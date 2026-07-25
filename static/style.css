@@ -1,6 +1,7 @@
-* {
-    box-sizing: border-box;
-}
+/* ==========================================================
+   Base
+   ========================================================== */
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
@@ -34,6 +35,9 @@ button {
 
 button:hover { background: #334155; }
 
+/* ==========================================================
+   Layout
+   ========================================================== */
 .layout {
     display: flex;
     align-items: flex-start;
@@ -41,6 +45,31 @@ button:hover { background: #334155; }
     padding: 16px;
 }
 
+.map-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 0 0 360px;
+    min-width: 320px;
+}
+
+.panel h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin: 0 0 8px;
+}
+
+/* ==========================================================
+   Warehouse map
+   ========================================================== */
 #warehouse {
     position: relative;
     background: #0b1220;
@@ -49,7 +78,7 @@ button:hover { background: #334155; }
     flex-shrink: 0;
 }
 
-/* No borders: adjacent cells merge into solid zones. This is the big one. */
+/* No borders: adjacent cells merge into solid zones. */
 .tile { position: absolute; }
 
 /* Floor is invisible; travel aisles read as continuous corridors. */
@@ -60,7 +89,7 @@ button:hover { background: #334155; }
 /* Storage is the visual anchor of the map. */
 .shelf         { background: #4b586e; }
 
-/* Operational zones: muted, equal visual weight. None may shout. */
+/* Operational zones: muted, equal visual weight. */
 .receiving     { background: #245c40; }
 .buffer        { background: #343a6e; }
 .pick_station  { background: #6b5220; }
@@ -71,6 +100,14 @@ button:hover { background: #334155; }
 .charging      { background: #66571f; }
 .maintenance   { background: #39424f; }
 .intersection  { background: #3f3f56; }
+
+/* Active task location highlights */
+.tile.task-pickup-active  { box-shadow: inset 0 0 0 2px rgba(245, 158, 11, 0.95); }
+.tile.task-dropoff-active { box-shadow: inset 0 0 0 2px rgba(34, 197, 94, 0.95); }
+
+/* Faint secondary target */
+.tile.task-pickup-faint   { box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45); }
+.tile.task-dropoff-faint  { box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.45); }
 
 /* Rack letters: quiet, but present (tasks reference them). */
 .rack-label {
@@ -97,7 +134,9 @@ button:hover { background: #334155; }
     z-index: 5;
 }
 
-/* Robots are the ONLY saturated objects on the map. */
+/* ==========================================================
+   Robots (the only saturated objects on the map)
+   ========================================================== */
 .robot {
     position: absolute;
     width: 20px;
@@ -112,30 +151,24 @@ button:hover { background: #334155; }
 
 .robot.idle { opacity: 0.6; }
 
-.sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    min-width: 300px;
+/* Robot has an active task */
+.robot.has-task {
+    outline: 2px solid rgba(255, 255, 255, 0.9);
+    outline-offset: 1px;
 }
 
-.panel h2 {
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #64748b;
-    margin: 0 0 8px;
-}
+/* Task type ring colors */
+.robot.task-putaway { box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.95); } /* Orange */
+.robot.task-pick    { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.95); }  /* Blue */
+.robot.task-pack    { box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.95); }  /* Purple */
+.robot.task-ship    { box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.95); }   /* Green */
 
-#robot-list, #task-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.dashboard-grid {
+/* ==========================================================
+   Dashboard (compact, 4 columns)
+   ========================================================== */
+#dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
 }
 
@@ -143,31 +176,101 @@ button:hover { background: #334155; }
     background: linear-gradient(180deg, #111a2e 0%, #0f172a 100%);
     border: 1px solid #1e293b;
     border-radius: 8px;
-    padding: 10px;
-    min-height: 84px;
+    padding: 8px 10px;
 }
 
 .metric-title {
-    font-size: 11px;
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: #64748b;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .metric-value {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: #f8fafc;
     line-height: 1.1;
 }
 
 .metric-detail {
-    margin-top: 6px;
-    font-size: 11px;
+    margin-top: 4px;
+    font-size: 10px;
     color: #94a3b8;
 }
 
+/* ==========================================================
+   Task list (scrollable, compact rows)
+   ========================================================== */
+#task-list {
+    max-height: 55vh;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.section-header {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #64748b;
+    margin: 20px 0 8px 0;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #334155;
+    letter-spacing: 0.05em;
+}
+
+.empty-msg {
+    color: #94a3b8;
+    font-size: 13px;
+    font-style: italic;
+    padding: 8px 0;
+}
+
+.task-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    background: #ffffff;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    border-left: 4px solid transparent;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Status colors */
+.task-row.pending   { border-left-color: #f59e0b; background: #fffbeb; }
+.task-row.assigned  { border-left-color: #3b82f6; background: #eff6ff; }
+.task-row.completed { border-left-color: #10b981; opacity: 0.6; }
+.task-row.failed    { border-left-color: #ef4444; opacity: 0.6; }
+
+/* Task type badges */
+.task-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 6px;
+    border-radius: 4px;
+    color: white;
+    text-transform: uppercase;
+    min-width: 42px;
+    text-align: center;
+}
+
+.task-badge.putaway { background: #f97316; }
+.task-badge.pick    { background: #3b82f6; }
+.task-badge.pack    { background: #a855f7; }
+.task-badge.ship    { background: #22c55e; }
+.task-badge.legacy  { background: #64748b; }
+
+/* Task text */
+.task-info  { flex: 1; min-width: 0; }
+.task-title { font-size: 13px; font-weight: 600; color: #1e293b; }
+.task-sub   { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+/* ==========================================================
+   Cards (kept for compatibility)
+   ========================================================== */
 .card {
     background: #111a2e;
     border: 1px solid #1e293b;
@@ -188,8 +291,14 @@ button:hover { background: #334155; }
 .label { color: #64748b; }
 .value { color: #e2e8f0; }
 
-/* Zone legend lives in the sidebar, not on the map. */
-.legend { display: flex; flex-direction: column; gap: 4px; }
+/* ==========================================================
+   Zone legend (below the map)
+   ========================================================== */
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+}
 
 .legend-item {
     display: flex;
@@ -206,14 +315,14 @@ button:hover { background: #334155; }
     display: inline-block;
 }
 
-.map-column {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+/* ==========================================================
+   Scrollbars (dark theme)
+   ========================================================== */
+#task-list::-webkit-scrollbar { width: 8px; }
+
+#task-list::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 4px;
 }
 
-.legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px 16px;
-}
+#task-list::-webkit-scrollbar-track { background: transparent; }

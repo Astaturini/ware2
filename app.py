@@ -8,91 +8,10 @@ from simulation.task_generator import TaskGenerator
 from simulation.metrics import Metrics
 from simulation.warehouse import Location, Warehouse
 
-
-def _build_warehouse() -> tuple[list[str], dict[str, Location]]:
-    """Build the layout grid and the named locations together so they match."""
-    width, height = 26, 21
-    grid = [["."] * width for _ in range(height)]
-    locations: dict[str, Location] = {}
-    ACCESS_ROW = 4
-
-    def paint(x0: int, y0: int, x1: int, y1: int, ch: str) -> None:
-        for y in range(y0, y1 + 1):
-            for x in range(x0, x1 + 1):
-                grid[y][x] = ch
-
-    def add_rack(letter: str, col: int, top: int, bottom: int) -> None:
-        paint(col, top, col + 3, bottom, "#")
-        idx = 1
-        for y in (top, bottom):
-            for x in range(col, col + 4):
-                name = f"{letter}-{idx:02d}"
-                locations[name] = Location(name, (x, y), (x, ACCESS_ROW))
-                idx += 1
-
-    # Receiving + QC / put-away buffer
-    paint(0, 0, 5, 1, "R")
-    paint(8, 0, 19, 0, "B")
-    locations["RECV"] = Location("RECV", (2, 1), (2, 1))
-    locations["BUFFER"] = Location("BUFFER", (12, 0), (12, 0))
-
-    # Racks A-D (top), E-H (bottom); shared access aisle on ACCESS_ROW
-    rack_cols = {"A": 2, "B": 8, "C": 14, "D": 20}
-    lower = {"A": "E", "B": "F", "C": "G", "D": "H"}
-    for letter, col in rack_cols.items():
-        add_rack(letter, col, 2, 3)
-        add_rack(lower[letter], col, 5, 6)
-        paint(col, ACCESS_ROW, col + 3, ACCESS_ROW, "a")
-    
-    #continuous travel corridors: full width access aisle + vertical aisles
-    paint(0, ACCESS_ROW, width - 1, ACCESS_ROW, "a")
-    for x0, x1 in ((0, 1), (6, 7), (12, 13), (18, 19), (24, 25)):
-        paint(x0, 2, x1, 6, "a")
-
-    # Main AMR cross-aisle
-    paint(0, 7, width - 1, 7, "M")
-
-    # Pick stations
-    for name, col in {"PICK-1": 4, "PICK-2": 12, "PICK-3": 20}.items():
-        paint(col, 8, col + 1, 9, "K")
-        locations[name] = Location(name, (col, 8), (col, 8))
-
-    
-    # Consolidation
-    paint(10, 10, 15, 11, "O")
-    locations["CONSOL"] = Location("CONSOL", (12, 10), (12, 10))
-
-    # Packing
-    paint(9, 12, 11, 13, "P")
-    paint(14, 12, 16, 13, "P")
-    locations["PACK-1"] = Location("PACK-1", (10, 12), (10, 12))
-    locations["PACK-2"] = Location("PACK-2", (15, 12), (15, 12))
-
-    # Outbound staging
-    paint(10, 14, 15, 14, "G")
-    locations["STAGING"] = Location("STAGING", (12, 14), (12, 14))
-
-    # Shipping docks
-    paint(10, 15, 11, 16, "S")
-    paint(14, 15, 15, 16, "S")
-    locations["DOCK-1"] = Location("DOCK-1", (10, 15), (10, 15))
-    locations["DOCK-2"] = Location("DOCK-2", (14, 15), (14, 15))
-
-    # Charging bays + maintenance
-    paint(1, 18, 3, 20, "C")
-    for i, x in enumerate((1, 2, 3), start=1):
-        locations[f"CHG-{i}"] = Location(f"CHG-{i}", (x, 18), (x, 18))
-    paint(14, 18, 19, 20, "X")
-    locations["MAINT"] = Location("MAINT", (16, 18), (16, 18))
-
-    return ["".join(row) for row in grid], locations
-
-
-WAREHOUSE_LAYOUT, WAREHOUSE_LOCATIONS = _build_warehouse()
-
+from simulation.warehouse_layout import build_warehouse
 
 def create_initial_warehouse() -> Warehouse:
-    return Warehouse(layout=WAREHOUSE_LAYOUT, locations=WAREHOUSE_LOCATIONS)
+    return build_warehouse()
 
 
 def create_initial_robots() -> list[Robot]:
@@ -102,11 +21,15 @@ def create_initial_robots() -> list[Robot]:
         Robot(id="R3", x=17, y=7, color="#10b981", status=RobotStatus.IDLE, path=[], current_task_id=None),
         Robot(id="R4", x=24, y=7, color="#f59e0b", status=RobotStatus.IDLE, path=[], current_task_id=None),
         Robot(id="R5", x=1, y=20, color="#8b5cf6", status=RobotStatus.IDLE, path=[], current_task_id=None),
-        Robot(id="R6", x=9, y=20, color="#ec4899", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R6", x=9, y=20, color="#2a7016", status=RobotStatus.IDLE, path=[], current_task_id=None),
         Robot(id="R7", x=17, y=20, color="#14b8a6", status=RobotStatus.IDLE, path=[], current_task_id=None),
         Robot(id="R8", x=24, y=20, color="#f97316", status=RobotStatus.IDLE, path=[], current_task_id=None),
         Robot(id="R9", x=1, y=0, color="#e11d48", status=RobotStatus.IDLE, path=[], current_task_id=None),
         Robot(id="R10", x=9, y=0, color="#2563eb", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R11", x=17, y=0, color="#22c55e", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        #Robot(id="R12", x=12, y=1, color="#983084", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        #Robot(id="R13", x=13, y=0, color="#63431b", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        
     ]
 
 
@@ -144,7 +67,7 @@ def create_default_simulation() -> Simulation:
         robots=robots,
         tasks=[],
         scheduler=CostBasedScheduler(),
-        task_generator=TaskGenerator(warehouse, seed=42),
+        task_generator=TaskGenerator(warehouse, seed=731),
         metrics=Metrics(),
     )
 

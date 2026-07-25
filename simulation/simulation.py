@@ -28,8 +28,8 @@ class Simulation:
         scheduler: Scheduler | None = None,
         task_generator: TaskGenerator | None = None,
         metrics: Metrics | None = None,
-        blocked_replan_seconds: float = 0.8,
-        replan_cooldown_ticks: int = 3,
+        blocked_replan_seconds: float = 0.7,
+        replan_cooldown_ticks: int = 7,
     ) -> None:
         self._warehouse = warehouse
         self._tick_interval = tick_interval
@@ -192,6 +192,8 @@ class Simulation:
         self._assign_pending_tasks()
         self._advance_robots()
         self._metrics.record_tick(list(self._robots.values()))
+        
+        self._prune_old_tasks()
 
         self._tick_count += 1
 
@@ -896,3 +898,21 @@ class Simulation:
             return -1
 
         return task.priority
+    
+    # prune older than last 100 tasks
+    def _prune_old_tasks(self) -> None:
+        """Remove completed or failed tasks older than 100 ticks
+            to prevent memory/UI bloat."""
+        current_tick = self._tick_count
+        max_age = 100  # Keep completed tasks in UI for ~30 seconds (at 0.3s/tick)
+        
+        to_delete = [
+            task_id for task_id, task in self._tasks.items()
+            if task.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)
+            and task.completed_at is not None
+            and (current_tick - task.completed_at) > max_age
+        ]
+        
+        for task_id in to_delete:
+            del self._tasks[task_id]
+    

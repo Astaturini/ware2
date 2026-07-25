@@ -3,7 +3,6 @@ const POLL_INTERVAL_MS = 300;
 
 const warehouseEl = document.getElementById("warehouse");
 const dashboardGridEl = document.getElementById("dashboard-grid");
-const robotListEl = document.getElementById("robot-list");
 const taskListEl = document.getElementById("task-list");
 const simulationStateEl = document.getElementById("simulation-state");
 const pauseBtn = document.getElementById("pause-btn");
@@ -38,7 +37,8 @@ function render(state) {
         previousWarehouseKey = warehouseKey;
     }
 
-    updateRobots(state.robots);
+    updateRobots(state.robots, state.tasks);
+    updateTaskHighlights(state);
     updateSidePanel(state);
     simulationStateEl.textContent = state.paused ? "Paused" : `Tick ${state.tick}`;
 }
@@ -54,7 +54,6 @@ function buildStaticLayer(warehouse) {
         });
     });
 
-    // Rack labels: show the letter only, e.g. "B".
     for (const [rack, [x, y]] of Object.entries(warehouse.racks ?? {})) {
         const label = document.createElement("div");
         label.className = "rack-label";
@@ -63,7 +62,6 @@ function buildStaticLayer(warehouse) {
         label.style.top = `${(y + 0.5) * CELL_SIZE}px`;
         warehouseEl.appendChild(label);
     }
-
 }
 
 function shortLabel(name) {
@@ -74,6 +72,8 @@ function shortLabel(name) {
 function addCell(x, y, className, label) {
     const cell = document.createElement("div");
     cell.className = `tile ${className}`;
+    cell.dataset.x = x;
+    cell.dataset.y = y;
     cell.style.left = `${x * CELL_SIZE}px`;
     cell.style.top = `${y * CELL_SIZE}px`;
     cell.style.width = `${CELL_SIZE}px`;
@@ -92,8 +92,9 @@ function addMarker([x, y], text, tooltip) {
     warehouseEl.appendChild(marker);
 }
 
-function updateRobots(robots) {
+function updateRobots(robots, tasks) {
     const seen = new Set();
+    const tasksById = new Map(tasks.map(task => [task.id, task]));
 
     for (const robot of robots) {
         seen.add(robot.id);
@@ -108,7 +109,34 @@ function updateRobots(robots) {
         el.style.left = `${robot.x * CELL_SIZE}px`;
         el.style.top = `${robot.y * CELL_SIZE}px`;
         el.classList.toggle("idle", robot.status === "Idle");
-        el.title = robot.id;
+
+        el.classList.remove(
+            "has-task",
+            "task-putaway",
+            "task-pick",
+            "task-pack",
+            "task-ship"
+        );
+
+        const task = robot.currentTaskId ? tasksById.get(robot.currentTaskId) : null;
+
+        if (task) {
+            el.classList.add("has-task");
+            const taskType = (task.taskType || "").toLowerCase();
+
+            if (taskType === "putaway") {
+                el.classList.add("task-putaway");
+            } else if (taskType === "pick") {
+                el.classList.add("task-pick");
+            } else if (taskType === "pack") {
+                el.classList.add("task-pack");
+            } else if (taskType === "ship") {
+                el.classList.add("task-ship");
+            }
+            el.title = `${robot.id} | ${task.name} | ${task.pickup} → ${task.dropoff}`;
+        } else {
+            el.title = `${robot.id} | Idle`;
+        }
     }
 
     for (const id of Object.keys(robotElements)) {
@@ -119,81 +147,139 @@ function updateRobots(robots) {
     }
 }
 
+function updateTaskHighlights(state) {
+    document.querySelectorAll(
+        ".task-pickup-active, .task-dropoff-active, .task-pickup-faint, .task-dropoff-faint"
+    ).forEach(el => {
+        el.classList.remove(
+            "task-pickup-active",
+            "task-dropoff-active",
+            "task-pickup-faint",
+            "task-dropoff-faint"
+        );
+    });
+
+    const activeTasks = state.tasks.filter(task =>
+        task.status === "Assigned" && task.assignedRobotId
+    );
+
+    for (const task of activeTasks) {
+        if (task.phase === "To pickup") {
+            highlightLocation(state, task.pickup, "task-pickup-active");
+            highlightLocation(state, task.dropoff, "task-dropoff-faint");
+        } else if (task.phase === "To dropoff") {
+            highlightLocation(state, task.dropoff, "task-dropoff-active");
+        }
+    }
+}
+
+function highlightLocation(state, locationName, className) {
+    if (!locationName) return;
+    const location = state.warehouse.locations?.[locationName];
+    if (!location) return;
+
+    addTileClass(location.cell, className);
+    addTileClass(location.access, className);
+}
+
+function addTileClass(coord, className) {
+    if (!coord) return;
+    const [x, y] = coord;
+    const tileEl = document.querySelector(
+        `.tile[data-x="${x}"][data-y="${y}"]`
+    );
+    if (tileEl) {
+        tileEl.classList.add(className);
+    }
+}
+
 function updateSidePanel(state) {
     const metrics = state.metrics ?? {};
-    const taskCounts = state.tasks.reduce((counts, task) => {
-        counts.total += 1;
-        counts[task.status.toLowerCase()] = (counts[task.status.toLowerCase()] ?? 0) + 1;
-        return counts;
-    }, { total: 0, pending: 0, assigned: 0, completed: 0, failed: 0 });
 
+    // --- Dashboard on top ---
     dashboardGridEl.innerHTML = "";
     const metricCards = [
-        ["Generated", metrics.tasksGenerated ?? 0, "tasks"],
-        ["Pending", taskCounts.pending ?? 0, "queue"],
-        ["Active", taskCounts.assigned ?? 0, "in motion"],
+        ["Generated", metrics.tasksGenerated ?? 0, "total"],
         ["Completed", metrics.tasksCompleted ?? 0, "tasks"],
-        ["Failed", metrics.tasksFailed ?? 0, "tasks"],
+        ["Active", state.tasks.filter(t => t.status === "Assigned").length, "robots"],
+        ["Pending", state.tasks.filter(t => t.status === "Pending").length, "queue"],
         ["Throughput", (metrics.throughputPerTick ?? 0).toFixed(2), "per tick"],
-        ["Avg wait", (metrics.averageTaskWaitingTime ?? 0).toFixed(1), "ticks"],
-        ["Avg cycle", (metrics.averageTaskCompletionTime ?? 0).toFixed(1), "ticks"],
+        ["Avg Cycle", (metrics.averageTaskCompletionTime ?? 0).toFixed(1), "ticks"],
+        ["Blocked", (metrics.blockedTimeSeconds ?? 0).toFixed(1), "secs"],
+        ["Replans", metrics.replanningCount ?? 0, "events"],
     ];
-
     metricCards.forEach(([title, value, detail]) => {
         dashboardGridEl.appendChild(createMetricCard(title, value, detail));
     });
 
-    robotListEl.innerHTML = "";
-    for (const robot of state.robots) {
-        const utilization = metrics.robotUtilization?.[robot.id] ?? 0;
-        robotListEl.appendChild(createCard(robot.id, [
-            ["Status", robot.status],
-            ["Task", robot.currentTaskId ?? "—"],
-            ["Target", robot.currentTarget ? robot.currentTarget.join(", ") : "—"],
-            ["Utilization", `${(utilization * 100).toFixed(0)}%`],
-        ]));
+    // --- Tasks directly below dashboard ---
+    taskListEl.innerHTML = "";
+
+    const activeTasks = state.tasks.filter(t => t.status === "Pending" || t.status === "Assigned");
+    const recentDone = state.tasks
+        .filter(t => t.status === "Completed" || t.status === "Failed")
+        .sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0))
+        .slice(0, 5);
+
+    const activeHeader = document.createElement("h3");
+    activeHeader.className = "section-header";
+    activeHeader.textContent = `Active Queue (${activeTasks.length})`;
+    taskListEl.appendChild(activeHeader);
+
+    if (activeTasks.length === 0) {
+        const emptyMsg = document.createElement("div");
+        emptyMsg.className = "empty-msg";
+        emptyMsg.textContent = "No active tasks";
+        taskListEl.appendChild(emptyMsg);
+    } else {
+        for (const task of activeTasks) {
+            taskListEl.appendChild(createTaskRow(task));
+        }
     }
 
-    taskListEl.innerHTML = "";
-    for (const task of state.tasks) {
-        taskListEl.appendChild(createCard(task.name, [
-            ["Type", task.taskType ?? "LEGACY"],
-            ["From", task.pickup],
-            ["To", task.dropoff],
-            ["Status", task.status],
-            ["Phase", task.phase],
-            ["Robot", task.assignedRobotId ?? "—"],
-        ], task.status === "Completed" ? "done" : ""));
+    const historyHeader = document.createElement("h3");
+    historyHeader.className = "section-header";
+    historyHeader.textContent = `Recent History (${metrics.tasksCompleted} completed)`;
+    taskListEl.appendChild(historyHeader);
+
+    if (recentDone.length === 0) {
+        const emptyMsg = document.createElement("div");
+        emptyMsg.className = "empty-msg";
+        emptyMsg.textContent = "No completed tasks yet";
+        taskListEl.appendChild(emptyMsg);
+    } else {
+        for (const task of recentDone) {
+            taskListEl.appendChild(createTaskRow(task, true));
+        }
     }
 }
 
-function createCard(title, rows, extraClass) {
-    const card = document.createElement("div");
-    card.className = `card ${extraClass ?? ""}`.trim();
+function createTaskRow(task, isHistory = false) {
+    const row = document.createElement("div");
+    row.className = `task-row ${task.status.toLowerCase()} ${isHistory ? 'history' : ''}`;
 
-    const titleEl = document.createElement("div");
-    titleEl.className = "card-title";
-    titleEl.textContent = title;
-    card.appendChild(titleEl);
+    const badge = document.createElement("span");
+    badge.className = `task-badge ${(task.taskType || "legacy").toLowerCase()}`;
+    badge.textContent = (task.taskType || "?").substring(0, 4);
 
-    for (const [label, value] of rows) {
-        const row = document.createElement("div");
-        row.className = "row";
+    const info = document.createElement("div");
+    info.className = "task-info";
 
-        const labelEl = document.createElement("span");
-        labelEl.className = "label";
-        labelEl.textContent = label;
+    const title = document.createElement("div");
+    title.className = "task-title";
+    title.textContent = `${task.pickup} → ${task.dropoff}`;
 
-        const valueEl = document.createElement("span");
-        valueEl.className = "value";
-        valueEl.textContent = value;
+    const sub = document.createElement("div");
+    sub.className = "task-sub";
+    sub.textContent = task.assignedRobotId ? `${task.assignedRobotId} • ${task.phase}` : task.status;
 
-        row.appendChild(labelEl);
-        row.appendChild(valueEl);
-        card.appendChild(row);
-    }
+    info.appendChild(title);
+    info.appendChild(sub);
 
-    return card;
+    row.appendChild(badge);
+    row.appendChild(info);
+
+    return row;
 }
 
 function createMetricCard(title, value, detail) {
