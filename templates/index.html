@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Warehouse Simulator v0.1</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+
+  <body>
+    <header>
+      <div>
+        <h1>Warehouse Simulator</h1>
+        <p>Version 0.1</p>
+      </div>
+
+      <div id="simulation-state">Loading</div>
+    </header>
+
+    <main>
+      <section id="simulation-panel">
+        <div id="controls">
+          <button id="pause-btn">Pause</button>
+          <button id="resume-btn">Resume</button>
+          <button id="reset-btn">Reset</button>
+        </div>
+
+        <div id="warehouse-wrapper">
+          <div id="warehouse"></div>
+        </div>
+      </section>
+
+      <aside id="side-panel">
+        <section>
+          <h2>Robots</h2>
+          <div id="robot-list"></div>
+        </section>
+
+        <section>
+          <h2>Tasks</h2>
+          <div id="task-list"></div>
+        </section>
+      </aside>
+    </main>
+
+    <script src="{{ url_for('static', filename='simulation.js') }}"></script>
+  </body>
+</html>
