@@ -1,249 +1,184 @@
-:root {
-  --cell-size: 42px;
-  --background: #0f172a;
-  --panel: #111827;
-  --border: #1f2937;
-  --text: #e5e7eb;
-  --muted: #94a3b8;
-}
-
 * {
-  box-sizing: border-box;
+    box-sizing: border-box;
 }
 
 body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--background);
-  color: var(--text);
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #0b1220;
+    color: #e2e8f0;
 }
 
 header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #111a2e;
+    border-bottom: 1px solid #1e293b;
 }
 
-header h1 {
-  margin: 0;
-  font-size: 20px;
-}
+header h1 { font-size: 16px; margin: 0; }
 
-header p {
-  margin: 2px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-#simulation-state {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: #1e293b;
-  font-size: 14px;
-}
-
-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
-  gap: 16px;
-  padding: 16px;
-}
-
-#controls {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 12px;
-}
+#simulation-state { font-size: 13px; color: #64748b; }
 
 button {
-  border: 1px solid #334155;
-  background: #1e293b;
-  color: var(--text);
-  border-radius: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
+    padding: 6px 12px;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: #1e293b;
+    color: #e2e8f0;
+    cursor: pointer;
+    font-size: 13px;
 }
 
-button:hover {
-  background: #334155;
-}
+button:hover { background: #334155; }
 
-#warehouse-wrapper {
-  overflow: auto;
-  padding: 16px;
-  background: #0b1220;
-  border: 1px solid var(--border);
-  border-radius: 12px;
+.layout {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
 }
 
 #warehouse {
-  position: relative;
-  background-color: #020617;
-  background-image:
-    linear-gradient(to right, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
-  background-size: var(--cell-size) var(--cell-size);
-  border: 1px solid #334155;
+    position: relative;
+    background: #0b1220;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    flex-shrink: 0;
 }
 
-.cell {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* No borders: adjacent cells merge into solid zones. This is the big one. */
+.tile { position: absolute; }
 
-.obstacle {
-  background: #7f1d1d;
-  border: 1px solid #b91c1c;
-  border-radius: 4px;
-}
+/* Floor is invisible; travel aisles read as continuous corridors. */
+.empty         { background: transparent; }
+.aisle         { background: #16223a; }
+.main_aisle    { background: #1e3a66; }
 
-.station {
-  font-weight: 700;
-  color: white;
-  border-radius: 4px;
-}
+/* Storage is the visual anchor of the map. */
+.shelf         { background: #4b586e; }
 
-.pickup {
-  background: #14532d;
-  border: 1px solid #22c55e;
-}
+/* Operational zones: muted, equal visual weight. None may shout. */
+.receiving     { background: #245c40; }
+.buffer        { background: #343a6e; }
+.pick_station  { background: #6b5220; }
+.consolidation { background: #5d4a1f; }
+.packing       { background: #4a3668; }
+.staging       { background: #1f5a50; }
+.shipping      { background: #6b3226; }
+.charging      { background: #66571f; }
+.maintenance   { background: #39424f; }
+.intersection  { background: #3f3f56; }
 
-.dropoff {
-  background: #1d4ed8;
-  border: 1px solid #60a5fa;
-}
-
-.robot {
-  position: absolute;
-  width: calc(var(--cell-size) * 0.68);
-  height: calc(var(--cell-size) * 0.68);
-  margin: calc(var(--cell-size) * 0.16);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: white;
-  z-index: 2;
-  transition: left 0.28s linear, top 0.28s linear;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
-}
-
-.robot.idle {
-  opacity: 0.72;
-}
-
-#side-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-}
-
-#side-panel h2 {
-  margin: 0 0 8px;
-  font-size: 16px;
-}
-
-.card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-}
-
-.card-title {
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 2px 0;
-  font-size: 14px;
-}
-
-.label {
-  color: var(--muted);
-}
-
-.value {
-  text-align: right;
-}
-
-@media (max-width: 1000px) {
-  main {
-    grid-template-columns: 1fr;
-  }
-}
-/* Tile-based warehouse layout */
-
-.tile {
-  border-radius: 2px;
-}
-
-.empty {
-  background: #020617;
-}
-
-.shelf {
-  background: #3f3f46;
-  border: 1px solid #71717a;
-}
-
-.aisle {
-  background: #1f2937;
-}
-
-.main_aisle {
-  background: #334155;
-}
-
-.packing {
-  background: #4c1d95;
-  border: 1px solid #8b5cf6;
-}
-
-.receiving {
-  background: #14532d;
-  border: 1px solid #22c55e;
-}
-
-.shipping {
-  background: #92400e;
-  border: 1px solid #f59e0b;
-}
-
-.charging {
-  background: #854d0e;
-  border: 1px solid #facc15;
-}
-
-.intersection {
-  background: #155e75;
-  border: 1px solid #22d3ee;
+/* Rack letters: quiet, but present (tasks reference them). */
+.rack-label {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-weight: 600;
+    font-size: 11px;
+    color: rgba(248, 250, 252, 0.55);
+    pointer-events: none;
+    z-index: 4;
 }
 
 .marker {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-  font-size: 10px;
-  font-weight: 800;
-  color: white;
-  border: 2px dashed rgba(255, 255, 255, 0.65);
-  border-radius: 6px;
-  pointer-events: none;
-  text-shadow: 0 1px 2px black;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    background: #0f172a;
+    color: #f8fafc;
+    border: 1px solid #64748b;
+    border-radius: 4px;
+    font-size: 10px;
+    line-height: 1;
+    padding: 3px 4px;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Robots are the ONLY saturated objects on the map. */
+.robot {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 2px solid #f8fafc;
+    transform: translate(6px, 6px);
+    transition: left 0.25s linear, top 0.25s linear;
+    z-index: 10;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+.robot.idle { opacity: 0.6; }
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-width: 260px;
+}
+
+.panel h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin: 0 0 8px;
+}
+
+#robot-list, #task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card {
+    background: #111a2e;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.card.done { opacity: 0.55; }
+.card-title { font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    padding: 2px 0;
+}
+
+.label { color: #64748b; }
+.value { color: #e2e8f0; }
+
+/* Zone legend lives in the sidebar, not on the map. */
+.legend { display: flex; flex-direction: column; gap: 4px; }
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+.swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.map-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
 }

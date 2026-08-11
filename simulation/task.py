@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
 from typing import Any
@@ -18,18 +20,15 @@ class TaskPhase(str, Enum):
 
 @dataclass
 class Task:
-    """A simple transport task from pickup to dropoff."""
-
     id: str
     name: str
-    pickup: tuple[int, int]
-    dropoff: tuple[int, int]
+    pickup: str      # location name, e.g. "B-02" or "PICK-1"
+    dropoff: str     # location name
     status: TaskStatus = TaskStatus.PENDING
     assigned_robot_id: str | None = None
     phase: TaskPhase = TaskPhase.TO_PICKUP
 
     def to_dict(self) -> dict[str, Any]:
-        """Return JSON-serializable task state."""
         return {
             "id": self.id,
             "name": self.name,

@@ -57,7 +57,14 @@ class Simulation:
                 raise ValueError(f"Robot {robot.id} starts inside an obstacle.")
 
         for task in tasks:
-            for point in (task.pickup, task.dropoff):
+            for name in (task.pickup, task.dropoff):
+                try:
+                    point = self._warehouse.resolve(name)
+                except KeyError:
+                    raise ValueError(
+                        f"Task {task.id} references unknown location {name!r}."
+                    ) from None
+
                 if not self._warehouse.in_bounds(*point):
                     raise ValueError(f"Task {task.id} has a location outside bounds.")
 
@@ -173,7 +180,7 @@ class Simulation:
         task.phase = TaskPhase.TO_PICKUP
         robot.current_task_id = task.id
 
-        self._route_robot_to(robot, task, task.pickup)
+        self._route_robot_to(robot, task, self._warehouse.resolve(task.pickup))
 
     def _route_robot_to(
         self,
@@ -210,7 +217,7 @@ class Simulation:
 
         if task.phase == TaskPhase.TO_PICKUP:
             task.phase = TaskPhase.TO_DROPOFF
-            self._route_robot_to(robot, task, task.dropoff)
+            self._route_robot_to(robot, task, self._warehouse.resolve(task.dropoff))
             return
 
         if task.phase == TaskPhase.TO_DROPOFF:

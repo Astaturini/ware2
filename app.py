@@ -1,91 +1,124 @@
-from __future__ import annotations
+from flask import Flask, jsonify, render_template
 
-from flask import Flask, Response, jsonify, render_template
-
-from simulation.robot import Robot
+from simulation.robot import Robot, RobotStatus
 from simulation.simulation import Simulation
 from simulation.task import Task
-from simulation.warehouse import Warehouse
+from simulation.warehouse import Location, Warehouse
 
 
-WAREHOUSE_LAYOUT = [
-    "E" * 20,
-    "RRa###a###a###aPPaSS",
-    "RRa###a###a###aPPaSS",
-    "RRa###a###a###aPPaSS",
-    "RRa###a###a###aPPaSS",
-    "MMIMMMIMMMIMMMIMMIMM",
-    "EEa###a###a###aEEaSS",
-    "EEa###a###a###aEEaSS",
-    "EEa###a###a###aEEaSS",
-    "EEa###a###a###aEEaSS",
-    "CC" + "a" * 13 + "EEaSS",
-    "CC" + "E" * 18,
-]
+def _build_warehouse() -> tuple[list[str], dict[str, Location]]:
+    """Build the layout grid and the named locations together so they match."""
+    width, height = 26, 21
+    grid = [["."] * width for _ in range(height)]
+    locations: dict[str, Location] = {}
+    ACCESS_ROW = 4
+
+    def paint(x0: int, y0: int, x1: int, y1: int, ch: str) -> None:
+        for y in range(y0, y1 + 1):
+            for x in range(x0, x1 + 1):
+                grid[y][x] = ch
+
+    def add_rack(letter: str, col: int, top: int, bottom: int) -> None:
+        paint(col, top, col + 3, bottom, "#")
+        idx = 1
+        for y in (top, bottom):
+            for x in range(col, col + 4):
+                name = f"{letter}-{idx:02d}"
+                locations[name] = Location(name, (x, y), (x, ACCESS_ROW))
+                idx += 1
+
+    # Receiving + QC / put-away buffer
+    paint(0, 0, 5, 1, "R")
+    paint(8, 0, 19, 0, "B")
+    locations["RECV"] = Location("RECV", (2, 1), (2, 1))
+    locations["BUFFER"] = Location("BUFFER", (12, 0), (12, 0))
+
+    # Racks A-D (top), E-H (bottom); shared access aisle on ACCESS_ROW
+    rack_cols = {"A": 2, "B": 8, "C": 14, "D": 20}
+    lower = {"A": "E", "B": "F", "C": "G", "D": "H"}
+    for letter, col in rack_cols.items():
+        add_rack(letter, col, 2, 3)
+        add_rack(lower[letter], col, 5, 6)
+        paint(col, ACCESS_ROW, col + 3, ACCESS_ROW, "a")
+    
+    #continuous travel corridors: full width access aisle + vertical aisles
+    paint(0, ACCESS_ROW, width - 1, ACCESS_ROW, "a")
+    for x0, x1 in ((0, 1), (6, 7), (12, 13), (18, 19), (24, 25)):
+        paint(x0, 2, x1, 6, "a")
+
+    # Main AMR cross-aisle
+    paint(0, 7, width - 1, 7, "M")
+
+    # Pick stations
+    for name, col in {"PICK-1": 4, "PICK-2": 12, "PICK-3": 20}.items():
+        paint(col, 8, col + 1, 9, "K")
+        locations[name] = Location(name, (col, 8), (col, 8))
+
+    
+    # Consolidation
+    paint(10, 10, 15, 11, "O")
+    locations["CONSOL"] = Location("CONSOL", (12, 10), (12, 10))
+
+    # Packing
+    paint(9, 12, 11, 13, "P")
+    paint(14, 12, 16, 13, "P")
+    locations["PACK-1"] = Location("PACK-1", (10, 12), (10, 12))
+    locations["PACK-2"] = Location("PACK-2", (15, 12), (15, 12))
+
+    # Outbound staging
+    paint(10, 14, 15, 14, "G")
+    locations["STAGING"] = Location("STAGING", (12, 14), (12, 14))
+
+    # Shipping docks
+    paint(10, 15, 11, 16, "S")
+    paint(14, 15, 15, 16, "S")
+    locations["DOCK-1"] = Location("DOCK-1", (10, 15), (10, 15))
+    locations["DOCK-2"] = Location("DOCK-2", (14, 15), (14, 15))
+
+    # Charging bays + maintenance
+    paint(1, 18, 3, 20, "C")
+    for i, x in enumerate((1, 2, 3), start=1):
+        locations[f"CHG-{i}"] = Location(f"CHG-{i}", (x, 18), (x, 18))
+    paint(14, 18, 19, 20, "X")
+    locations["MAINT"] = Location("MAINT", (16, 18), (16, 18))
+
+    return ["".join(row) for row in grid], locations
+
+
+WAREHOUSE_LAYOUT, WAREHOUSE_LOCATIONS = _build_warehouse()
 
 
 def create_initial_warehouse() -> Warehouse:
-    """Create the tile-based warehouse.
-
-    Pickup is in RECEIVING.
-    Dropoff is in PACKING.
-    """
-    return Warehouse(
-        layout=WAREHOUSE_LAYOUT,
-        pickup=(1, 2),
-        dropoff=(15, 2),
-    )
+    return Warehouse(layout=WAREHOUSE_LAYOUT, locations=WAREHOUSE_LOCATIONS)
 
 
 def create_initial_robots() -> list[Robot]:
-    """Create robots on passable cells."""
     return [
-        Robot(id="R1", x=1, y=5, color="#ef4444"),
-        Robot(id="R2", x=6, y=10, color="#3b82f6"),
+        Robot(id="R1", x=1, y=7, color="#ef4444", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R2", x=9, y=7, color="#3b82f6", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R3", x=17, y=7, color="#10b981", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R4", x=24, y=7, color="#f59e0b", status=RobotStatus.IDLE, path=[], current_task_id=None),
     ]
 
 
 def create_initial_tasks(warehouse: Warehouse) -> list[Task]:
-    """Create simple transport tasks from receiving to packing."""
-    return [
-        Task(
-            id="T1",
-            name="Inbound A to Packing",
-            pickup=warehouse.pickup,
-            dropoff=warehouse.dropoff,
-        ),
-        Task(
-            id="T2",
-            name="Inbound B to Packing",
-            pickup=warehouse.pickup,
-            dropoff=warehouse.dropoff,
-        ),
-        Task(
-            id="T3",
-            name="Inbound C to Packing",
-            pickup=warehouse.pickup,
-            dropoff=warehouse.dropoff,
-        ),
-        Task(
-            id="T4",
-            name="Inbound D to Packing",
-            pickup=warehouse.pickup,
-            dropoff=warehouse.dropoff,
-        ),
+    specs = [
+        ("T1", "Inbound putaway A", "RECV", "A-03"),
+        ("T2", "Inbound putaway C", "BUFFER", "C-01"),
+        ("T3", "Pick order 1", "B-02", "PICK-1"),
+        ("T4", "Pick order 2", "F-05", "PICK-2"),
+        ("T5", "Move to packing", "CONSOL", "PACK-1"),
+        ("T6", "Ship outbound", "PACK-2", "DOCK-1"),
     ]
+    return [Task(id=tid, name=name, pickup=pickup, dropoff=dropoff)
+            for (tid, name, pickup, dropoff) in specs]
 
 
 def create_default_simulation() -> Simulation:
     warehouse = create_initial_warehouse()
     robots = create_initial_robots()
     tasks = create_initial_tasks(warehouse)
-
-    return Simulation(
-        warehouse=warehouse,
-        robots=robots,
-        tasks=tasks,
-        tick_interval=0.35,
-    )
+    return Simulation(warehouse=warehouse, robots=robots, tasks=tasks)
 
 
 def create_app(
@@ -98,27 +131,27 @@ def create_app(
     app = Flask(__name__)
 
     @app.get("/")
-    def index() -> str:
+    def index():
         return render_template("index.html")
 
     @app.get("/api/state")
-    def get_state() -> Response:
+    def state():
         return jsonify(simulation.get_state())
 
     @app.post("/api/pause")
-    def pause() -> Response:
+    def pause():
         simulation.pause()
-        return jsonify({"status": "paused"})
+        return jsonify({"paused": simulation.is_paused})
 
     @app.post("/api/resume")
-    def resume() -> Response:
+    def resume():
         simulation.resume()
-        return jsonify({"status": "running"})
+        return jsonify({"paused": simulation.is_paused})
 
     @app.post("/api/reset")
-    def reset() -> Response:
+    def reset():
         simulation.reset()
-        return jsonify({"status": "reset"})
+        return jsonify({"paused": simulation.is_paused})
 
     if start_simulation:
         simulation.start()
@@ -126,17 +159,8 @@ def create_app(
     return app
 
 
-if __name__ == "__main__":
-    simulation = create_default_simulation()
-    app = create_app(simulation, start_simulation=True)
+app = create_app()
 
-    try:
-        app.run(
-            host="127.0.0.1",
-            port=5000,
-            debug=False,
-            use_reloader=False,
-            threaded=True,
-        )
-    finally:
-        simulation.stop()
+
+if __name__ == "__main__":
+    app.run(debug=False)

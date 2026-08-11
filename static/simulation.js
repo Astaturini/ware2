@@ -1,227 +1,148 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const CELL_SIZE = 36;
-  const POLL_INTERVAL_MS = 300;
+const CELL_SIZE = 32;
+const POLL_INTERVAL_MS = 300;
 
-  document.documentElement.style.setProperty("--cell-size", `${CELL_SIZE}px`);
+const warehouseEl = document.getElementById("warehouse");
+const robotListEl = document.getElementById("robot-list");
+const taskListEl = document.getElementById("task-list");
+const simulationStateEl = document.getElementById("simulation-state");
+const pauseBtn = document.getElementById("pause-btn");
+const resumeBtn = document.getElementById("resume-btn");
+const resetBtn = document.getElementById("reset-btn");
 
-  const warehouseEl = document.getElementById("warehouse");
-  const robotListEl = document.getElementById("robot-list");
-  const taskListEl = document.getElementById("task-list");
-  const simulationStateEl = document.getElementById("simulation-state");
+let robotElements = {};
+let previousWarehouseKey = null;
+let updateInProgress = false;
 
-  const pauseBtn = document.getElementById("pause-btn");
-  const resumeBtn = document.getElementById("resume-btn");
-  const resetBtn = document.getElementById("reset-btn");
-
-  const robotElements = new Map();
-
-  let previousWarehouseKey = "";
-  let updateInProgress = false;
-
-  pauseBtn.addEventListener("click", async () => {
-    await postCommand("/api/pause");
-    await refresh();
-  });
-
-  resumeBtn.addEventListener("click", async () => {
-    await postCommand("/api/resume");
-    await refresh();
-  });
-
-  resetBtn.addEventListener("click", async () => {
-    await postCommand("/api/reset");
-    await refresh();
-  });
-
-  setInterval(refresh, POLL_INTERVAL_MS);
-  refresh();
-
-  async function refresh() {
-    if (updateInProgress) {
-      return;
-    }
-
+function refresh() {
+    if (updateInProgress) return;
     updateInProgress = true;
+    fetchState()
+        .then(render)
+        .catch(console.error)
+        .finally(() => { updateInProgress = false; });
+}
 
-    try {
-      const state = await fetchState();
-      render(state);
-    } catch (error) {
-      console.error(error);
-      simulationStateEl.textContent = "Disconnected";
-    } finally {
-      updateInProgress = false;
-    }
-  }
+function fetchState() {
+    return fetch("/api/state").then((response) => response.json());
+}
 
-  async function fetchState() {
-    const response = await fetch("/api/state");
+function postCommand(url) {
+    return fetch(url, { method: "POST" });
+}
 
-    if (!response.ok) {
-      throw new Error(`State request failed with status ${response.status}`);
-    }
-
-    return response.json();
-  }
-
-  async function postCommand(url) {
-    const response = await fetch(url, {
-      method: "POST",
-    });
-
-    if (!response.ok) {
-      throw new Error(`Command failed with status ${response.status}`);
-    }
-  }
-
-  function render(state) {
-    simulationStateEl.textContent = state.paused ? "Paused" : "Running";
-
+function render(state) {
     const warehouseKey = JSON.stringify(state.warehouse);
-
     if (warehouseKey !== previousWarehouseKey) {
-      buildStaticLayer(state.warehouse);
-      previousWarehouseKey = warehouseKey;
+        buildStaticLayer(state.warehouse);
+        previousWarehouseKey = warehouseKey;
     }
 
     updateRobots(state.robots);
     updateSidePanel(state);
-  }
+    simulationStateEl.textContent = state.paused ? "Paused" : `Tick ${state.tick}`;
+}
 
-  function buildStaticLayer(warehouse) {
+function buildStaticLayer(warehouse) {
     warehouseEl.innerHTML = "";
-    robotElements.clear();
-
     warehouseEl.style.width = `${warehouse.width * CELL_SIZE}px`;
     warehouseEl.style.height = `${warehouse.height * CELL_SIZE}px`;
 
-    if (Array.isArray(warehouse.layout)) {
-      warehouse.layout.forEach((row, y) => {
-        row.forEach((cellType, x) => {
-          const cssClass = `cell tile ${cellType.toLowerCase()}`;
-          addCell(x, y, cssClass);
+    warehouse.layout.forEach((row, y) => {
+        row.forEach((cell, x) => {
+            addCell(x, y, cell.toLowerCase());
         });
-      });
-    } else {
-      // Fallback for the older simple warehouse format.
-      for (const [x, y] of warehouse.obstacles) {
-        addCell(x, y, "cell tile shelf");
-      }
+    });
 
-      addCell(warehouse.pickup[0], warehouse.pickup[1], "cell tile receiving");
-      addCell(warehouse.dropoff[0], warehouse.dropoff[1], "cell tile packing");
+    // Rack labels: show the letter only, e.g. "B".
+    for (const [rack, [x, y]] of Object.entries(warehouse.racks ?? {})) {
+        const label = document.createElement("div");
+        label.className = "rack-label";
+        label.textContent = rack;
+        label.style.left = `${(x + 0.5) * CELL_SIZE}px`;
+        label.style.top = `${(y + 0.5) * CELL_SIZE}px`;
+        warehouseEl.appendChild(label);
     }
 
-    addMarker(warehouse.pickup, "PU", "Pickup");
-    addMarker(warehouse.dropoff, "DO", "Dropoff");
-  }
+}
 
-  function addCell(x, y, className, label = "") {
+function shortLabel(name) {
+    const parts = name.split("-");
+    return parts[0][0] + (parts[1] ?? "");
+}
+
+function addCell(x, y, className, label) {
     const cell = document.createElement("div");
-
-    cell.className = className;
+    cell.className = `tile ${className}`;
     cell.style.left = `${x * CELL_SIZE}px`;
     cell.style.top = `${y * CELL_SIZE}px`;
     cell.style.width = `${CELL_SIZE}px`;
     cell.style.height = `${CELL_SIZE}px`;
-
-    if (label) {
-      cell.textContent = label;
-    }
-
+    if (label) cell.textContent = label;
     warehouseEl.appendChild(cell);
-    return cell;
-  }
+}
 
-  function addMarker([x, y], text, tooltip) {
+function addMarker([x, y], text, tooltip) {
     const marker = document.createElement("div");
-
     marker.className = "marker";
-    marker.style.left = `${x * CELL_SIZE}px`;
-    marker.style.top = `${y * CELL_SIZE}px`;
-    marker.style.width = `${CELL_SIZE}px`;
-    marker.style.height = `${CELL_SIZE}px`;
     marker.textContent = text;
-    marker.title = tooltip;
-
+    marker.title = tooltip ?? "";
+    marker.style.left = `${(x + 0.5) * CELL_SIZE}px`;
+    marker.style.top = `${(y + 0.5) * CELL_SIZE}px`;
     warehouseEl.appendChild(marker);
-  }
+}
 
-  function updateRobots(robots) {
-    const activeRobotIds = new Set();
+function updateRobots(robots) {
+    const seen = new Set();
 
     for (const robot of robots) {
-      activeRobotIds.add(robot.id);
-
-      let robotEl = robotElements.get(robot.id);
-
-      if (!robotEl) {
-        robotEl = document.createElement("div");
-        robotEl.className = "robot";
-        robotEl.textContent = robot.id;
-
-        robotElements.set(robot.id, robotEl);
-        warehouseEl.appendChild(robotEl);
-      }
-
-      robotEl.style.backgroundColor = robot.color;
-      robotEl.style.left = `${robot.x * CELL_SIZE}px`;
-      robotEl.style.top = `${robot.y * CELL_SIZE}px`;
-      robotEl.classList.toggle("idle", robot.status === "Idle");
+        seen.add(robot.id);
+        let el = robotElements[robot.id];
+        if (!el) {
+            el = document.createElement("div");
+            el.className = "robot";
+            warehouseEl.appendChild(el);
+            robotElements[robot.id] = el;
+        }
+        el.style.backgroundColor = robot.color;
+        el.style.left = `${robot.x * CELL_SIZE}px`;
+        el.style.top = `${robot.y * CELL_SIZE}px`;
+        el.classList.toggle("idle", robot.status === "Idle");
+        el.title = robot.id;
     }
 
-    for (const [robotId, robotEl] of robotElements) {
-      if (!activeRobotIds.has(robotId)) {
-        robotEl.remove();
-        robotElements.delete(robotId);
-      }
+    for (const id of Object.keys(robotElements)) {
+        if (!seen.has(id)) {
+            robotElements[id].remove();
+            delete robotElements[id];
+        }
     }
-  }
+}
 
-  function updateSidePanel(state) {
-    const tasksById = new Map(state.tasks.map((task) => [task.id, task]));
-
+function updateSidePanel(state) {
     robotListEl.innerHTML = "";
-
     for (const robot of state.robots) {
-      const task = robot.currentTaskId ? tasksById.get(robot.currentTaskId) : null;
-
-      const currentTarget = robot.currentTarget
-        ? `(${robot.currentTarget[0]}, ${robot.currentTarget[1]})`
-        : "-";
-
-      const rows = [
-        ["Status", robot.status],
-        ["Position", `(${robot.x}, ${robot.y})`],
-        ["Target", currentTarget],
-        ["Task", task ? task.name : "None"],
-      ];
-
-      robotListEl.appendChild(
-        createCard(robot.id, rows, `robot-${robot.status.toLowerCase()}`)
-      );
+        robotListEl.appendChild(createCard(robot.id, [
+            ["Status", robot.status],
+            ["Task", robot.currentTaskId ?? "—"],
+            ["Target", robot.currentTarget ? robot.currentTarget.join(", ") : "—"],
+        ]));
     }
 
     taskListEl.innerHTML = "";
-
     for (const task of state.tasks) {
-      const rows = [
-        ["Status", task.status],
-        ["Robot", task.assignedRobotId ?? "-"],
-        ["Phase", task.phase],
-        ["Pickup", `(${task.pickup[0]}, ${task.pickup[1]})`],
-        ["Dropoff", `(${task.dropoff[0]}, ${task.dropoff[1]})`],
-      ];
-
-      taskListEl.appendChild(
-        createCard(task.name, rows, `task-${task.status.toLowerCase()}`)
-      );
+        taskListEl.appendChild(createCard(task.name, [
+            ["From", task.pickup],
+            ["To", task.dropoff],
+            ["Status", task.status],
+            ["Phase", task.phase],
+            ["Robot", task.assignedRobotId ?? "—"],
+        ], task.status === "Completed" ? "done" : ""));
     }
-  }
+}
 
-  function createCard(title, rows, extraClass = "") {
+function createCard(title, rows, extraClass) {
     const card = document.createElement("div");
-    card.className = `card ${extraClass}`.trim();
+    card.className = `card ${extraClass ?? ""}`.trim();
 
     const titleEl = document.createElement("div");
     titleEl.className = "card-title";
@@ -229,22 +150,28 @@ document.addEventListener("DOMContentLoaded", () => {
     card.appendChild(titleEl);
 
     for (const [label, value] of rows) {
-      const row = document.createElement("div");
-      row.className = "row";
+        const row = document.createElement("div");
+        row.className = "row";
 
-      const labelEl = document.createElement("span");
-      labelEl.className = "label";
-      labelEl.textContent = label;
+        const labelEl = document.createElement("span");
+        labelEl.className = "label";
+        labelEl.textContent = label;
 
-      const valueEl = document.createElement("span");
-      valueEl.className = "value";
-      valueEl.textContent = value;
+        const valueEl = document.createElement("span");
+        valueEl.className = "value";
+        valueEl.textContent = value;
 
-      row.appendChild(labelEl);
-      row.appendChild(valueEl);
-      card.appendChild(row);
+        row.appendChild(labelEl);
+        row.appendChild(valueEl);
+        card.appendChild(row);
     }
 
     return card;
-  }
-});
+}
+
+pauseBtn.addEventListener("click", () => postCommand("/api/pause").then(refresh));
+resumeBtn.addEventListener("click", () => postCommand("/api/resume").then(refresh));
+resetBtn.addEventListener("click", () => postCommand("/api/reset").then(refresh));
+
+refresh();
+setInterval(refresh, POLL_INTERVAL_MS);

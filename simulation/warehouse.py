@@ -1,15 +1,11 @@
-from collections.abc import Iterable
+from __future__ import annotations
+
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, Iterable, Mapping
 
 
 class CellType(str, Enum):
-    """Warehouse tile types.
-
-    Version 0.2 layout extension:
-    These are semantic cell types. Only SHELF is blocked in this version.
-    """
-
     EMPTY = "EMPTY"
     SHELF = "SHELF"
     AISLE = "AISLE"
@@ -19,6 +15,11 @@ class CellType(str, Enum):
     SHIPPING = "SHIPPING"
     CHARGING = "CHARGING"
     INTERSECTION = "INTERSECTION"
+    BUFFER = "BUFFER"
+    PICK_STATION = "PICK_STATION"
+    CONSOLIDATION = "CONSOLIDATION"
+    STAGING = "STAGING"
+    MAINTENANCE = "MAINTENANCE"
 
 
 LAYOUT_SYMBOLS: dict[str, CellType] = {
@@ -32,114 +33,111 @@ LAYOUT_SYMBOLS: dict[str, CellType] = {
     "S": CellType.SHIPPING,
     "C": CellType.CHARGING,
     "I": CellType.INTERSECTION,
+    "B": CellType.BUFFER,
+    "K": CellType.PICK_STATION,
+    "O": CellType.CONSOLIDATION,
+    "G": CellType.STAGING,
+    "X": CellType.MAINTENANCE,
 }
 
 
-class Warehouse:
-    """Tile-based warehouse layout.
+@dataclass(frozen=True)
+class Location:
+    """A named point in the warehouse.
 
-    The layout is defined as a list of equal-length strings.
-    Each character represents one warehouse cell.
+    ``cell``   -> the physical cell the location represents (a shelf cell for
+                  storage, the station cell itself for work stations).
+    ``access`` -> the passable cell an AMR actually drives to.
     """
+    name: str
+    cell: tuple[int, int]
+    access: tuple[int, int]
 
+
+class Warehouse:
     def __init__(
         self,
         layout: Iterable[str],
-        pickup: tuple[int, int],
-        dropoff: tuple[int, int],
+        locations: Mapping[str, Location] | None = None,
     ) -> None:
-        rows = list(layout)
-
-        if not rows:
-            raise ValueError("Warehouse layout cannot be empty.")
-
-        self.height = len(rows)
-        self.width = len(rows[0])
-
-        if self.width <= 0 or self.height <= 0:
-            raise ValueError("Warehouse layout must have positive width and height.")
-
-        self.layout: list[list[CellType]] = []
-
-        for y, row in enumerate(rows):
-            if len(row) != self.width:
-                raise ValueError(
-                    f"Layout row {y} has length {len(row)}, expected {self.width}."
-                )
-
-            parsed_row: list[CellType] = []
-
-            for x, symbol in enumerate(row):
-                cell = LAYOUT_SYMBOLS.get(symbol)
-
-                if cell is None:
-                    raise ValueError(
-                        f"Unknown layout symbol '{symbol}' at ({x}, {y})."
-                    )
-
-                parsed_row.append(cell)
-
-            self.layout.append(parsed_row)
-
-        self.pickup = pickup
-        self.dropoff = dropoff
-
+        self.layout: list[list[CellType]] = self._parse_layout(layout)
+        self.height: int = len(self.layout)
+        self.width: int = len(self.layout[0]) if self.layout else 0
+        self.locations: dict[str, Location] = dict(locations) if locations else {}
         self._validate()
 
-    def _validate(self) -> None:
-        for x, y in (self.pickup, self.dropoff):
-            if not self.in_bounds(x, y):
-                raise ValueError(
-                    f"Station location ({x}, {y}) is outside warehouse bounds."
-                )
+    @staticmethod
+    def _parse_layout(layout: Iterable[str]) -> list[list[CellType]]:
+        rows: list[list[CellType]] = []
+        for line in layout:
+            row = []
+            for ch in line:
+                if ch not in LAYOUT_SYMBOLS:
+                    raise ValueError(f"Unknown layout symbol: {ch!r}")
+                row.append(LAYOUT_SYMBOLS[ch])
+            rows.append(row)
+        return rows
 
-            if self.is_blocked(x, y):
-                raise ValueError(
-                    f"Station location ({x}, {y}) is blocked."
-                )
+    def _validate(self) -> None:
+        if not self.layout:
+            raise ValueError("Warehouse layout is empty")
+        widths = {len(row) for row in self.layout}
+        if len(widths) != 1:
+            raise ValueError("Warehouse rows have inconsistent widths")
+        for loc in self.locations.values():
+            for point in (loc.cell, loc.access):
+                if not self.in_bounds(*point):
+                    raise ValueError(f"Location {loc.name!r} is out of bounds")
+            if self.is_blocked(*loc.access):
+                raise ValueError(f"Location {loc.name!r} access point is blocked")
 
     def in_bounds(self, x: int, y: int) -> bool:
-        """Return True if the coordinate is inside the warehouse."""
         return 0 <= x < self.width and 0 <= y < self.height
 
     def cell_type(self, x: int, y: int) -> CellType:
-        """Return the cell type at the given coordinate."""
-        if not self.in_bounds(x, y):
-            raise ValueError(f"Location ({x}, {y}) is outside warehouse bounds.")
-
         return self.layout[y][x]
 
     def is_blocked(self, x: int, y: int) -> bool:
-        """Return True if a robot cannot occupy this cell.
-
-        Extension point:
-        Add WALL, CLOSED_AISLE, CONGESTED, or RESERVED cells later.
-        """
         if not self.in_bounds(x, y):
             return True
-
-        return self.layout[y][x] == CellType.SHELF
+        return self.cell_type(x, y) is CellType.SHELF
 
     @property
     def obstacles(self) -> frozenset[tuple[int, int]]:
-        """Return shelf cells.
-
-        Kept for backward compatibility with older rendering/debug code.
-        """
-        return frozenset(
+        blocked = {
             (x, y)
             for y, row in enumerate(self.layout)
             for x, cell in enumerate(row)
-            if cell == CellType.SHELF
-        )
+            if cell is CellType.SHELF
+        }
+        return frozenset(blocked)
+
+    def resolve(self, name: str) -> tuple[int, int]:
+        """Return the AMR target (access) coordinate for a named location."""
+        try:
+            return self.locations[name].access
+        except KeyError:
+            raise KeyError(f"Unknown location: {name!r}") from None
 
     def to_dict(self) -> dict[str, Any]:
-        """Return JSON-serializable warehouse state."""
         return {
             "width": self.width,
             "height": self.height,
             "layout": [[cell.value for cell in row] for row in self.layout],
-            "obstacles": sorted(self.obstacles),
-            "pickup": self.pickup,
-            "dropoff": self.dropoff,
+            "obstacles": [[x, y] for (x, y) in sorted(self.obstacles)],
+            "locations": {
+                name: {"cell": list(loc.cell), "access": list(loc.access)}
+                for name, loc in self.locations.items()
+            },
+            "racks": self._rack_anchors(),
         }
+
+    def _rack_anchors(self) -> dict[str, list[int]]:
+        """One anchor cell per rack letter, for map labels ('B', not 'B-02')."""
+        anchors: dict[str, list[int]] = {}
+        for loc in self.locations.values():
+            if self.cell_type(*loc.cell) is not CellType.SHELF:
+                continue
+            rack = loc.name.split("-")[0]
+            anchors.setdefault(rack, list(loc.cell))
+        return anchors
