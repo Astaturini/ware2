@@ -116,7 +116,7 @@ button:hover { background: #334155; }
     display: flex;
     flex-direction: column;
     gap: 16px;
-    min-width: 260px;
+    min-width: 300px;
 }
 
 .panel h2 {
@@ -131,6 +131,41 @@ button:hover { background: #334155; }
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.metric-card {
+    background: linear-gradient(180deg, #111a2e 0%, #0f172a 100%);
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 10px;
+    min-height: 84px;
+}
+
+.metric-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.metric-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.1;
+}
+
+.metric-detail {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #94a3b8;
 }
 
 .card {

@@ -1,4 +1,5 @@
 from collections import deque
+from typing import Iterable
 
 from .warehouse import Warehouse
 
@@ -7,6 +8,7 @@ def find_shortest_path(
     warehouse: Warehouse,
     start: tuple[int, int],
     goal: tuple[int, int],
+    blocked_cells: Iterable[tuple[int, int]] | None = None,
 ) -> list[tuple[int, int]] | None:
     """Find a shortest path on the warehouse grid using BFS.
 
@@ -23,6 +25,10 @@ def find_shortest_path(
 
     if start == goal:
         return []
+
+    blocked = set(blocked_cells or ())
+    blocked.discard(start)
+    blocked.discard(goal)
 
     queue: deque[tuple[int, int]] = deque([start])
     came_from: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
@@ -47,6 +53,9 @@ def find_shortest_path(
                 continue
 
             if warehouse.is_blocked(nx, ny):
+                continue
+
+            if neighbor in blocked:
                 continue
 
             came_from[neighbor] = current

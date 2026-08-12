@@ -1,8 +1,11 @@
 from flask import Flask, jsonify, render_template
 
 from simulation.robot import Robot, RobotStatus
+from simulation.scheduler import CostBasedScheduler
 from simulation.simulation import Simulation
-from simulation.task import Task
+from simulation.task import Task, TaskType
+from simulation.task_generator import TaskGenerator
+from simulation.metrics import Metrics
 from simulation.warehouse import Location, Warehouse
 
 
@@ -98,27 +101,52 @@ def create_initial_robots() -> list[Robot]:
         Robot(id="R2", x=9, y=7, color="#3b82f6", status=RobotStatus.IDLE, path=[], current_task_id=None),
         Robot(id="R3", x=17, y=7, color="#10b981", status=RobotStatus.IDLE, path=[], current_task_id=None),
         Robot(id="R4", x=24, y=7, color="#f59e0b", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R5", x=1, y=20, color="#8b5cf6", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R6", x=9, y=20, color="#ec4899", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R7", x=17, y=20, color="#14b8a6", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R8", x=24, y=20, color="#f97316", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R9", x=1, y=0, color="#e11d48", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        Robot(id="R10", x=9, y=0, color="#2563eb", status=RobotStatus.IDLE, path=[], current_task_id=None),
     ]
 
 
 def create_initial_tasks(warehouse: Warehouse) -> list[Task]:
+    """Legacy compatibility demo tasks.
+
+    The v0.3 default simulation no longer starts with these tasks, but keeping
+    the helper avoids breaking callers that still expect the old demo dataset.
+    """
     specs = [
-        ("T1", "Inbound putaway A", "RECV", "A-03"),
-        ("T2", "Inbound putaway C", "BUFFER", "C-01"),
-        ("T3", "Pick order 1", "B-02", "PICK-1"),
-        ("T4", "Pick order 2", "F-05", "PICK-2"),
-        ("T5", "Move to packing", "CONSOL", "PACK-1"),
-        ("T6", "Ship outbound", "PACK-2", "DOCK-1"),
+        ("T1", "Inbound putaway A", "RECV", "A-03", TaskType.PUTAWAY),
+        ("T2", "Inbound putaway C", "BUFFER", "C-01", TaskType.PUTAWAY),
+        ("T3", "Pick order 1", "B-02", "PICK-1", TaskType.PICK),
+        ("T4", "Pick order 2", "F-05", "PICK-2", TaskType.PICK),
+        ("T5", "Move to packing", "CONSOL", "PACK-1", TaskType.PACK),
+        ("T6", "Ship outbound", "PACK-2", "DOCK-1", TaskType.SHIP),
     ]
-    return [Task(id=tid, name=name, pickup=pickup, dropoff=dropoff)
-            for (tid, name, pickup, dropoff) in specs]
+    return [
+        Task(
+            id=tid,
+            name=name,
+            pickup=pickup,
+            dropoff=dropoff,
+            task_type=task_type,
+        )
+        for (tid, name, pickup, dropoff, task_type) in specs
+    ]
 
 
 def create_default_simulation() -> Simulation:
     warehouse = create_initial_warehouse()
     robots = create_initial_robots()
-    tasks = create_initial_tasks(warehouse)
-    return Simulation(warehouse=warehouse, robots=robots, tasks=tasks)
+    return Simulation(
+        warehouse=warehouse,
+        robots=robots,
+        tasks=[],
+        scheduler=CostBasedScheduler(),
+        task_generator=TaskGenerator(warehouse),
+        metrics=Metrics(),
+    )
 
 
 def create_app(

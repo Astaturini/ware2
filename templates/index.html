@@ -1,52 +1,81 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Warehouse Simulator</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+  </head>
+  <body>
     <header>
-        <h1>Warehouse Simulator</h1>
-        <span id="simulation-state"></span>
-        <button id="pause-btn">Pause</button>
-        <button id="resume-btn">Resume</button>
-        <button id="reset-btn">Reset</button>
+      <h1>Warehouse Simulator</h1>
+      <span id="simulation-state"></span>
+      <button id="pause-btn">Pause</button>
+      <button id="resume-btn">Resume</button>
+      <button id="reset-btn">Reset</button>
     </header>
 
     <div class="layout">
-        <div class="map-column">
-            <div id="warehouse"></div>
+      <div class="map-column">
+        <div id="warehouse"></div>
 
-            <div class="legend">
-                <div class="legend-item"><span class="swatch shelf"></span>Storage racks</div>
-                <div class="legend-item"><span class="swatch aisle"></span>Aisle</div>
-                <div class="legend-item"><span class="swatch main_aisle"></span>Main cross-aisle</div>
-                <div class="legend-item"><span class="swatch receiving"></span>Receiving</div>
-                <div class="legend-item"><span class="swatch buffer"></span>QC / put-away buffer</div>
-                <div class="legend-item"><span class="swatch pick_station"></span>Pick stations</div>
-                <div class="legend-item"><span class="swatch consolidation"></span>Consolidation</div>
-                <div class="legend-item"><span class="swatch packing"></span>Packing</div>
-                <div class="legend-item"><span class="swatch staging"></span>Outbound staging</div>
-                <div class="legend-item"><span class="swatch shipping"></span>Shipping docks</div>
-                <div class="legend-item"><span class="swatch charging"></span>AMR charging</div>
-                <div class="legend-item"><span class="swatch maintenance"></span>Maintenance</div>
-            </div>
+        <div class="legend">
+          <div class="legend-item">
+            <span class="swatch shelf"></span>Storage racks
+          </div>
+          <div class="legend-item"><span class="swatch aisle"></span>Aisle</div>
+          <div class="legend-item">
+            <span class="swatch main_aisle"></span>Main cross-aisle
+          </div>
+          <div class="legend-item">
+            <span class="swatch receiving"></span>Receiving
+          </div>
+          <div class="legend-item">
+            <span class="swatch buffer"></span>QC / put-away buffer
+          </div>
+          <div class="legend-item">
+            <span class="swatch pick_station"></span>Pick stations
+          </div>
+          <div class="legend-item">
+            <span class="swatch consolidation"></span>Consolidation
+          </div>
+          <div class="legend-item">
+            <span class="swatch packing"></span>Packing
+          </div>
+          <div class="legend-item">
+            <span class="swatch staging"></span>Outbound staging
+          </div>
+          <div class="legend-item">
+            <span class="swatch shipping"></span>Shipping docks
+          </div>
+          <div class="legend-item">
+            <span class="swatch charging"></span>AMR charging
+          </div>
+          <div class="legend-item">
+            <span class="swatch maintenance"></span>Maintenance
+          </div>
         </div>
+      </div>
 
-        <div class="sidebar">
-            <div class="panel">
-                <h2>Robots</h2>
-                <div id="robot-list"></div>
-            </div>
-            <div class="panel">
-                <h2>Tasks</h2>
-                <div id="task-list"></div>
-            </div>
+      <div class="sidebar">
+        <div class="panel">
+          <h2>Operational Dashboard</h2>
+          <div id="dashboard-grid" class="dashboard-grid"></div>
         </div>
+        <div class="panel">
+          <h2>Robots</h2>
+          <div id="robot-list"></div>
+        </div>
+        <div class="panel">
+          <h2>Tasks</h2>
+          <div id="task-list"></div>
+        </div>
+      </div>
     </div>
 
     <script src="{{ url_for('static', filename='simulation.js') }}"></script>
-</body>
+  </body>
 </html>

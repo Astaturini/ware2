@@ -2,6 +2,7 @@ const CELL_SIZE = 32;
 const POLL_INTERVAL_MS = 300;
 
 const warehouseEl = document.getElementById("warehouse");
+const dashboardGridEl = document.getElementById("dashboard-grid");
 const robotListEl = document.getElementById("robot-list");
 const taskListEl = document.getElementById("task-list");
 const simulationStateEl = document.getElementById("simulation-state");
@@ -119,18 +120,44 @@ function updateRobots(robots) {
 }
 
 function updateSidePanel(state) {
+    const metrics = state.metrics ?? {};
+    const taskCounts = state.tasks.reduce((counts, task) => {
+        counts.total += 1;
+        counts[task.status.toLowerCase()] = (counts[task.status.toLowerCase()] ?? 0) + 1;
+        return counts;
+    }, { total: 0, pending: 0, assigned: 0, completed: 0, failed: 0 });
+
+    dashboardGridEl.innerHTML = "";
+    const metricCards = [
+        ["Generated", metrics.tasksGenerated ?? 0, "tasks"],
+        ["Pending", taskCounts.pending ?? 0, "queue"],
+        ["Active", taskCounts.assigned ?? 0, "in motion"],
+        ["Completed", metrics.tasksCompleted ?? 0, "tasks"],
+        ["Failed", metrics.tasksFailed ?? 0, "tasks"],
+        ["Throughput", (metrics.throughputPerTick ?? 0).toFixed(2), "per tick"],
+        ["Avg wait", (metrics.averageTaskWaitingTime ?? 0).toFixed(1), "ticks"],
+        ["Avg cycle", (metrics.averageTaskCompletionTime ?? 0).toFixed(1), "ticks"],
+    ];
+
+    metricCards.forEach(([title, value, detail]) => {
+        dashboardGridEl.appendChild(createMetricCard(title, value, detail));
+    });
+
     robotListEl.innerHTML = "";
     for (const robot of state.robots) {
+        const utilization = metrics.robotUtilization?.[robot.id] ?? 0;
         robotListEl.appendChild(createCard(robot.id, [
             ["Status", robot.status],
             ["Task", robot.currentTaskId ?? "—"],
             ["Target", robot.currentTarget ? robot.currentTarget.join(", ") : "—"],
+            ["Utilization", `${(utilization * 100).toFixed(0)}%`],
         ]));
     }
 
     taskListEl.innerHTML = "";
     for (const task of state.tasks) {
         taskListEl.appendChild(createCard(task.name, [
+            ["Type", task.taskType ?? "LEGACY"],
             ["From", task.pickup],
             ["To", task.dropoff],
             ["Status", task.status],
@@ -166,6 +193,28 @@ function createCard(title, rows, extraClass) {
         card.appendChild(row);
     }
 
+    return card;
+}
+
+function createMetricCard(title, value, detail) {
+    const card = document.createElement("div");
+    card.className = "metric-card";
+
+    const titleEl = document.createElement("div");
+    titleEl.className = "metric-title";
+    titleEl.textContent = title;
+
+    const valueEl = document.createElement("div");
+    valueEl.className = "metric-value";
+    valueEl.textContent = value;
+
+    const detailEl = document.createElement("div");
+    detailEl.className = "metric-detail";
+    detailEl.textContent = detail;
+
+    card.appendChild(titleEl);
+    card.appendChild(valueEl);
+    card.appendChild(detailEl);
     return card;
 }
 
