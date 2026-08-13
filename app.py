@@ -144,7 +144,7 @@ def create_default_simulation() -> Simulation:
         robots=robots,
         tasks=[],
         scheduler=CostBasedScheduler(),
-        task_generator=TaskGenerator(warehouse),
+        task_generator=TaskGenerator(warehouse, seed=42),
         metrics=Metrics(),
     )
 

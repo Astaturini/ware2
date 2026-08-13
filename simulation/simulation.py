@@ -28,8 +28,8 @@ class Simulation:
         scheduler: Scheduler | None = None,
         task_generator: TaskGenerator | None = None,
         metrics: Metrics | None = None,
-        blocked_replan_seconds: float = 2.0,
-        replan_cooldown_ticks: int = 5,
+        blocked_replan_seconds: float = 0.8,
+        replan_cooldown_ticks: int = 3,
     ) -> None:
         self._warehouse = warehouse
         self._tick_interval = tick_interval
@@ -42,14 +42,6 @@ class Simulation:
             int(round(blocked_replan_seconds / tick_interval)),
         )
         self._replan_cooldown_ticks = max(1, replan_cooldown_ticks)
-
-        # If a conflict remains active for too long, swap the yielding robot.
-        # This prevents two robots from waiting forever when the first yielder
-        # has no useful local move.
-        self._max_conflict_age_ticks = max(
-            20,
-            self._blocked_replan_threshold_ticks * 4,
-        )
 
         self._validate_initial_state(robots, tasks)
 
@@ -65,18 +57,7 @@ class Simulation:
         self._running_event = threading.Event()
         self._thread: threading.Thread | None = None
 
-        # Active conflict records.
-        #
-        # key: frozenset({robot_id_a, robot_id_b})
-        # value:
-        # {
-        #     "yielder": robot_id,
-        #     "blocker": robot_id,
-        #     "created_tick": int,
-        #     "last_tick": int,
-        #     "replan_counted": bool,
-        # }
-        self._active_conflicts: dict[frozenset[str], dict[str, Any]] = {}
+        self._active_conflict_yielder: dict[frozenset[str], str] = {}
 
         self.reset()
 
@@ -156,10 +137,9 @@ class Simulation:
                 robot.replanning = False
                 robot.yielding_to = None
                 robot.travel_history = []
-                robot.temporary_path = False
 
             self._tick_count = 0
-            self._active_conflicts.clear()
+            self._active_conflict_yielder.clear()
 
             self._metrics.reset()
             for robot in self._robots.values():
@@ -210,10 +190,6 @@ class Simulation:
                 self._metrics.record_generated(task)
 
         self._assign_pending_tasks()
-
-        # Watchdog for conflicts that have lived too long.
-        self._watchdog_conflicts()
-
         self._advance_robots()
         self._metrics.record_tick(list(self._robots.values()))
 
@@ -265,7 +241,6 @@ class Simulation:
         robot.replanning = False
         robot.yielding_to = None
         robot.blocked_ticks = 0
-        robot.temporary_path = False
 
         self._clear_conflicts_for_robot(robot)
         self._metrics.record_assigned(task, self._tick_count)
@@ -278,21 +253,16 @@ class Simulation:
     def _advance_robots(self) -> None:
         occupied = self._occupied_cells()
 
-        # Yielding/replanning robots move first so that frozen blocker robots
-        # can immediately use cells that were just cleared.
         ordered_robots = sorted(
             self._robots.values(),
-            key=lambda robot: (0 if (robot.replanning or robot.temporary_path) else 1, robot.id),
+            key=lambda robot: (0 if robot.replanning else 1, robot.id),
         )
 
         for robot in ordered_robots:
             if robot.replan_cooldown > 0:
                 robot.replan_cooldown -= 1
 
-            if robot.replanning or robot.temporary_path:
-                if not robot.replanning:
-                    robot.replanning = True
-
+            if robot.replanning:
                 self._advance_replanning_robot(robot, occupied)
                 continue
 
@@ -309,31 +279,20 @@ class Simulation:
                 self._handle_blocked_robot(robot, next_cell)
                 continue
 
-            arrived = self._move_robot(robot, occupied)
+            previous_cell = (robot.x, robot.y)
+            arrived = robot.advance()
 
-            # If this robot was the frozen blocker in an active conflict,
-            # the conflict is now resolved because it has moved.
-            self._release_blocker_conflicts(robot)
+            robot.travel_history.append(previous_cell)
+            robot.blocked_ticks = 0
+
+            occupied.discard(previous_cell)
+            occupied.add((robot.x, robot.y))
+
+            self._metrics.record_robot_move(robot)
+            self._release_conflict(robot)
 
             if arrived:
                 self._handle_arrival(robot)
-
-    def _move_robot(self, robot: Robot, occupied: set[tuple[int, int]]) -> bool:
-        previous_cell = (robot.x, robot.y)
-
-        arrived = robot.advance()
-
-        robot.travel_history.append(previous_cell)
-        if len(robot.travel_history) > 256:
-            robot.travel_history.pop(0)
-
-        robot.blocked_ticks = 0
-
-        occupied.discard(previous_cell)
-        occupied.add((robot.x, robot.y))
-
-        self._metrics.record_robot_move(robot)
-        return arrived
 
     def _advance_replanning_robot(
         self,
@@ -341,9 +300,8 @@ class Simulation:
         occupied: set[tuple[int, int]],
     ) -> None:
         if not robot.path:
-            if not self._try_assign_yield_path_from_active_conflict(robot):
-                self._complete_yield(robot)
-                return
+            self._complete_yield(robot)
+            return
 
         next_cell = robot.current_target
         if next_cell is None:
@@ -354,34 +312,53 @@ class Simulation:
             robot.blocked_ticks += 1
             self._metrics.record_blocked(robot)
 
-            # If the temporary yield move is already blocked, try another
-            # local move after a very short retry delay.
+            # If the temporary yield step is blocked, try another one quickly.
             if robot.blocked_ticks >= 2 and robot.replan_cooldown == 0:
                 blocker = None
+
                 if robot.yielding_to is not None:
                     blocker = self._robots.get(robot.yielding_to)
 
-                if blocker is not None and self._choose_and_assign_yield_step(robot, blocker):
-                    next_cell = robot.current_target
-
-                    if next_cell is None:
-                        self._complete_yield(robot)
-                        return
-
-                    if next_cell in occupied:
-                        return
-                else:
+                if blocker is None:
+                    self._complete_yield(robot)
                     return
-            else:
-                return
 
-        arrived = self._move_robot(robot, occupied)
+                step = self._choose_yield_step(robot, blocker, occupied)
 
-        # A yielding robot may also be the blocker in another conflict.
-        self._release_blocker_conflicts(robot)
+                if step is not None:
+                    robot.set_path([step])
+                    robot.blocked_ticks = 0
+                    robot.replan_cooldown = self._replan_cooldown_ticks
+                    return
 
-        if arrived or not robot.path:
+            return
+
+        previous_cell = (robot.x, robot.y)
+        robot.advance()
+
+        robot.travel_history.append(previous_cell)
+        robot.blocked_ticks = 0
+
+        occupied.discard(previous_cell)
+        occupied.add((robot.x, robot.y))
+
+        self._metrics.record_robot_move(robot)
+        self._release_conflict(robot)
+
+        if not robot.path:
             self._complete_yield(robot)
+
+    def _complete_yield(self, robot: Robot) -> None:
+        self._release_conflict(robot)
+
+        robot.replanning = False
+        robot.set_path([])
+
+        if robot.current_task_id is not None:
+            robot.status = RobotStatus.MOVING
+
+        if robot.current_task_id is not None and robot.route_goal is not None:
+            self._attempt_resume_route(robot)
 
     # ------------------------------------------------------------------
     # Blocking / conflict handling
@@ -394,232 +371,223 @@ class Simulation:
     ) -> None:
         blocker = self._robot_at(next_cell, exclude_robot_id=robot.id)
 
-        robot.blocked_ticks += 1
-        self._metrics.record_blocked(robot)
-
         if blocker is None:
-            # Blocked by something other than another robot. This should be
-            # rare, but attempt a normal route refresh after the timeout.
+            robot.blocked_ticks += 1
+            self._metrics.record_blocked(robot)
+
             if (
                 robot.blocked_ticks >= self._blocked_replan_threshold_ticks
                 and robot.replan_cooldown == 0
             ):
                 self._attempt_resume_route(robot)
-            return
 
-        # If this robot is currently frozen as the blocker in another active
-        # conflict, do not allow it to replan here.
-        if self._robot_is_blocker(robot.id):
             return
 
         pair_key = frozenset({robot.id, blocker.id})
-        info = self._active_conflicts.get(pair_key)
+        active_yielder = self._active_conflict_yielder.get(pair_key)
 
-        if info is not None:
-            info["last_tick"] = self._tick_count
+        robot.blocked_ticks += 1
+        self._metrics.record_blocked(robot)
 
-            # Frozen blocker: do not replan.
-            if info["blocker"] == robot.id:
+        if active_yielder is not None:
+            # This robot is already the selected yielder.
+            if active_yielder == robot.id:
+                if not robot.replanning:
+                    self._active_conflict_yielder.pop(pair_key, None)
+
+                    if self._can_yield(robot):
+                        self._make_robot_yield(robot, blocker, pair_key)
+
                 return
 
-            # This robot is the active yielder.
-            robot.replanning = True
-            robot.yielding_to = blocker.id
+            # The other robot is the selected yielder.
+            yielder_robot = self._robots.get(active_yielder)
 
-            if robot.replan_cooldown > 0:
+            if yielder_robot is not None:
+                # If the selected yielder appears inactive for too long,
+                # let this robot take over to avoid a long deadlock.
+                if (
+                    robot.blocked_ticks >= self._blocked_replan_threshold_ticks * 3
+                    and not yielder_robot.replanning
+                    and self._can_yield(robot)
+                ):
+                    self._active_conflict_yielder.pop(pair_key, None)
+                    self._make_robot_yield(robot, blocker, pair_key)
+
                 return
 
-            # If the yielder's current next move is still blocked, choose a
-            # different local yield move.
-            current_target = robot.current_target
-            if current_target is None or current_target in self._occupied_cells(
-                exclude_robot_id=robot.id
-            ):
-                self._choose_and_assign_yield_step(robot, blocker)
-
-            return
-
-        # No active conflict for this pair yet.
-        preferred_yielder = self._select_yielding_robot(robot, blocker)
-
-        # Only the selected robot may start yielding. The other robot waits.
-        if preferred_yielder.id != robot.id:
-            return
-
-        if robot.replan_cooldown > 0:
-            return
+            # Stale record.
+            self._active_conflict_yielder.pop(pair_key, None)
 
         if robot.blocked_ticks < self._blocked_replan_threshold_ticks:
             return
 
-        self._make_robot_yield(robot, blocker)
+        preferred_yielder = self._select_yielding_robot(robot, blocker)
+
+        # The other robot should yield.
+        if preferred_yielder.id == blocker.id:
+            # If the blocker is stationary or already blocked enough, force it to yield.
+            if (
+                not blocker.path
+                or blocker.blocked_ticks >= self._blocked_replan_threshold_ticks
+            ) and self._can_yield(blocker):
+                if self._make_robot_yield(blocker, robot, pair_key):
+                    return
+
+            # Fallback: if the blocker cannot or will not yield quickly enough,
+            # this robot yields to avoid a long deadlock.
+            if self._can_yield(robot) and (
+                not blocker.path
+                or blocker.replan_cooldown > 0
+                or robot.blocked_ticks >= self._blocked_replan_threshold_ticks + 2
+            ):
+                self._make_robot_yield(robot, blocker, pair_key)
+
+            return
+
+        # This robot is the preferred yielder.
+        if self._can_yield(robot):
+            self._make_robot_yield(robot, blocker, pair_key)
+
+    def _make_robot_yield(
+        self,
+        robot: Robot,
+        blocker: Robot,
+        pair_key: frozenset[str],
+    ) -> bool:
+        if not self._can_yield(robot):
+            return False
+
+        occupied = self._occupied_cells(exclude_robot_id=robot.id)
+
+        step = self._choose_yield_step(robot, blocker, occupied)
+
+        if step is None:
+            # Small delay to avoid repeatedly trying impossible local moves.
+            robot.replan_cooldown = 1
+            return False
+
+        self._active_conflict_yielder[pair_key] = robot.id
+
+        robot.replanning = True
+        robot.yielding_to = blocker.id
+
+        robot.set_path([step])
+        robot.blocked_ticks = 0
+        robot.replan_cooldown = self._replan_cooldown_ticks
+
+        self._metrics.record_replan(robot)
+        self._metrics.record_deadlock_resolution()
+
+        return True
+
+    # ------------------------------------------------------------------
+    # Priority-based yielding
+    # ------------------------------------------------------------------
 
     def _select_yielding_robot(self, robot: Robot, blocker: Robot) -> Robot:
-        # Prefer yielding robots without tasks if one robot is idle.
-        if robot.current_task_id is None and blocker.current_task_id is not None:
-            return robot
+        robot_score = self._yield_score(robot)
+        blocker_score = self._yield_score(blocker)
 
-        if blocker.current_task_id is None and robot.current_task_id is not None:
-            return blocker
+        # Higher score means more willing to yield.
+        if robot_score != blocker_score:
+            return robot if robot_score > blocker_score else blocker
 
-        # Prefer the robot that has been blocked longer.
+        # If priority scoring cannot decide, use blocked time.
         if robot.blocked_ticks != blocker.blocked_ticks:
             return robot if robot.blocked_ticks > blocker.blocked_ticks else blocker
 
-        # Deterministic tie-break.
+        # Final deterministic tie-break.
         return robot if robot.id < blocker.id else blocker
 
-    def _robot_is_blocker(self, robot_id: str) -> bool:
-        return any(
-            info.get("blocker") == robot_id
-            for info in self._active_conflicts.values()
-        )
+    def _yield_score(self, robot: Robot) -> int:
+        """Return how willing this robot is to yield.
 
-    def _make_robot_yield(self, robot: Robot, blocker: Robot) -> bool:
-        pair_key = self._register_conflict(robot, blocker)
+        Higher score = more willing to yield.
 
-        robot.replanning = True
-        robot.yielding_to = blocker.id
+        Priority convention:
+        - Lower task.priority value = higher urgency.
+        - Therefore larger priority numbers yield more easily.
+        """
 
-        success = self._choose_and_assign_yield_step(robot, blocker)
+        if robot.current_task_id is None:
+            return 10_000
 
-        if success:
-            robot.replan_cooldown = self._replan_cooldown_ticks
+        task = self._tasks.get(robot.current_task_id)
+        if task is None:
+            return 10_000
 
-            info = self._active_conflicts.get(pair_key)
-            if info is not None and not info.get("replan_counted", False):
-                self._metrics.record_replan(robot)
-                info["replan_counted"] = True
+        priority = int(getattr(task, "priority", 0) or 0)
 
-        return success
+        # One priority level is worth 20 points.
+        priority_pressure = max(0, min(priority, 10)) * 20
 
-    def _force_yield(self, robot: Robot, blocker: Robot) -> bool:
-        """Used by the watchdog to swap yielder roles after a long deadlock."""
-        pair_key = self._register_conflict(robot, blocker)
+        # One blocked tick is worth 10 points.
+        # Two blocked ticks can overcome one priority level.
+        blocked_pressure = min(robot.blocked_ticks, 20) * 10
 
-        robot.replanning = True
-        robot.yielding_to = blocker.id
-        robot.blocked_ticks = 0
+        return priority_pressure + blocked_pressure
 
-        success = self._choose_and_assign_yield_step(robot, blocker)
-
-        robot.replan_cooldown = self._replan_cooldown_ticks
-
-        info = self._active_conflicts.get(pair_key)
-        if info is not None and success and not info.get("replan_counted", False):
-            self._metrics.record_replan(robot)
-            info["replan_counted"] = True
-
-        return success
-
-    def _register_conflict(self, yielder: Robot, blocker: Robot) -> frozenset[str]:
-        pair_key = frozenset({yielder.id, blocker.id})
-
-        info = self._active_conflicts.get(pair_key)
-        if info is not None:
-            info["yielder"] = yielder.id
-            info["blocker"] = blocker.id
-            info["last_tick"] = self._tick_count
-            return pair_key
-
-        self._active_conflicts[pair_key] = {
-            "yielder": yielder.id,
-            "blocker": blocker.id,
-            "created_tick": self._tick_count,
-            "last_tick": self._tick_count,
-            "replan_counted": False,
-        }
-
-        return pair_key
-
-    def _watchdog_conflicts(self) -> None:
-        for pair_key, info in list(self._active_conflicts.items()):
-            created_tick = info.get("created_tick", self._tick_count)
-
-            if self._tick_count - created_tick < self._max_conflict_age_ticks:
-                continue
-
-            yielder_id = info.get("yielder")
-            blocker_id = info.get("blocker")
-            if not isinstance(yielder_id, str) or not isinstance(blocker_id, str):
-                self._clear_conflict(pair_key, resume_yielder=True)
-                continue
-
-            yielder = self._robots.get(yielder_id)
-            blocker = self._robots.get(blocker_id)
-
-            if yielder is None or blocker is None:
-                self._clear_conflict(pair_key, resume_yielder=True)
-                continue
-
-            # Stop the old yielder.
-            self._clear_conflict(pair_key, resume_yielder=False)
-
-            yielder.replanning = False
-            yielder.yielding_to = None
-            yielder.temporary_path = False
-            yielder.set_path([])
-
-            if yielder.current_task_id is not None and yielder.route_goal is not None:
-                self._attempt_resume_route(yielder)
-
-            # Swap roles: the old blocker now yields.
-            self._force_yield(blocker, yielder)
-
-    # ------------------------------------------------------------------
-    # Local yield path selection
-    # ------------------------------------------------------------------
-
-    def _try_assign_yield_path_from_active_conflict(self, robot: Robot) -> bool:
-        for info in self._active_conflicts.values():
-            if info.get("yielder") != robot.id:
-                continue
-
-            blocker_id = info.get("blocker")
-            if not isinstance(blocker_id, str):
-                continue
-
-            blocker = self._robots.get(blocker_id)
-            if blocker is None:
-                continue
-
-            robot.yielding_to = blocker.id
-            return self._choose_and_assign_yield_step(robot, blocker)
+    def _robot_is_in_active_conflict(self, robot_id: str) -> bool:
+        for pair_key in self._active_conflict_yielder.keys():
+            if robot_id in pair_key:
+                return True
 
         return False
 
-    def _choose_and_assign_yield_step(self, robot: Robot, blocker: Robot) -> bool:
-        blocked = self._local_blocked_cells(robot)
+    def _can_yield(self, robot: Robot) -> bool:
+        return (
+            not robot.replanning
+            and robot.replan_cooldown == 0
+            and not self._robot_is_in_active_conflict(robot.id)
+        )
+
+    # ------------------------------------------------------------------
+    # Local yield-step selection
+    # ------------------------------------------------------------------
+
+    def _choose_yield_step(
+        self,
+        robot: Robot,
+        blocker: Robot,
+        occupied: set[tuple[int, int]],
+    ) -> tuple[int, int] | None:
         current = (robot.x, robot.y)
+
+        claimed = self._claimed_cells(exclude_robot_id=robot.id)
+        blocked = occupied | claimed
+        blocked.discard(current)
 
         safe_neighbors: list[tuple[int, int]] = []
 
-        for neighbor in self._neighbors(current):
-            if neighbor in blocked:
-                continue
-
+        for neighbor in (
+            (robot.x + 1, robot.y),
+            (robot.x - 1, robot.y),
+            (robot.x, robot.y + 1),
+            (robot.x, robot.y - 1),
+        ):
             if not self._warehouse.in_bounds(*neighbor):
                 continue
 
             if self._warehouse.is_blocked(*neighbor):
                 continue
 
+            if neighbor in blocked:
+                continue
+
             safe_neighbors.append(neighbor)
 
         if not safe_neighbors:
-            return False
+            return None
 
         goal = robot.route_goal
 
-        # 1. Prefer a local move that still allows reaching the current goal.
-        #
-        # This checks the next move first, then verifies that a path exists
-        # from that next cell to the task destination.
+        # 1. Prefer a local step that still allows reaching the current goal.
         if goal is not None and goal != current and goal not in blocked:
-            def goal_distance(cell: tuple[int, int]) -> int:
-                return abs(cell[0] - goal[0]) + abs(cell[1] - goal[1])
+            best_neighbor = None
+            best_distance = None
 
-            for neighbor in sorted(safe_neighbors, key=goal_distance):
+            for neighbor in safe_neighbors:
                 path = find_shortest_path(
                     self._warehouse,
                     neighbor,
@@ -628,58 +596,18 @@ class Simulation:
                 )
 
                 if path is not None:
-                    robot.set_temporary_path([neighbor])
-                    robot.replanning = True
-                    robot.temporary_path = True
-                    robot.blocked_ticks = 0
-                    return True
+                    distance = abs(neighbor[0] - goal[0]) + abs(neighbor[1] - goal[1])
 
-        # 2. Backtrack toward a previously visited cell.
-        backtrack_step = self._choose_backtrack_step(robot, safe_neighbors, blocked)
-        if backtrack_step is not None:
-            robot.set_temporary_path([backtrack_step])
-            robot.replanning = True
-            robot.temporary_path = True
-            robot.blocked_ticks = 0
-            return True
+                    if best_distance is None or distance < best_distance:
+                        best_neighbor = neighbor
+                        best_distance = distance
 
-        # 3. Last resort: any locally safe neighbor, preferably away from the
-        # blocker and still biased toward the goal.
-        blocker_position = (blocker.x, blocker.y)
+            if best_neighbor is not None:
+                return best_neighbor
 
-        def last_resort_score(cell: tuple[int, int]) -> tuple[int, int]:
-            if goal is not None:
-                toward_goal = abs(cell[0] - goal[0]) + abs(cell[1] - goal[1])
-            else:
-                toward_goal = 0
-
-            away_from_blocker = -(
-                abs(cell[0] - blocker_position[0])
-                + abs(cell[1] - blocker_position[1])
-            )
-
-            return toward_goal, away_from_blocker
-
-        for neighbor in sorted(safe_neighbors, key=last_resort_score):
-            robot.set_temporary_path([neighbor])
-            robot.replanning = True
-            robot.temporary_path = True
-            robot.blocked_ticks = 0
-            return True
-
-        return False
-
-    def _choose_backtrack_step(
-        self,
-        robot: Robot,
-        safe_neighbors: list[tuple[int, int]],
-        blocked: set[tuple[int, int]],
-    ) -> tuple[int, int] | None:
-        current = (robot.x, robot.y)
+        # 2. Prefer backtracking through recently visited cells.
         safe_set = set(safe_neighbors)
-
-        # Recent history first.
-        history = robot.travel_history[-48:]
+        history = robot.travel_history[-32:]
 
         for target in reversed(history):
             if target == current:
@@ -694,11 +622,9 @@ class Simulation:
             if self._warehouse.is_blocked(*target):
                 continue
 
-            # Direct adjacent backtrack move.
             if target in safe_set:
                 return target
 
-            # Otherwise, take the first step toward a reachable historical cell.
             path = find_shortest_path(
                 self._warehouse,
                 current,
@@ -706,110 +632,43 @@ class Simulation:
                 blocked_cells=blocked - {current},
             )
 
-            if not path:
+            if path and path[0] in safe_set:
+                return path[0]
+
+        # 3. Last resort: escape locally, preferably away from the blocker.
+        blocker_position = (blocker.x, blocker.y)
+
+        def escape_score(cell: tuple[int, int]) -> tuple[int, int]:
+            away_from_blocker = -(
+                abs(cell[0] - blocker_position[0])
+                + abs(cell[1] - blocker_position[1])
+            )
+
+            if goal is not None:
+                toward_goal = abs(cell[0] - goal[0]) + abs(cell[1] - goal[1])
+            else:
+                toward_goal = 0
+
+            return toward_goal, away_from_blocker
+
+        safe_neighbors.sort(key=escape_score)
+        return safe_neighbors[0]
+
+    def _claimed_cells(self, exclude_robot_id: str | None = None) -> set[tuple[int, int]]:
+        claimed: set[tuple[int, int]] = set()
+
+        for robot in self._robots.values():
+            if robot.id == exclude_robot_id:
                 continue
 
-            first_step = path[0]
-            if first_step in safe_set:
-                return first_step
+            next_cell = robot.current_target
+            if next_cell is not None:
+                claimed.add(next_cell)
 
-        return None
-
-    def _local_blocked_cells(self, robot: Robot) -> set[tuple[int, int]]:
-        """Cells treated as blocked for local yield-step validation."""
-        blocked = self._occupied_cells(exclude_robot_id=robot.id)
-
-        # Also avoid cells that other robots are about to enter.
-        for other in self._robots.values():
-            if other.id == robot.id:
-                continue
-
-            target = other.current_target
-            if target is not None:
-                blocked.add(target)
-
-        blocked.discard((robot.x, robot.y))
-        return blocked
-
-    def _neighbors(self, cell: tuple[int, int]) -> tuple[tuple[int, int], ...]:
-        x, y = cell
-        return (
-            (x + 1, y),
-            (x - 1, y),
-            (x, y + 1),
-            (x, y - 1),
-        )
+        return claimed
 
     # ------------------------------------------------------------------
-    # Conflict clearing
-    # ------------------------------------------------------------------
-
-    def _clear_conflict(
-        self,
-        pair_key: frozenset[str],
-        resume_yielder: bool = False,
-    ) -> None:
-        info = self._active_conflicts.pop(pair_key, None)
-        if info is None:
-            return
-
-        self._metrics.record_deadlock_resolution()
-
-        yielder_id = info.get("yielder")
-        if not isinstance(yielder_id, str):
-            return
-
-        yielder = self._robots.get(yielder_id)
-        if yielder is not None:
-            yielder.yielding_to = None
-
-            if resume_yielder and not yielder.path:
-                yielder.replanning = False
-                yielder.temporary_path = False
-
-                if (
-                    yielder.current_task_id is not None
-                    and yielder.route_goal is not None
-                ):
-                    self._attempt_resume_route(yielder)
-
-    def _clear_conflicts_where_yielder(self, robot: Robot) -> None:
-        for pair_key, info in list(self._active_conflicts.items()):
-            if info.get("yielder") == robot.id:
-                self._clear_conflict(pair_key, resume_yielder=False)
-
-    def _release_blocker_conflicts(self, robot: Robot) -> None:
-        for pair_key, info in list(self._active_conflicts.items()):
-            if info.get("blocker") == robot.id:
-                self._clear_conflict(pair_key, resume_yielder=True)
-
-    def _clear_conflicts_for_robot(self, robot: Robot) -> None:
-        for pair_key, info in list(self._active_conflicts.items()):
-            if robot.id in (info.get("yielder"), info.get("blocker")):
-                self._clear_conflict(pair_key, resume_yielder=False)
-
-    # Kept for compatibility with older internal call sites.
-    def _release_conflict(self, robot: Robot) -> None:
-        self._clear_conflicts_for_robot(robot)
-
-    def _complete_yield(self, robot: Robot) -> None:
-        self._clear_conflicts_where_yielder(robot)
-
-        robot.replanning = False
-        robot.yielding_to = None
-        robot.temporary_path = False
-        robot.set_path([])
-
-        if robot.current_task_id is not None:
-            robot.status = RobotStatus.MOVING
-
-            if robot.route_goal is not None:
-                self._attempt_resume_route(robot)
-        else:
-            robot.status = RobotStatus.IDLE
-
-    # ------------------------------------------------------------------
-    # Routing
+    # Routing / route recovery
     # ------------------------------------------------------------------
 
     def _attempt_resume_route(self, robot: Robot) -> bool:
@@ -837,15 +696,17 @@ class Simulation:
         )
 
         # If claims make the route temporarily impossible, try again using only
-        # physically occupied cells. The first step is still rejected if it is
-        # claimed by another robot.
-        if path is None:
-            path = find_shortest_path(
+        # physically occupied cells. The first step is still rejected if claimed.
+        if path is None or (path and path[0] in claimed):
+            fallback = find_shortest_path(
                 self._warehouse,
                 current,
                 goal,
                 blocked_cells=occupied,
             )
+
+            if fallback is not None:
+                path = fallback
 
         if path is None:
             return False
@@ -862,7 +723,6 @@ class Simulation:
         robot.set_path(path)
         robot.replanning = False
         robot.yielding_to = None
-        robot.temporary_path = False
         robot.blocked_ticks = 0
 
         return True
@@ -902,9 +762,6 @@ class Simulation:
 
             robot.current_task_id = None
             robot.route_goal = None
-            robot.replanning = False
-            robot.yielding_to = None
-            robot.temporary_path = False
 
             self._clear_conflicts_for_robot(robot)
             robot.set_path([])
@@ -913,16 +770,11 @@ class Simulation:
         robot.set_path(path)
         robot.replanning = False
         robot.yielding_to = None
-        robot.temporary_path = False
 
         if not robot.path:
             self._handle_arrival(robot)
 
     def _handle_arrival(self, robot: Robot) -> None:
-        robot.temporary_path = False
-        robot.replanning = False
-        robot.yielding_to = None
-
         self._clear_conflicts_for_robot(robot)
 
         if robot.current_task_id is None:
@@ -938,9 +790,7 @@ class Simulation:
 
         if task.phase == TaskPhase.TO_PICKUP:
             task.phase = TaskPhase.TO_DROPOFF
-
             robot.blocked_ticks = 0
-            robot.travel_history = []
 
             self._route_robot_to(
                 robot,
@@ -960,10 +810,10 @@ class Simulation:
             robot.route_goal = None
             robot.blocked_ticks = 0
             robot.replan_cooldown = 0
-            robot.travel_history = []
-            robot.temporary_path = False
 
             self._clear_conflicts_for_robot(robot)
+
+            robot.travel_history = []
             robot.set_path([])
             return
 
@@ -971,14 +821,49 @@ class Simulation:
         robot.route_goal = None
         robot.blocked_ticks = 0
         robot.replan_cooldown = 0
-        robot.travel_history = []
-        robot.temporary_path = False
 
         self._clear_conflicts_for_robot(robot)
+
+        robot.travel_history = []
         robot.set_path([])
 
     # ------------------------------------------------------------------
-    # Geometry / occupancy helpers
+    # Conflict state helpers
+    # ------------------------------------------------------------------
+
+    def _release_conflict(self, robot: Robot) -> None:
+        if robot.yielding_to is None:
+            return
+
+        pair_key = frozenset({robot.id, robot.yielding_to})
+
+        if self._active_conflict_yielder.get(pair_key) == robot.id:
+            del self._active_conflict_yielder[pair_key]
+
+        robot.replanning = False
+        robot.yielding_to = None
+
+    def _clear_conflicts_for_robot(self, robot: Robot) -> None:
+        for pair_key, yielder_id in list(self._active_conflict_yielder.items()):
+            if robot.id not in pair_key:
+                continue
+
+            self._active_conflict_yielder.pop(pair_key, None)
+
+            if yielder_id == robot.id:
+                robot.replanning = False
+                robot.yielding_to = None
+            else:
+                other = self._robots.get(yielder_id)
+
+                # If the other yielder has no temporary movement left, clear it.
+                # If it still has a path, let it finish that local maneuver.
+                if other is not None and not other.path:
+                    other.replanning = False
+                    other.yielding_to = None
+
+    # ------------------------------------------------------------------
+    # Geometry helpers
     # ------------------------------------------------------------------
 
     def _occupied_cells(self, exclude_robot_id: str | None = None) -> set[tuple[int, int]]:
@@ -987,19 +872,6 @@ class Simulation:
             for robot in self._robots.values()
             if robot.id != exclude_robot_id
         }
-
-    def _claimed_cells(self, exclude_robot_id: str | None = None) -> set[tuple[int, int]]:
-        claimed: set[tuple[int, int]] = set()
-
-        for robot in self._robots.values():
-            if robot.id == exclude_robot_id:
-                continue
-
-            target = robot.current_target
-            if target is not None:
-                claimed.add(target)
-
-        return claimed
 
     def _robot_at(
         self,
@@ -1015,7 +887,6 @@ class Simulation:
 
         return None
 
-    # Kept for possible future priority-aware logic.
     def _task_priority(self, task_id: str | None) -> int:
         if task_id is None:
             return -1

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from dataclasses import dataclass, field
 
 from .task import Task, TaskType
@@ -8,10 +9,18 @@ from .warehouse import CellType, Warehouse
 
 @dataclass
 class TaskGenerator:
-    """Create a light stream of operational tasks over time."""
+    """Create a light stream of operational tasks over time.
+
+    If seed is None, the generator keeps the old deterministic round-robin
+    location selection.
+
+    If seed is an int, location selection becomes random but reproducible.
+    """
 
     warehouse: Warehouse
     start_tick: int = 2
+    seed: int | None = None
+
     _next_task_number: int = 1
     _next_due: dict[TaskType, int] = field(default_factory=dict)
     _storage_locations: list[str] = field(default_factory=list)
@@ -21,7 +30,10 @@ class TaskGenerator:
     _receiving_locations: list[str] = field(default_factory=list)
     _staging_locations: list[str] = field(default_factory=list)
 
+    _rng: random.Random | None = field(init=False, default=None)
+
     def __post_init__(self) -> None:
+        self._rng = random.Random(self.seed)
         self._refresh_location_cache()
         self._next_due = {
             TaskType.PUTAWAY: self.start_tick,
@@ -32,6 +44,7 @@ class TaskGenerator:
 
     def reset(self) -> None:
         self._next_task_number = 1
+        self._rng = random.Random(self.seed)
         self._refresh_location_cache()
         self._next_due = {
             TaskType.PUTAWAY: self.start_tick,
@@ -42,12 +55,15 @@ class TaskGenerator:
 
     def step(self, tick: int) -> list[Task]:
         generated: list[Task] = []
+
         for task_type, due_tick in self._next_due.items():
             if tick < due_tick:
                 continue
+
             if tick == due_tick:
                 generated.append(self._create_task(task_type, tick))
                 self._next_due[task_type] = due_tick + self._interval_for(task_type)
+
         return generated
 
     def _refresh_location_cache(self) -> None:
@@ -60,6 +76,7 @@ class TaskGenerator:
 
         for name, location in self.warehouse.locations.items():
             cell_type = self.warehouse.cell_type(*location.cell)
+
             if cell_type is CellType.SHELF:
                 storage.append(name)
             elif cell_type is CellType.PICK_STATION:
@@ -88,19 +105,23 @@ class TaskGenerator:
             pickup = self._pick_one(self._receiving_locations, fallback="RECV")
             dropoff = self._pick_one(self._storage_locations)
             name = f"Inbound putaway {task_id}"
+
         elif task_type is TaskType.PICK:
             pickup = self._pick_one(self._storage_locations)
             dropoff = self._pick_one(self._pick_stations)
             name = f"Pick order {task_id}"
+
         elif task_type is TaskType.PACK:
             pickup = self._pick_one(self._pick_stations)
             dropoff = self._pick_one(self._packing_locations)
             name = f"Pack order {task_id}"
+
         else:
             if self._staging_locations:
                 pickup = self._pick_one(self._staging_locations)
             else:
                 pickup = self._pick_one(self._packing_locations)
+
             dropoff = self._pick_one(self._shipping_locations)
             name = f"Ship order {task_id}"
 
@@ -116,19 +137,28 @@ class TaskGenerator:
 
     def _pick_one(self, values: list[str], fallback: str | None = None) -> str:
         if values:
+            # If a seed was provided, use reproducible random selection.
+            # If no seed was provided, preserve the old deterministic behavior.
+            if self.seed is not None:
+                assert self._rng is not None
+                return self._rng.choice(values)
+
             index = (self._next_task_number - 1) % len(values)
             return values[index]
+
         if fallback is not None:
             return fallback
+
         raise ValueError("Task generator has no suitable locations for this task type.")
 
     @staticmethod
     def _priority_for(task_type: TaskType) -> int:
+        # Lower number = higher priority
         return {
-            TaskType.PUTAWAY: 0,
-            TaskType.PICK: 1,
-            TaskType.PACK: 2,
-            TaskType.SHIP: 3,
+            TaskType.PUTAWAY: 3,
+            TaskType.PICK: 2,
+            TaskType.PACK: 1,
+            TaskType.SHIP: 0,
         }[task_type]
 
     @staticmethod
