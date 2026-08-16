@@ -24,26 +24,26 @@ Task JSON: `pickup` / `dropoff` values are now strings.
 
 `/api/state` now includes a `metrics` object with aggregate operational data.
 
-## Changes From v0.3.0
+## Changes From v0.3.0 (v0.3.1)
 
-v0.3.1 introduces local single-robot traffic/conflict resolution.
+No breaking JSON API changes. Robot, task, and warehouse JSON keys are
+unchanged.
 
-No breaking JSON API changes are introduced in v0.3.1.
+`Simulation` gained traffic/conflict-resolution state and methods, and its
+constructor accepts optional traffic tuning arguments:
+`blocked_replan_seconds` (default `0.9`) and `replan_cooldown_ticks`
+(default `2`).
 
-`Robot` gains an internal `temporary_path` field and a `set_temporary_path()`
-method. These are used for temporary yield/backtrack movement and are not
-exposed in the robot JSON.
+`TaskGenerator` gained an optional `seed` argument for reproducible random
+location selection. `seed=None` preserves the old deterministic round-robin
+behavior.
 
-`Simulation` gains traffic/conflict-resolution state and methods.
+`Simulation._prune_old_tasks()` removes completed/failed tasks older than
+100 ticks so the JSON payload and UI stay small.
 
-`Simulation` constructor accepts optional traffic tuning arguments:
-`blocked_replan_seconds` and `replan_cooldown_ticks`.
-
-The simulation uses `_active_conflicts` instead of the older
-`_active_conflict_yielder` mapping.
-
-Metrics JSON includes `robotBlockedTicks`, `robotReplanEvents`, and
-`replanEvents`.
+Frontend: the `robot-list` sidebar section was removed. The sidebar now shows
+the dashboard on top and a scrollable task list below. Robots and task
+locations are highlighted on the map instead.
 
 ## Coordinate System
 
@@ -142,8 +142,8 @@ Fields:
 
 Meaning:
 
-`cell` is the physical cell the location represents, such as a shelf cell for
-storage locations or the station cell for work stations.
+`cell` is the physical cell the location represents (a shelf cell for storage
+locations, or the station cell for work stations).
 
 `access` is the passable cell an AMR actually drives to.
 
@@ -179,7 +179,7 @@ Property:
 
 Private methods:
 
-- `warehouse._parse_layout(layout) -> list[list[CellType]]`
+- `warehouse._parse_layout(layout) -> list[list[CellType]]` (static)
 - `warehouse._validate() -> None`
 - `warehouse._rack_anchors() -> dict[str, list[int]]`
 
@@ -198,7 +198,7 @@ for unknown names.
 that access is not blocked.
 
 `_rack_anchors()` returns one anchor cell per rack letter, used for map
-labels such as `"B"` instead of `"B-02"`.
+labels (`"B"`, not `"B-02"`).
 
 ---
 
@@ -233,7 +233,6 @@ Fields:
 - `robot.yielding_to: str | None`
 - `robot.replan_cooldown: int`
 - `robot.travel_history: list[tuple[int, int]]`
-- `robot.temporary_path: bool`
 
 Property:
 
@@ -242,7 +241,6 @@ Property:
 Public methods:
 
 - `robot.set_path(path: list[tuple[int, int]]) -> None`
-- `robot.set_temporary_path(path: list[tuple[int, int]]) -> None`
 - `robot.advance() -> bool`
 - `robot.to_dict() -> dict[str, Any]`
 
@@ -250,21 +248,15 @@ Important behavior:
 
 `set_path()` expects a path excluding the robot's current cell.
 
-`set_path()` clears `temporary_path`.
-
-`set_temporary_path()` marks the current path as a temporary yield/backtrack
-path.
-
 `advance()` moves the robot one cell.
 
 `advance()` returns `True` when the robot reaches the end of its path.
 
-`temporary_path` is internal and is not exposed in the robot JSON.
-
 `route_goal` is the current final destination for the robot's current task
 phase.
 
-`travel_history` is used for backtracking during yield maneuvers.
+`travel_history` stores previously visited cells and is used for backtracking
+during yield maneuvers.
 
 ---
 
@@ -337,16 +329,27 @@ Important behavior:
 
 #### `TaskGenerator`
 
+@dataclass
 class TaskGenerator
 
-Constructor:
+Constructor fields:
 
-    TaskGenerator(warehouse: Warehouse, start_tick: int = 2)
+- `warehouse: Warehouse`
+- `start_tick: int = 2`
+- `seed: int | None = None`
 
 Public methods:
 
 - `task_generator.step(tick: int) -> list[Task]`
 - `task_generator.reset() -> None`
+
+Private methods:
+
+- `_refresh_location_cache() -> None`
+- `_create_task(task_type: TaskType, tick: int) -> Task`
+- `_pick_one(values: list[str], fallback: str | None = None) -> str`
+- `_priority_for(task_type: TaskType) -> int` (static)
+- `_interval_for(task_type: TaskType) -> int` (static)
 
 Important behavior:
 
@@ -355,7 +358,21 @@ Generates tasks during the simulation instead of seeding all work at startup.
 Emits a light stream of `PUTAWAY`, `PICK`, `PACK`, and `SHIP` tasks using the
 existing named locations.
 
-Uses the warehouse layout to pick reasonable pickup and dropoff names.
+First due ticks: `PUTAWAY` at `start_tick`, `PICK` at `start_tick + 2`,
+`PACK` at `start_tick + 4`, `SHIP` at `start_tick + 6`.
+
+Generation intervals (ticks): `PUTAWAY` 8, `PICK` 10, `PACK` 12, `SHIP` 14.
+
+Priority mapping (lower number = higher priority):
+
+- `SHIP` = 0 (most urgent)
+- `PACK` = 1
+- `PICK` = 2
+- `PUTAWAY` = 3 (least urgent)
+
+If `seed` is an int, `_pick_one()` uses a private `random.Random(seed)`
+instance for reproducible location selection. `reset()` re-seeds with the
+same seed. If `seed` is None, selection stays deterministic round-robin.
 
 ---
 
@@ -437,14 +454,6 @@ Important behavior:
 Tracks task throughput, wait time, completion time, robot distance, busy
 time, blocked time, replanning activity, and utilization.
 
-`record_blocked()` increments aggregate blocked ticks and per-robot blocked
-ticks.
-
-`record_replan()` increments aggregate replan count and per-robot replan
-events.
-
-`record_deadlock_resolution()` increments the deadlock-resolution counter.
-
 ---
 
 ### `simulation/pathfinding.py`
@@ -492,8 +501,8 @@ Constructor:
         scheduler: Scheduler | None = None,
         task_generator: TaskGenerator | None = None,
         metrics: Metrics | None = None,
-        blocked_replan_seconds: float = 2.0,
-        replan_cooldown_ticks: int = 5,
+        blocked_replan_seconds: float = 0.9,
+        replan_cooldown_ticks: int = 2,
     )
 
 Public methods:
@@ -514,34 +523,31 @@ Important private methods:
 - `simulation._validate_initial_state(robots, tasks) -> None`
 - `simulation._run() -> None`
 - `simulation._tick() -> None`
+- `simulation._prune_old_tasks() -> None`
 - `simulation._assign_pending_tasks() -> None`
 - `simulation._begin_task(robot: Robot, task: Task) -> None`
 - `simulation._advance_robots() -> None`
-- `simulation._move_robot(robot: Robot, occupied: set[tuple[int, int]]) -> bool`
 - `simulation._advance_replanning_robot(robot: Robot, occupied: set[tuple[int, int]]) -> None`
-- `simulation._handle_blocked_robot(robot: Robot, next_cell: tuple[int, int]) -> None`
-- `simulation._select_yielding_robot(robot: Robot, blocker: Robot) -> Robot`
-- `simulation._robot_is_blocker(robot_id: str) -> bool`
-- `simulation._make_robot_yield(robot: Robot, blocker: Robot) -> bool`
-- `simulation._force_yield(robot: Robot, blocker: Robot) -> bool`
-- `simulation._register_conflict(yielder: Robot, blocker: Robot) -> frozenset[str]`
-- `simulation._watchdog_conflicts() -> None`
-- `simulation._try_assign_yield_path_from_active_conflict(robot: Robot) -> bool`
-- `simulation._choose_and_assign_yield_step(robot: Robot, blocker: Robot) -> bool`
-- `simulation._choose_backtrack_step(robot: Robot, safe_neighbors: list[tuple[int, int]], blocked: set[tuple[int, int]]) -> tuple[int, int] | None`
-- `simulation._local_blocked_cells(robot: Robot) -> set[tuple[int, int]]`
-- `simulation._neighbors(cell: tuple[int, int]) -> tuple[tuple[int, int], ...]`
-- `simulation._clear_conflict(pair_key: frozenset[str], resume_yielder: bool = False) -> None`
-- `simulation._clear_conflicts_where_yielder(robot: Robot) -> None`
-- `simulation._release_blocker_conflicts(robot: Robot) -> None`
-- `simulation._clear_conflicts_for_robot(robot: Robot) -> None`
 - `simulation._complete_yield(robot: Robot) -> None`
+- `simulation._handle_blocked_robot(robot: Robot, next_cell: tuple[int, int]) -> None`
+- `simulation._make_robot_yield(robot: Robot, blocker: Robot, pair_key: frozenset[str]) -> bool`
+- `simulation._select_yielding_robot(robot: Robot, blocker: Robot) -> Robot`
+- `simulation._yield_score(robot: Robot) -> int`
+- `simulation._robot_is_in_active_conflict(robot_id: str) -> bool`
+- `simulation._can_yield(robot: Robot) -> bool`
+- `simulation._choose_yield_step(robot: Robot, blocker: Robot, occupied: set[tuple[int, int]]) -> tuple[int, int] | None`
+- `simulation._claimed_cells(exclude_robot_id: str | None = None) -> set[tuple[int, int]]`
+- `simulation._build_backtrack_path(robot: Robot) -> list[tuple[int, int]] | None`
 - `simulation._attempt_resume_route(robot: Robot) -> bool`
+- `simulation._attempt_replan_route(robot: Robot, occupied: set[tuple[int, int]], pair_key: frozenset[str] | None = None) -> bool`
+- `simulation._assign_yield_path(robot: Robot, yield_path: list[tuple[int, int]]) -> None`
 - `simulation._route_robot_to(robot: Robot, task: Task, destination: tuple[int, int]) -> None`
 - `simulation._handle_arrival(robot: Robot) -> None`
+- `simulation._release_conflict(robot: Robot) -> None`
+- `simulation._clear_conflicts_for_robot(robot: Robot) -> None`
 - `simulation._occupied_cells(exclude_robot_id: str | None = None) -> set[tuple[int, int]]`
-- `simulation._claimed_cells(exclude_robot_id: str | None = None) -> set[tuple[int, int]]`
 - `simulation._robot_at(cell: tuple[int, int], exclude_robot_id: str | None = None) -> Robot | None`
+- `simulation._task_priority(task_id: str | None) -> int`
 
 Important internal state:
 
@@ -558,20 +564,13 @@ Important internal state:
 - `simulation._thread`
 - `simulation._blocked_replan_threshold_ticks`
 - `simulation._replan_cooldown_ticks`
-- `simulation._max_conflict_age_ticks`
-- `simulation._active_conflicts`
+- `simulation._active_conflict_yielder`
 
-`_active_conflicts` maps a robot-pair key to an active conflict record:
+`_active_conflict_yielder` maps a robot-pair key to the currently yielding
+robot id:
 
     pair_key = frozenset({robot_id_a, robot_id_b})
-
-    self._active_conflicts[pair_key] = {
-        "yielder": robot_id,
-        "blocker": robot_id,
-        "created_tick": tick,
-        "last_tick": tick,
-        "replan_counted": bool,
-    }
+    self._active_conflict_yielder[pair_key] = yielder_robot_id
 
 Important behavior:
 
@@ -596,8 +595,11 @@ assignment timing.
 at pickup and records completion or failure.
 
 `_tick()` asks the task generator for new work, uses the scheduler to assign
-pending tasks, runs traffic watchdog logic, advances robots, and records
-metrics.
+pending tasks, advances robots, records metrics, and prunes old tasks.
+
+`_prune_old_tasks()` deletes completed/failed tasks whose `completed_at` is
+more than 100 ticks old. Metrics are unaffected because aggregates were
+already recorded.
 
 Pathfinding operates on coordinates only; name resolution happens at the call
 sites.
@@ -605,69 +607,63 @@ sites.
 The simulation reserves occupied cells during each tick so robots do not step
 into the same cell.
 
-Task assignment is unchanged by yielding. Yielding is local and temporary.
-
-Normal task routing still uses BFS.
-
 ---
 
-## Traffic / Conflict Resolution Behavior
-
-v0.3.1 uses single-robot conflict resolution.
+## Traffic / Conflict Resolution Behavior (v0.3.1)
 
 When a robot's next cell is occupied by another robot, the blocked robot
 increments `blocked_ticks`.
 
-After `blocked_replan_seconds` has been converted into ticks, the conflict
-becomes eligible for yielding.
+After `blocked_replan_seconds` (default 0.9 s ≈ 3 ticks at 0.3 s) the
+conflict becomes eligible for yielding.
 
-For a conflicting robot pair, the simulation chooses exactly one yielder.
+For each blocking pair, only one robot may replan at a time. The selected
+yielder is stored in `_active_conflict_yielder`.
 
-Yielder selection rules:
+Yielder selection uses `_yield_score()`; higher score means more willing to
+yield:
 
-1. If one robot has no task and the other has a task, prefer the idle robot.
-2. Otherwise, prefer the robot that has been blocked longer.
-3. If still tied, prefer the lower robot ID.
+- Idle robots (no task) score 10000 and yield first.
+- `priority_pressure = priority * 20`. Lower task priority numbers are more
+  urgent and yield less; larger numbers yield more.
+- `blocked_pressure = blocked_ticks * 10`. Two blocked ticks can overcome one
+  priority level.
+- Ties fall back to blocked time, then lower robot id.
 
-The non-yielding robot is frozen:
+The non-yielding robot's route is frozen during the conflict.
 
-- its route is not replaced,
-- it does not participate in replanning for that conflict,
-- it continues as soon as its next cell is available.
+The yielding robot receives a single local yield step from
+`_choose_yield_step()`:
 
-Only the yielding robot may receive a temporary path.
+1. Prefer a neighboring cell that still allows reaching the current
+   `route_goal` (validated with BFS from that neighbor).
+2. Otherwise prefer a backtrack step through recent `travel_history`.
+3. Otherwise choose any safe escape neighbor, biased away from the blocker.
 
-The yielding robot evaluates local next moves.
+A valid yield step must be in bounds, not a shelf, not occupied, and not
+claimed by another robot's immediate next target (`_claimed_cells()`).
 
-A valid yield move must be:
+If the preferred yielder is stationary (no path) it can be forced to yield.
+If the preferred yielder cannot act quickly enough, the blocked robot yields
+instead after `threshold + 2` ticks. If the active yielder appears inactive
+for `threshold * 3` ticks, the blocked robot takes over.
 
-- in bounds,
-- not a shelf,
-- not blocked,
-- not occupied,
-- not claimed by another robot's immediate next target,
-- not an immediate recreation of the same conflict.
+`_can_yield()` prevents a robot from participating in more than one active
+conflict and enforces `replan_cooldown`.
 
-Yield-move preference:
+`_attempt_resume_route()` resumes normal BFS routing after a yield maneuver
+without waiting for replan cooldown. It avoids occupied and claimed cells and
+rejects a first step into either.
 
-1. Choose a neighboring cell that still allows reaching the current task
-   goal.
-2. If none exists, choose a backtrack step toward a previously visited cell.
-3. If no backtrack step exists, choose any safe local escape neighbor.
+`_advance_replanning_robot()` retries a different local yield step if the
+current yield step stays blocked for 2+ ticks.
 
-Temporary yield paths do not trigger task arrival.
+`_release_conflict()` clears the pair record when the yielder moves.
+`_clear_conflicts_for_robot()` removes stale conflicts when a robot begins a
+task, arrives, or fails.
 
-When the blocker robot moves and is no longer blocked, the conflict is
-cleared.
-
-When the yielding robot completes its temporary maneuver, it resumes normal
-routing toward its current `route_goal`.
-
-If a conflict remains active longer than `_max_conflict_age_ticks`, the
-watchdog swaps the yielding robot.
-
-This avoids the old failure mode where both robots replanned simultaneously
-and recreated the same head-on conflict.
+This is a local deadlock-recovery mechanism. It is not reservation-based
+multi-agent pathfinding and does not implement intersection control.
 
 ---
 
@@ -705,7 +701,7 @@ Important behavior:
 `WAREHOUSE_LAYOUT` and `WAREHOUSE_LOCATIONS` are generated together by
 `_build_warehouse()`, so the grid and the named locations never drift apart.
 
-`create_initial_tasks()` is a legacy compatibility helper. The default app
+`create_initial_tasks()` is a legacy compatibility helper; the default app
 wiring uses dynamic generation instead of seeding those demo tasks.
 
 `create_default_simulation()` wires in the baseline scheduler, task
@@ -713,12 +709,10 @@ generator, and metrics collector.
 
 `create_app()` may start the simulation automatically.
 
-Routes should remain thin.
+Routes should remain thin. Business logic should stay in `simulation/`.
 
-Business logic should stay in `simulation/`.
-
-Robot ids should be clean strings such as `"R1"`, `"R2"`, `"R3"`, and
-`"R4"` without trailing spaces.
+Robot ids must be clean strings: `"R1"`, `"R2"`, `"R3"`, `"R4"` (no trailing
+spaces).
 
 ---
 
@@ -759,16 +753,16 @@ Returns:
       ],
       "tasks": [
         {
-          "id": "T3",
-          "name": "Pick order 1",
+          "id": "G00001",
+          "name": "Pick order G00001",
           "pickup": "B-02",
           "dropoff": "PICK-1",
           "taskType": "PICK",
-          "priority": 1,
-          "createdAt": 0,
+          "priority": 2,
+          "createdAt": 4,
           "completedAt": null,
-          "status": "Pending",
-          "assignedRobotId": null,
+          "status": "Assigned",
+          "assignedRobotId": "R1",
           "phase": "To pickup"
         }
       ],
@@ -818,8 +812,6 @@ Important JSON keys:
 - `yieldingTo`
 - `replanCooldown`
 
-`temporaryPath` is intentionally not exposed in the JSON API.
-
 ### Task JSON keys
 
 - `id`
@@ -865,8 +857,7 @@ Important JSON keys:
 - `robotReplanEvents`
 - `robotUtilization`
 
-`replanEvents` duplicates `replanningCount` for backward compatibility with
-existing dashboards or debugging views.
+`replanEvents` duplicates `replanningCount` for backward compatibility.
 
 ---
 
@@ -882,12 +873,14 @@ Important constants:
 Important DOM ids:
 
 - `warehouse`
-- `robot-list`
+- `dashboard-grid`
 - `task-list`
 - `simulation-state`
 - `pause-btn`
 - `resume-btn`
 - `reset-btn`
+
+The `robot-list` section was removed from the HTML and JS in v0.3.1.
 
 Important state variables:
 
@@ -902,38 +895,49 @@ Important functions:
 - `postCommand(url)`
 - `render(state)`
 - `buildStaticLayer(warehouse)`
+- `shortLabel(name)`
 - `addCell(x, y, className, label)`
 - `addMarker([x, y], text, tooltip)`
-- `updateRobots(robots)`
+- `updateRobots(robots, tasks)`
+- `updateTaskHighlights(state)`
+- `highlightLocation(state, locationName, className)`
+- `addTileClass(coord, className)`
 - `updateSidePanel(state)`
-- `createCard(title, rows, extraClass)`
+- `createTaskRow(task, isHistory)`
 - `createMetricCard(title, value, detail)`
 
 Important behavior:
 
-The frontend polls `/api/state`.
+The frontend polls `/api/state` every 300 ms.
 
-It rebuilds the static warehouse layer when the warehouse JSON changes.
+It rebuilds the static warehouse layer only when the warehouse JSON changes.
 
-Robots are updated without rebuilding the entire warehouse.
+`addCell()` stores `dataset.x` and `dataset.y` on every tile so task
+highlights can target cells.
 
-Tile rendering uses `warehouse.layout`.
+`updateRobots()` keeps the robot's identity color and adds task-type ring
+classes plus a `has-task` outline. Robot tooltips show the current task's
+name, pickup, and dropoff.
 
-`buildStaticLayer()` also renders rack letter labels from `warehouse.racks`.
+`updateTaskHighlights()` highlights active task locations on the map:
 
-Station markers are no longer added; zone naming lives in a static HTML
-legend below the map.
+- Phase `To pickup`: strong amber highlight on the pickup cell/access, faint
+  green highlight on the dropoff.
+- Phase `To dropoff`: strong green highlight on the dropoff cell/access.
 
-`addMarker()` is retained but currently unused.
+Highlights are derived from state on every poll, so they clear automatically
+when tasks complete.
 
-Task cards display `pickup` / `dropoff` as strings and also show task type,
-status, and assignment details.
+`updateSidePanel()` renders:
 
-The sidebar includes a compact operational dashboard for queue depth,
-throughput, average wait/completion time, blocked time, replanning activity,
-and robot utilization.
+1. A compact 4-column metrics dashboard.
+2. An `Active Queue` section with compact task rows for `Pending` and
+   `Assigned` tasks.
+3. A `Recent History` section showing the 5 most recent completed/failed
+   tasks, with totals taken from metrics.
 
-No frontend change is required for v0.3.1 traffic/replanning behavior.
+The task list scrolls inside the sidebar (`#task-list`), so the page no
+longer grows with the queue.
 
 ---
 
@@ -959,23 +963,61 @@ Tile classes:
 - `.staging`
 - `.maintenance`
 
-Other important classes:
+Robot classes:
 
-- `.marker`
 - `.robot`
 - `.robot.idle`
+- `.robot.has-task`
+- `.robot.task-putaway`
+- `.robot.task-pick`
+- `.robot.task-pack`
+- `.robot.task-ship`
+
+Task location highlight classes:
+
+- `.tile.task-pickup-active`
+- `.tile.task-dropoff-active`
+- `.tile.task-pickup-faint`
+- `.tile.task-dropoff-faint`
+
+Map classes:
+
 - `.rack-label`
-- `.card`
-- `.card-title`
-- `.row`
-- `.label`
-- `.value`
+- `.marker`
 - `.map-column`
 - `.legend`
 - `.legend-item`
 - `.swatch`
 
-No CSS change is required for v0.3.1.
+Sidebar / dashboard classes:
+
+- `.panel`
+- `.metric-card`
+- `.metric-title`
+- `.metric-value`
+- `.metric-detail`
+- `.card`
+- `.card-title`
+- `.row`
+- `.label`
+- `.value`
+
+Task list classes:
+
+- `.section-header`
+- `.empty-msg`
+- `.task-row` (with `.pending`, `.assigned`, `.completed`, `.failed`)
+- `.task-badge` (with `.putaway`, `.pick`, `.pack`, `.ship`, `.legacy`)
+- `.task-info`
+- `.task-title`
+- `.task-sub`
+
+Important ids styled directly:
+
+- `#warehouse`
+- `#dashboard-grid` (4-column grid)
+- `#task-list` (scrollable, `max-height` + `overflow-y`)
+- `#simulation-state`
 
 ---
 
@@ -984,11 +1026,11 @@ No CSS change is required for v0.3.1.
 These are intentionally not implemented yet:
 
 - `CHARGING` → battery charging behavior
-- `INTERSECTION` → formal traffic control or collision avoidance
+- `INTERSECTION` → formal intersection traffic control
 - `MAIN_AISLE` → priority routing or speed changes
 - `PACKING` → packing queue or processing delay
-- `RECEIVING` → inbound task generation
-- `SHIPPING` → outbound task completion
+- `RECEIVING` → inbound task generation coupling
+- `SHIPPING` → outbound task completion coupling
 - `EMPTY` → dynamic obstacles or editor placement
 - `BUFFER` → QC delay or put-away scheduling
 - `PICK_STATION` → pick processing time or queueing
@@ -996,55 +1038,7 @@ These are intentionally not implemented yet:
 - `STAGING` → carrier lane assignment
 - `MAINTENANCE` → robot repair / downtime behavior
 
-The v0.3.1 traffic layer is a local deadlock-resolution mechanism, not a
-replacement for future intersection control, priority routing, or
-reservation-based multi-agent pathfinding.
-
-### Traffic / Conflict Resolution (v0.3.1+)
-
-`Simulation` constructor accepts optional traffic tuning arguments:
-
--   `blocked_replan_seconds: float = 0.9`
--   `replan_cooldown_ticks: int = 2`
-
-Important private methods for traffic resolution:
-
--   `simulation._handle_blocked_robot(robot: Robot, next_cell: tuple[int, int]) -> None`
--   `simulation._select_yielding_robot(robot: Robot, blocker: Robot) -> Robot`
--   `simulation._yield_score(robot: Robot) -> int`
--   `simulation._make_robot_yield(robot: Robot, blocker: Robot, pair_key: frozenset[str]) -> bool`
--   `simulation._choose_yield_step(robot: Robot, blocker: Robot, occupied: set[tuple[int, int]]) -> tuple[int, int] | None`
--   `simulation._claimed_cells(exclude_robot_id: str | None = None) -> set[tuple[int, int]]`
--   `simulation._can_yield(robot: Robot) -> bool`
--   `simulation._robot_is_in_active_conflict(robot_id: str) -> bool`
--   `simulation._complete_yield(robot: Robot) -> None`
--   `simulation._attempt_resume_route(robot: Robot) -> bool`
--   `simulation._release_conflict(robot: Robot) -> None`
--   `simulation._clear_conflicts_for_robot(robot: Robot) -> None`
-
-Important internal state for traffic resolution:
-
--   `simulation._active_conflict_yielder: dict[frozenset[str], str]`
--   `simulation._blocked_replan_threshold_ticks: int`
--   `simulation._replan_cooldown_ticks: int`
-
-Traffic behavior:
-
--   When a robot is blocked by another robot, it increments `blocked_ticks`.
--   After `blocked_replan_seconds` (converted to ticks), the conflict becomes eligible for yielding.
--   For each blocking pair, only one robot may replan at a time.
--   The yielder is selected using `_yield_score()`:
-    -   Idle robots yield first.
-    -   Lower `task.priority` values are more urgent and yield less.
-    -   Robots blocked longer yield more.
--   The non-yielding robot’s route is frozen during the conflict.
--   The yielding robot uses `_choose_yield_step()` to select a single safe local move:
-    -   Prefer a neighbor that still allows reaching the current `route_goal`.
-    -   Otherwise prefer backtracking through `travel_history`.
-    -   Otherwise choose any safe escape neighbor away from the blocker.
--   Temporary yield paths do not trigger task arrival.
--   When the conflict clears, `_attempt_resume_route()` resumes normal BFS routing immediately without waiting for replan cooldown.
--   If the preferred yielder is stationary or cannot act, the simulation may force it to yield or fall back to the blocked robot to prevent long deadlocks.
--   `_active_conflict_yielder` tracks which robot is currently yielding for each pair.
--   `_clear_conflicts_for_robot()` removes stale conflicts when a robot begins a new task or arrives at a destination.
+The v0.3.1 traffic layer is local single-yielder deadlock recovery. It is
+not a replacement for future reservation-based pathfinding or intersection
+control.
 

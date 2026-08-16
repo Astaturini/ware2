@@ -26,7 +26,7 @@ def create_initial_robots() -> list[Robot]:
         Robot(id="R8", x=24, y=20, color="#f97316", status=RobotStatus.IDLE, path=[], current_task_id=None),
         Robot(id="R9", x=1, y=0, color="#e11d48", status=RobotStatus.IDLE, path=[], current_task_id=None),
         Robot(id="R10", x=9, y=0, color="#2563eb", status=RobotStatus.IDLE, path=[], current_task_id=None),
-        Robot(id="R11", x=17, y=0, color="#22c55e", status=RobotStatus.IDLE, path=[], current_task_id=None),
+        #Robot(id="R11", x=17, y=0, color="#22c55e", status=RobotStatus.IDLE, path=[], current_task_id=None),
         #Robot(id="R12", x=12, y=1, color="#983084", status=RobotStatus.IDLE, path=[], current_task_id=None),
         #Robot(id="R13", x=13, y=0, color="#63431b", status=RobotStatus.IDLE, path=[], current_task_id=None),
         

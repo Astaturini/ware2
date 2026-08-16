@@ -15,10 +15,12 @@ from simulation.scheduler import CostBasedScheduler
 """
 
 def create_robots(num_robots: int) -> list[Robot]:
-    # Spawn points along the main cross-aisle (y=7)
+    # Spawn points as app.py has them,
+    # but we can adjust if needed
     spawn_points = [
         (1, 7), (9, 7), (17, 7), (24, 7),
-        (5, 7), (13, 7), (21, 7), (3, 7)
+        (1, 20), (9, 20), (17, 20), (24, 20),
+        (1, 0), (9, 0), (17, 0), (12, 1), (13, 0)
     ]
     colors = ["#ef4444", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899", "#14b8a6", "#f97316"]
     
@@ -54,9 +56,9 @@ def run_benchmark(
         warehouse=warehouse,
         robots=robots,
         tasks=[],
-        tick_interval=0.3, 
+        tick_interval=0.3,
         scheduler=CostBasedScheduler(),
-        task_generator=TaskGenerator(warehouse, seed=seed), # Requires the seeded TaskGenerator we made
+        task_generator=TaskGenerator(warehouse=warehouse, seed=seed),
         metrics=metrics,
         blocked_replan_seconds=blocked_replan_seconds,
         replan_cooldown_ticks=replan_cooldown_ticks,
