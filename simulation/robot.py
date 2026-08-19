@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -6,6 +8,23 @@ from typing import Any
 class RobotStatus(str, Enum):
     IDLE = "Idle"
     MOVING = "Moving"
+
+
+class RobotMode(str, Enum):
+    """
+    v0.4 operational state machine.
+
+    RobotStatus remains Idle/Moving for backward compatibility.
+    RobotMode carries richer behavior state.
+    """
+
+    IDLE = "Idle"
+    MOVING = "Moving"
+    TO_CHARGER = "To charger"
+    WAITING_FOR_CHARGER = "Waiting for charger"
+    CHARGING = "Charging"
+    FAILED = "Failed"
+    REPAIRING = "Repairing"
 
 
 @dataclass
@@ -37,6 +56,30 @@ class Robot:
     # instead of its normal task route.
     temporary_path: bool = False
 
+    # ------------------------------------------------------------------
+    # v0.4 battery / charging / failure state
+    # ------------------------------------------------------------------
+    battery: float = 100.0
+    mode: RobotMode = RobotMode.IDLE
+
+    # Used for opportunistic charging.
+    idle_ticks: int = 0
+
+    # Waiting-for-charger tracking.
+    charger_wait_ticks: int = 0
+
+    # Robot may remember a task it interrupted.
+    interrupted_task_id: str | None = None
+
+    # Target charging cell while traveling to charge.
+    charge_target: tuple[int, int] | None = None
+
+    # Used for linear charging display.
+    charge_start_battery: float | None = None
+
+    # Failure / repair.
+    repair_remaining_ticks: int = 0
+
     @property
     def current_target(self) -> tuple[int, int] | None:
         """Return the next cell the robot will move into, if any."""
@@ -59,6 +102,7 @@ class Robot:
 
         Returns True if the robot reached the end of its path.
         """
+
         if not self.path:
             self.status = RobotStatus.IDLE
             return False
@@ -86,4 +130,14 @@ class Robot:
             "replanning": self.replanning,
             "yieldingTo": self.yielding_to,
             "replanCooldown": self.replan_cooldown,
+
+            # v0.4
+            "battery": self.battery,
+            "mode": self.mode.value,
+            "idleTicks": self.idle_ticks,
+            "chargerWaitTicks": self.charger_wait_ticks,
+            "interruptedTaskId": self.interrupted_task_id,
+            "chargeTarget": self.charge_target,
+            "chargeStartBattery": self.charge_start_battery,
+            "repairRemainingTicks": self.repair_remaining_ticks,
         }

@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import argparse
+
 import optuna
-from simulation.warehouse_layout import build_warehouse
+
+from simulation.config import BatteryConfig, ChargingConfig, FailureConfig
+from simulation.metrics import Metrics
 from simulation.robot import Robot, RobotStatus
+from simulation.scheduler import CostBasedScheduler
 from simulation.simulation import Simulation
 from simulation.task_generator import TaskGenerator
-from simulation.metrics import Metrics
-from simulation.scheduler import CostBasedScheduler
+from simulation.warehouse_layout import build_warehouse
+
 
 DEFAULT_ROBOT_XS = [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24]
 ROBOT_Y = 7
@@ -44,10 +50,153 @@ def create_robots(num_robots: int) -> list[Robot]:
 
 def make_task_generator(warehouse, seed: int | None):
     """Create TaskGenerator with seed if supported, fallback otherwise."""
+
     try:
         return TaskGenerator(warehouse, seed=seed)
     except TypeError:
         return TaskGenerator(warehouse)
+
+
+def safe_divide(numerator: float, denominator: float) -> float:
+    return numerator / denominator if denominator else 0.0
+
+
+def build_v04_configs(trial: optuna.Trial, args, seed: int | None):
+    """
+    Build v0.4 configs.
+
+    If args.search_v04 is True, battery/charging parameters are suggested by
+    Optuna. Otherwise fixed CLI/default values are used.
+    """
+
+    if args.search_v04:
+        empty_move_energy = trial.suggest_float(
+            "empty_move_energy",
+            0.3,
+            1.5,
+        )
+
+        loaded_move_factor = trial.suggest_float(
+            "loaded_move_factor",
+            1.0,
+            2.0,
+        )
+
+        loaded_move_energy = empty_move_energy * loaded_move_factor
+
+        critical_battery = trial.suggest_float(
+            "critical_battery",
+            5.0,
+            35.0,
+        )
+
+        opportunistic_charge_threshold = trial.suggest_float(
+            "opportunistic_charge_threshold",
+            20.0,
+            80.0,
+        )
+
+        # Keep threshold meaningfully above critical battery.
+        opportunistic_charge_threshold = max(
+            opportunistic_charge_threshold,
+            critical_battery + 5.0,
+        )
+
+        safety_margin = trial.suggest_float(
+            "battery_safety_margin",
+            0.0,
+            15.0,
+        )
+
+        charger_capacity = trial.suggest_int(
+            "charger_capacity",
+            1,
+            8,
+        )
+
+        charge_duration_ticks = trial.suggest_int(
+            "charge_duration_ticks",
+            3,
+            30,
+        )
+
+        battery_config = BatteryConfig(
+            capacity=args.battery_capacity,
+            empty_move_energy=empty_move_energy,
+            loaded_move_energy=loaded_move_energy,
+            critical_battery=critical_battery,
+            opportunistic_charge_threshold=opportunistic_charge_threshold,
+            idle_ticks_before_opportunistic_charge=args.idle_opportunistic_ticks,
+            safety_margin=safety_margin,
+        )
+
+        charging_config = ChargingConfig(
+            capacity=charger_capacity,
+            charge_duration_ticks=charge_duration_ticks,
+        )
+
+        if args.failure_enabled:
+            mtbf_ticks = trial.suggest_float(
+                "mtbf_ticks",
+                300.0,
+                5000.0,
+            )
+            mttr_ticks = trial.suggest_int(
+                "mttr_ticks",
+                5,
+                60,
+            )
+        else:
+            mtbf_ticks = 0.0
+            mttr_ticks = args.mttr_ticks
+
+        failure_config = FailureConfig(
+            enabled=args.failure_enabled,
+            mtbf_ticks=mtbf_ticks,
+            mttr_ticks=mttr_ticks,
+            seed=seed,
+        )
+
+        trial.set_user_attr("empty_move_energy", empty_move_energy)
+        trial.set_user_attr("loaded_move_energy", loaded_move_energy)
+        trial.set_user_attr("critical_battery", critical_battery)
+        trial.set_user_attr(
+            "opportunistic_charge_threshold",
+            opportunistic_charge_threshold,
+        )
+        trial.set_user_attr("battery_safety_margin", safety_margin)
+        trial.set_user_attr("charger_capacity", charger_capacity)
+        trial.set_user_attr("charge_duration_ticks", charge_duration_ticks)
+
+        if args.failure_enabled:
+            trial.set_user_attr("mtbf_ticks", mtbf_ticks)
+            trial.set_user_attr("mttr_ticks", mttr_ticks)
+
+        return battery_config, charging_config, failure_config
+
+    battery_config = BatteryConfig(
+        capacity=args.battery_capacity,
+        empty_move_energy=args.empty_move_energy,
+        loaded_move_energy=args.loaded_move_energy,
+        critical_battery=args.critical_battery,
+        opportunistic_charge_threshold=args.opportunistic_charge_threshold,
+        idle_ticks_before_opportunistic_charge=args.idle_opportunistic_ticks,
+        safety_margin=args.battery_safety_margin,
+    )
+
+    charging_config = ChargingConfig(
+        capacity=args.charger_capacity,
+        charge_duration_ticks=args.charge_duration_ticks,
+    )
+
+    failure_config = FailureConfig(
+        enabled=args.failure_enabled,
+        mtbf_ticks=args.mtbf_ticks if args.failure_enabled else 0.0,
+        mttr_ticks=args.mttr_ticks,
+        seed=seed,
+    )
+
+    return battery_config, charging_config, failure_config
 
 
 def objective(trial: optuna.Trial, args) -> float:
@@ -59,8 +208,17 @@ def objective(trial: optuna.Trial, args) -> float:
     else:
         num_robots = trial.suggest_int("num_robots", 8, 13)
 
-    blocked_replan_seconds = trial.suggest_float("blocked_replan_seconds", 0.2, 3.0)
-    replan_cooldown_ticks = trial.suggest_int("replan_cooldown_ticks", 1, 8)
+    blocked_replan_seconds = trial.suggest_float(
+        "blocked_replan_seconds",
+        0.2,
+        3.0,
+    )
+
+    replan_cooldown_ticks = trial.suggest_int(
+        "replan_cooldown_ticks",
+        1,
+        8,
+    )
 
     # ------------------------------------------------------------------
     # Setup simulation
@@ -70,6 +228,13 @@ def objective(trial: optuna.Trial, args) -> float:
     metrics = Metrics()
 
     seed = args.base_seed + trial.number if args.base_seed is not None else None
+
+    battery_config, charging_config, failure_config = build_v04_configs(
+        trial,
+        args,
+        seed,
+    )
+
     task_generator = make_task_generator(warehouse, seed)
 
     sim = Simulation(
@@ -82,19 +247,24 @@ def objective(trial: optuna.Trial, args) -> float:
         metrics=metrics,
         blocked_replan_seconds=blocked_replan_seconds,
         replan_cooldown_ticks=replan_cooldown_ticks,
+        battery_config=battery_config,
+        charging_config=charging_config,
+        failure_config=failure_config,
+        seed=seed,
     )
 
     # ------------------------------------------------------------------
     # Run headless
     # ------------------------------------------------------------------
     ticks = 0
+
     while metrics.tasks_completed < args.target and ticks < args.max_ticks:
         with sim._lock:
             sim._tick()
         ticks += 1
 
     # ------------------------------------------------------------------
-    # Calculate all metrics
+    # Calculate metrics
     # ------------------------------------------------------------------
     completed = metrics.tasks_completed
     assigned = max(metrics.tasks_assigned, 1)
@@ -109,12 +279,22 @@ def objective(trial: optuna.Trial, args) -> float:
         else float(args.max_ticks)
     )
 
-    blocked_per_robot_tick = metrics.blocked_time_ticks / max(ticks * num_robots, 1)
+    blocked_per_robot_tick = metrics.blocked_time_ticks / max(
+        ticks * num_robots,
+        1,
+    )
 
     replans_per_task = metrics.replanning_count / max(completed, 1)
 
+    average_battery = safe_divide(metrics.battery_sum, metrics.battery_samples)
+
+    average_charger_wait = safe_divide(
+        metrics.charger_wait_ticks,
+        metrics.charger_wait_events,
+    )
+
     # ------------------------------------------------------------------
-    # Log everything to Optuna for dashboard inspection
+    # Log everything to Optuna
     # ------------------------------------------------------------------
     trial.set_user_attr("num_robots", num_robots)
     trial.set_user_attr("completed", completed)
@@ -128,6 +308,27 @@ def objective(trial: optuna.Trial, args) -> float:
     trial.set_user_attr("replans_per_task", replans_per_task)
     trial.set_user_attr("deadlock_resolutions", metrics.deadlock_resolutions)
 
+    # v0.4 metrics.
+    trial.set_user_attr("average_battery", average_battery)
+    trial.set_user_attr("charging_events", metrics.charging_events)
+    trial.set_user_attr("total_charging_ticks", metrics.total_charging_ticks)
+    trial.set_user_attr("charger_wait_ticks", metrics.charger_wait_ticks)
+    trial.set_user_attr("average_charger_wait", average_charger_wait)
+    trial.set_user_attr(
+        "battery_task_interruptions",
+        metrics.battery_task_interruptions,
+    )
+    trial.set_user_attr(
+        "failure_task_interruptions",
+        metrics.failure_task_interruptions,
+    )
+    trial.set_user_attr("task_reassignments", metrics.task_reassignments)
+    trial.set_user_attr("failed_robot_events", metrics.failed_robot_events)
+    trial.set_user_attr(
+        "failure_downtime_ticks",
+        metrics.failure_downtime_ticks,
+    )
+
     # ------------------------------------------------------------------
     # Penalize runs that did not complete enough tasks
     # ------------------------------------------------------------------
@@ -137,7 +338,7 @@ def objective(trial: optuna.Trial, args) -> float:
         return float(args.max_ticks)
 
     # ------------------------------------------------------------------
-    # Return the selected objective
+    # Return selected objective
     # ------------------------------------------------------------------
     if args.objective == "throughput":
         return throughput
@@ -155,10 +356,6 @@ def objective(trial: optuna.Trial, args) -> float:
         return replans_per_task
 
     if args.objective == "blocked_replans":
-        # Weighted combination.
-        # blocked_per_robot_tick is a rate (small number).
-        # replans_per_task is typically a small integer-ish number.
-        # Adjust the 0.25 weight if you want replans to matter more/less.
         return blocked_per_robot_tick + 0.25 * replans_per_task
 
     return throughput
@@ -175,28 +372,24 @@ def main() -> None:
         default=50,
         help="Number of optimization trials.",
     )
-
     parser.add_argument(
         "--target",
         type=int,
         default=50,
         help="Stop each run after this many completed tasks.",
     )
-
     parser.add_argument(
         "--max-ticks",
         type=int,
         default=20_000,
         help="Safety limit per run.",
     )
-
     parser.add_argument(
         "--base-seed",
         type=int,
         default=1000,
         help="Base RNG seed. Each trial uses base_seed + trial.number. Use -1 for no seed.",
     )
-
     parser.add_argument(
         "--objective",
         choices=[
@@ -213,19 +406,97 @@ def main() -> None:
             "throughput is maximized; all others are minimized."
         ),
     )
-
     parser.add_argument(
         "--fixed-robots",
         type=int,
         default=None,
         help="Fix number of robots instead of optimizing it.",
     )
-
     parser.add_argument(
         "--db",
         type=str,
         default="sqlite:///optuna_study.db",
         help="Optuna storage URL.",
+    )
+
+    # ------------------------------------------------------------------
+    # v0.4 fixed configuration options
+    # ------------------------------------------------------------------
+    parser.add_argument(
+        "--search-v04",
+        action="store_true",
+        help="Include selected v0.4 battery/charging parameters in the Optuna search.",
+    )
+    parser.add_argument(
+        "--battery-capacity",
+        type=float,
+        default=100.0,
+        help="Battery capacity.",
+    )
+    parser.add_argument(
+        "--empty-move-energy",
+        type=float,
+        default=0.7,
+        help="Fixed empty movement energy when --search-v04 is not used.",
+    )
+    parser.add_argument(
+        "--loaded-move-energy",
+        type=float,
+        default=1.0,
+        help="Fixed loaded movement energy when --search-v04 is not used.",
+    )
+    parser.add_argument(
+        "--critical-battery",
+        type=float,
+        default=20.0,
+        help="Fixed critical battery threshold when --search-v04 is not used.",
+    )
+    parser.add_argument(
+        "--opportunistic-charge-threshold",
+        type=float,
+        default=40.0,
+        help="Fixed opportunistic threshold when --search-v04 is not used.",
+    )
+    parser.add_argument(
+        "--idle-opportunistic-ticks",
+        type=int,
+        default=10,
+        help="Idle ticks before opportunistic charging.",
+    )
+    parser.add_argument(
+        "--battery-safety-margin",
+        type=float,
+        default=5.0,
+        help="Fixed battery safety margin when --search-v04 is not used.",
+    )
+    parser.add_argument(
+        "--charger-capacity",
+        type=int,
+        default=4,
+        help="Fixed charger capacity when --search-v04 is not used.",
+    )
+    parser.add_argument(
+        "--charge-duration-ticks",
+        type=int,
+        default=10,
+        help="Fixed charge duration when --search-v04 is not used.",
+    )
+    parser.add_argument(
+        "--failure-enabled",
+        action="store_true",
+        help="Enable random robot failures.",
+    )
+    parser.add_argument(
+        "--mtbf-ticks",
+        type=float,
+        default=0.0,
+        help="Fixed mean ticks between failures when --search-v04 is not used.",
+    )
+    parser.add_argument(
+        "--mttr-ticks",
+        type=int,
+        default=25,
+        help="Fixed repair duration in ticks when --search-v04 is not used.",
     )
 
     args = parser.parse_args()
@@ -235,10 +506,17 @@ def main() -> None:
 
     direction = "maximize" if args.objective == "throughput" else "minimize"
 
-    fixed_suffix = f"_fixed{args.fixed_robots}" if args.fixed_robots is not None else ""
-    study_name = f"warehouse_{args.objective}{fixed_suffix}"
+    fixed_suffix = (
+        f"_fixed{args.fixed_robots}"
+        if args.fixed_robots is not None
+        else ""
+    )
 
+    v04_suffix = "_v04search" if args.search_v04 else ""
+
+    study_name = f"warehouse_{args.objective}{fixed_suffix}{v04_suffix}"
     storage = optuna.storages.RDBStorage(args.db)
+
     study = optuna.create_study(
         study_name=study_name,
         storage=storage,
@@ -252,12 +530,14 @@ def main() -> None:
     if args.fixed_robots is not None:
         print(f"Robots:       fixed at {args.fixed_robots}")
     else:
-        print(f"Robots:       searching 8 to 13")
+        print("Robots:       searching 8 to 13")
 
     print(f"Target:       {args.target} completed tasks")
     print(f"Max ticks:    {args.max_ticks}")
     print(f"Base seed:    {args.base_seed}")
     print(f"Trials:       {args.trials}")
+    print(f"Search v0.4:  {args.search_v04}")
+    print(f"Failures:     {args.failure_enabled}")
     print()
 
     study.optimize(
@@ -266,9 +546,6 @@ def main() -> None:
         show_progress_bar=True,
     )
 
-    # ------------------------------------------------------------------
-    # Print best result
-    # ------------------------------------------------------------------
     print()
     print("=" * 50)
     print("BEST TRIAL")
@@ -276,13 +553,16 @@ def main() -> None:
     print(f"Objective value: {study.best_value:.6f}")
     print()
     print("Parameters:")
+
     for key, value in study.best_params.items():
         print(f"  {key}: {value}")
 
     best = study.best_trial
+
     if best.user_attrs:
         print()
         print("Metrics:")
+
         for key, value in best.user_attrs.items():
             if isinstance(value, float):
                 print(f"  {key}: {value:.4f}")

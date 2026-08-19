@@ -38,33 +38,56 @@ class CostBasedScheduler:
         warehouse: Warehouse,
         blocked_cells: set[tuple[int, int]] | None = None,
     ) -> list[Assignment]:
-        available_robots = [
-            robot
-            for robot in robots
-            if robot.status == RobotStatus.IDLE and robot.current_task_id is None
-        ]
+        available_robots: list[Robot] = []
+
+        for robot in robots:
+            if robot.status != RobotStatus.IDLE:
+                continue
+
+            if robot.current_task_id is not None:
+                continue
+
+            # v0.4 compatibility:
+            # A robot may be status Idle while charging or waiting for charger.
+            # If the robot has the new mode field, require mode Idle.
+            mode = getattr(robot, "mode", None)
+            mode_value = getattr(mode, "value", mode)
+
+            if mode_value not in (None, "Idle"):
+                continue
+
+            available_robots.append(robot)
+
         if not pending_tasks or not available_robots:
             return []
 
         blocked = set(blocked_cells or set())
         assignments: list[Assignment] = []
 
-        for task in sorted(pending_tasks, key=lambda item: (-item.priority, item.created_at, item.id)):
+        for task in sorted(
+            pending_tasks,
+            key=lambda item: (-item.priority, item.created_at, item.id),
+        ):
             chosen_robot: Robot | None = None
             chosen_path: list[tuple[int, int]] | None = None
             chosen_cost: int | None = None
 
             target = warehouse.resolve(task.pickup)
+
             for robot in available_robots:
                 path = self._path_for_robot(warehouse, robot, target, blocked)
                 if path is None:
                     continue
 
                 cost = len(path)
+
                 if (
                     chosen_cost is None
                     or cost < chosen_cost
-                    or (cost == chosen_cost and robot.id < (chosen_robot.id if chosen_robot else ""))
+                    or (
+                        cost == chosen_cost
+                        and robot.id < (chosen_robot.id if chosen_robot else "")
+                    )
                 ):
                     chosen_robot = robot
                     chosen_path = path
@@ -81,6 +104,7 @@ class CostBasedScheduler:
                     path=chosen_path,
                 )
             )
+
             available_robots.remove(chosen_robot)
             blocked.add((chosen_robot.x, chosen_robot.y))
 
@@ -95,12 +119,14 @@ class CostBasedScheduler:
     ) -> list[tuple[int, int]] | None:
         other_blocked = set(blocked)
         other_blocked.discard((robot.x, robot.y))
+
         path = find_shortest_path(
             warehouse,
             (robot.x, robot.y),
             target,
             blocked_cells=other_blocked,
         )
+
         if path is not None:
             return path
 
