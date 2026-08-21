@@ -1,328 +1,709 @@
-/* ==========================================================
-   Base
-   ========================================================== */
-* { box-sizing: border-box; }
+/* =========================================================
+   Warehouse Simulation v0.5 — Dark Theme
+   ========================================================= */
+
+/* Refined Dark Theme with Depth */
+:root {
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #16213e;
+    --bg-tertiary: #1e2233;
+    --bg-elevated: #252a3a;
+    --text-primary: #eaeaea;
+    --text-secondary: #a8a8a8;
+    --accent: #f59e0b;
+    --accent-hover: #d97706;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+    --border: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.15);
+    --shadow: rgba(0, 0, 0, 0.4);
+    --shadow-lg: rgba(0, 0, 0, 0.6);
+}
+
+* {
+    box-sizing: border-box;
+}
 
 body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     margin: 0;
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: #0b1220;
-    color: #e2e8f0;
+    padding: 16px;
+    line-height: 1.6;
 }
 
-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: #111a2e;
-    border-bottom: 1px solid #1e293b;
+h1, h2, h3, h4 {
+    color: var(--text-primary);
+    margin-top: 0;
 }
 
-header h1 { font-size: 16px; margin: 0; }
-
-#simulation-state { font-size: 13px; color: #64748b; }
+/* =========================================================
+   Buttons / Inputs
+   ========================================================= */
 
 button {
-    padding: 6px 12px;
-    border: 1px solid #334155;
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-elevated) 100%);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
     border-radius: 6px;
-    background: #1e293b;
-    color: #e2e8f0;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 14px;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px var(--shadow);
 }
 
-button:hover { background: #334155; }
+button:hover {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+    border-color: var(--accent);
+    box-shadow: 0 4px 8px var(--shadow-lg);
+    transform: translateY(-1px);
+}
 
-/* ==========================================================
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px var(--shadow);
+}
+
+input, select {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+/* =========================================================
    Layout
-   ========================================================== */
-.layout {
+   ========================================================= */
+
+.toolbar {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 4px var(--shadow);
+}
+
+.view {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.checkbox-label {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+details {
+    margin-bottom: 16px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 4px var(--shadow);
+    transition: all 0.2s;
+}
+
+details:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 8px var(--shadow-lg);
+}
+
+summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding: 4px 0;
+    transition: color 0.2s;
+}
+
+summary:hover {
+    color: var(--accent);
+}
+
+.run-layout {
+    display: flex;
+    gap: 20px;
     align-items: flex-start;
-    gap: 16px;
-    padding: 16px;
 }
 
 .map-column {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+    flex: 0 0 auto;
 }
 
-.sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    flex: 0 0 360px;
+.side-column {
+    flex: 1 1 auto;
     min-width: 320px;
 }
 
-.panel h2 {
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #64748b;
-    margin: 0 0 8px;
-}
+/* =========================================================
+   Warehouse Map — flat, no grid
+   ========================================================= */
 
-/* ==========================================================
-   Warehouse map
-   ========================================================== */
 #warehouse {
     position: relative;
-    background: #0b1220;
-    border: 1px solid #1e293b;
-    border-radius: 8px;
-    flex-shrink: 0;
+    border: 2px solid var(--border);
+    margin: 12px 0;
+    background: #0d0f16;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px var(--shadow-lg);
+    overflow: hidden;
 }
 
-/* No borders: adjacent cells merge into solid zones. */
-.tile { position: absolute; }
+/* Flat tiles, no grid lines, no inner borders */
+.tile {
+    position: absolute;
+    border: none;
+}
 
-/* Floor is invisible; travel aisles read as continuous corridors. */
-.empty         { background: transparent; }
-.aisle         { background: #16223a; }
-.main_aisle    { background: #1e3a66; }
+/* Floor */
+.tile.empty { background: #1e2530; }
+.tile.aisle { background: #1e2530; }
+.tile.main_aisle { background: #171c25; }
+.tile.intersection { background: #222838; }
 
-/* Storage is the visual anchor of the map. */
-.shelf         { background: #4b586e; }
+/* Storage racks */
+.tile.shelf { background: #4a5568; }
 
-/* Operational zones: muted, equal visual weight. */
-.receiving     { background: #245c40; }
-.buffer        { background: #343a6e; }
-.pick_station  { background: #6b5220; }
-.consolidation { background: #5d4a1f; }
-.packing       { background: #4a3668; }
-.staging       { background: #1f5a50; }
-.shipping      { background: #6b3226; }
-.charging      { background: #66571f; }
-.maintenance   { background: #39424f; }
-.intersection  { background: #3f3f56; }
+/* Zones — flat solid colors */
+.tile.packing { background: #744210; }
+.tile.receiving { background: #2c5282; }
+.tile.shipping { background: #276749; }
+.tile.charging { background: #975a16; }
+.tile.buffer { background: #9c4221; }
+.tile.pick_station { background: #285e61; }
+.tile.consolidation { background: #702459; }
+.tile.staging { background: #44337a; }
+.tile.maintenance { background: #742a2a; }
 
-/* Active task location highlights */
-.tile.task-pickup-active  { box-shadow: inset 0 0 0 2px rgba(245, 158, 11, 0.95); }
-.tile.task-dropoff-active { box-shadow: inset 0 0 0 2px rgba(34, 197, 94, 0.95); }
+/* Task location highlights — OUTER GLOW ONLY, no background change */
+.tile.task-pickup-active {
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.9), 0 0 14px 4px rgba(245, 158, 11, 0.5);
+    z-index: 3;
+}
 
-/* Faint secondary target */
-.tile.task-pickup-faint   { box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45); }
-.tile.task-dropoff-faint  { box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.45); }
+.tile.task-dropoff-active {
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.9), 0 0 14px 4px rgba(16, 185, 129, 0.5);
+    z-index: 3;
+}
 
-/* Rack letters: quiet, but present (tasks reference them). */
+.tile.task-pickup-faint {
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4), 0 0 8px 2px rgba(245, 158, 11, 0.2);
+    z-index: 2;
+}
+
+.tile.task-dropoff-faint {
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4), 0 0 8px 2px rgba(16, 185, 129, 0.2);
+    z-index: 2;
+}
+
 .rack-label {
     position: absolute;
     transform: translate(-50%, -50%);
-    font-weight: 600;
     font-size: 11px;
-    color: rgba(248, 250, 252, 0.55);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     pointer-events: none;
-    z-index: 4;
+    z-index: 5;
 }
 
 .marker {
     position: absolute;
     transform: translate(-50%, -50%);
-    background: #0f172a;
-    color: #f8fafc;
-    border: 1px solid #64748b;
-    border-radius: 4px;
     font-size: 10px;
-    line-height: 1;
-    padding: 3px 4px;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 4px;
     pointer-events: none;
-    z-index: 5;
+    z-index: 6;
 }
 
-/* ==========================================================
-   Robots (the only saturated objects on the map)
-   ========================================================== */
+/* =========================================================
+   Robots — square, identity color body, glow-only tasks
+   ========================================================= */
+
 .robot {
     position: absolute;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     border-radius: 4px;
-    border: 2px solid #f8fafc;
-    transform: translate(6px, 6px);
-    transition: left 0.25s linear, top 0.25s linear;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    transition: left 0.2s, top 0.2s;
     z-index: 10;
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 2px 4px var(--shadow);
 }
 
-.robot.idle { opacity: 0.6; }
+.robot.idle {
+    opacity: 0.85;
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 1px 2px var(--shadow);
+}
 
-/* Robot has an active task */
+/* Task glow only — no border color change */
 .robot.has-task {
-    outline: 2px solid rgba(255, 255, 255, 0.9);
-    outline-offset: 1px;
+    box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.5), 0 2px 4px var(--shadow);
 }
 
-/* Task type ring colors */
-.robot.task-putaway { box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.95); } /* Orange */
-.robot.task-pick    { box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.95); }  /* Blue */
-.robot.task-pack    { box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.95); }  /* Purple */
-.robot.task-ship    { box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.95); }   /* Green */
-
-/* ==========================================================
-   Dashboard (compact, 4 columns)
-   ========================================================== */
-#dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
+.robot.task-putaway {
+    box-shadow: 0 0 14px 3px rgba(239, 68, 68, 0.7), 0 2px 4px var(--shadow);
 }
 
-.metric-card {
-    background: linear-gradient(180deg, #111a2e 0%, #0f172a 100%);
-    border: 1px solid #1e293b;
+.robot.task-pick {
+    box-shadow: 0 0 14px 3px rgba(245, 158, 11, 0.7), 0 2px 4px var(--shadow);
+}
+
+.robot.task-pack {
+    box-shadow: 0 0 14px 3px rgba(16, 185, 129, 0.7), 0 2px 4px var(--shadow);
+}
+
+.robot.task-ship {
+    box-shadow: 0 0 14px 3px rgba(59, 130, 246, 0.7), 0 2px 4px var(--shadow);
+}
+
+.robot.to-charger {
+    border-color: rgba(251, 191, 36, 0.6);
+}
+
+.robot.waiting-for-charger {
+    border-color: rgba(251, 191, 36, 0.4);
+    box-shadow: 0 0 8px 1px rgba(251, 191, 36, 0.35);
+}
+
+.robot.charging {
+    border-color: #fbbf24;
+    box-shadow: 0 0 14px 3px rgba(251, 191, 36, 0.7), 0 2px 4px var(--shadow);
+}
+
+.robot.low-battery {
+    animation: pulse 1s infinite;
+    box-shadow: 0 0 16px 4px rgba(239, 68, 68, 0.8);
+}
+
+.robot.failed {
+    opacity: 0.4;
+    border-color: #ef4444;
+    box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.5);
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* =========================================================
+   Legend (robots + warehouse zones)
+   ========================================================= */
+
+.legend-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 8px 10px;
+    box-shadow: 0 2px 4px var(--shadow);
 }
 
-.metric-title {
-    font-size: 10px;
+.legend-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #64748b;
+    letter-spacing: 0.6px;
     margin-bottom: 4px;
 }
 
-.metric-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: #f8fafc;
-    line-height: 1.1;
-}
-
-.metric-detail {
-    margin-top: 4px;
-    font-size: 10px;
-    color: #94a3b8;
-}
-
-/* ==========================================================
-   Task list (scrollable, compact rows)
-   ========================================================== */
-#task-list {
-    max-height: 55vh;
-    overflow-y: auto;
-    padding-right: 4px;
-}
-
-.section-header {
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    color: #64748b;
-    margin: 20px 0 8px 0;
-    padding-bottom: 4px;
-    border-bottom: 1px solid #334155;
-    letter-spacing: 0.05em;
-}
-
-.empty-msg {
-    color: #94a3b8;
-    font-size: 13px;
-    font-style: italic;
-    padding: 8px 0;
-}
-
-.task-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 10px;
-    background: #ffffff;
-    border-radius: 6px;
-    margin-bottom: 6px;
-    border-left: 4px solid transparent;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-/* Status colors */
-.task-row.pending   { border-left-color: #f59e0b; background: #fffbeb; }
-.task-row.assigned  { border-left-color: #3b82f6; background: #eff6ff; }
-.task-row.completed { border-left-color: #10b981; opacity: 0.6; }
-.task-row.failed    { border-left-color: #ef4444; opacity: 0.6; }
-
-/* Task type badges */
-.task-badge {
-    font-size: 10px;
-    font-weight: 700;
-    padding: 4px 6px;
-    border-radius: 4px;
-    color: white;
-    text-transform: uppercase;
-    min-width: 42px;
-    text-align: center;
-}
-
-.task-badge.putaway { background: #f97316; }
-.task-badge.pick    { background: #3b82f6; }
-.task-badge.pack    { background: #a855f7; }
-.task-badge.ship    { background: #22c55e; }
-.task-badge.legacy  { background: #64748b; }
-
-/* Task text */
-.task-info  { flex: 1; min-width: 0; }
-.task-title { font-size: 13px; font-weight: 600; color: #1e293b; }
-.task-sub   { font-size: 11px; color: #64748b; margin-top: 2px; }
-
-/* ==========================================================
-   Cards (kept for compatibility)
-   ========================================================== */
-.card {
-    background: #111a2e;
-    border: 1px solid #1e293b;
-    border-radius: 8px;
-    padding: 10px;
-}
-
-.card.done { opacity: 0.55; }
-.card-title { font-weight: 600; font-size: 13px; margin-bottom: 6px; }
-
-.row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    padding: 2px 0;
-}
-
-.label { color: #64748b; }
-.value { color: #e2e8f0; }
-
-/* ==========================================================
-   Zone legend (below the map)
-   ========================================================== */
-.legend {
+.legend-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 16px;
+    gap: 10px 16px;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--text-primary);
 }
 
 .swatch {
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    flex: 0 0 auto;
+}
+
+/* Robot swatches */
+.swatch.robot-idle { background: #888; border-color: rgba(255, 255, 255, 0.35); }
+.swatch.robot-task { background: #888; box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.5); }
+.swatch.robot-putaway { background: #888; box-shadow: 0 0 6px 2px rgba(239, 68, 68, 0.7); }
+.swatch.robot-pick { background: #888; box-shadow: 0 0 6px 2px rgba(245, 158, 11, 0.7); }
+.swatch.robot-pack { background: #888; box-shadow: 0 0 6px 2px rgba(16, 185, 129, 0.7); }
+.swatch.robot-ship { background: #888; box-shadow: 0 0 6px 2px rgba(59, 130, 246, 0.7); }
+.swatch.robot-charging { background: #888; border-color: #fbbf24; box-shadow: 0 0 6px 2px rgba(251, 191, 36, 0.7); }
+.swatch.robot-failed { background: #888; border-color: #ef4444; opacity: 0.4; }
+
+/* Tile swatches — flat, matching map */
+.swatch.tile-shelf { background: #4a5568; }
+.swatch.tile-aisle { background: #1e2530; }
+.swatch.tile-main-aisle { background: #171c25; }
+.swatch.tile-receiving { background: #2c5282; }
+.swatch.tile-shipping { background: #276749; }
+.swatch.tile-packing { background: #744210; }
+.swatch.tile-pick { background: #285e61; }
+.swatch.tile-buffer { background: #9c4221; }
+.swatch.tile-consolidation { background: #702459; }
+.swatch.tile-staging { background: #44337a; }
+.swatch.tile-charging { background: #975a16; }
+.swatch.tile-maintenance { background: #742a2a; }
+
+/* =========================================================
+   Dashboard / metric cards
+   ========================================================= */
+
+#dashboard-grid, #result-summary, #analysis-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.metric-card {
+    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-elevated) 100%);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    box-shadow: 0 2px 4px var(--shadow);
+    transition: all 0.2s;
+}
+
+.metric-card:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 8px var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.metric-title {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 4px 0;
+}
+
+.metric-detail {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* =========================================================
+   Task list
+   ========================================================= */
+
+.section-header {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 16px 0 8px 0;
+    color: var(--text-primary);
+}
+
+.empty-msg {
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 12px;
+    text-align: center;
+}
+
+.task-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    margin-bottom: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    border-left: 3px solid transparent;
+    box-shadow: 0 1px 3px var(--shadow);
+    transition: all 0.2s;
+}
+
+.task-row:hover {
+    background: var(--bg-elevated);
+    box-shadow: 0 2px 6px var(--shadow-lg);
+}
+
+.task-row.pending { border-left-color: var(--warning); }
+.task-row.assigned { border-left-color: var(--success); }
+.task-row.completed { border-left-color: #3b82f6; opacity: 0.6; }
+.task-row.failed { border-left-color: var(--error); opacity: 0.6; }
+.task-row.interrupted { border-left-color: #a855f7; }
+.task-row.history { opacity: 0.7; }
+
+.task-badge {
     display: inline-block;
-}
-
-/* ==========================================================
-   Scrollbars (dark theme)
-   ========================================================== */
-#task-list::-webkit-scrollbar { width: 8px; }
-
-#task-list::-webkit-scrollbar-thumb {
-    background: #334155;
+    padding: 2px 8px;
     border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #14161f;
+    flex: 0 0 auto;
 }
 
-#task-list::-webkit-scrollbar-track { background: transparent; }
+.task-badge.putaway { background: #ef4444; }
+.task-badge.pick { background: #f59e0b; }
+.task-badge.pack { background: #10b981; }
+.task-badge.ship { background: #3b82f6; }
+.task-badge.legacy { background: #6b7280; }
+
+.task-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.task-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.task-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+/* =========================================================
+   Charts / Analysis
+   ========================================================= */
+
+.chart-container {
+    width: 100%;
+    height: 480px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 4px 12px var(--shadow);
+}
+
+.analysis-chart-wrapper {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px var(--shadow);
+}
+
+.analysis-chart-wrapper h4 {
+    margin: 0 0 10px 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.analysis-chart {
+    width: 100%;
+    height: 320px;
+}
+
+#analysis-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+    gap: 16px;
+}
+
+/* =========================================================
+   Experiments list
+   ========================================================= */
+
+.experiment-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 8px;
+    box-shadow: 0 2px 4px var(--shadow);
+    transition: all 0.2s;
+}
+
+.experiment-row:hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 4px 8px var(--shadow-lg);
+}
+
+.experiment-info {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.experiment-info small {
+    color: var(--text-secondary);
+}
+
+.delete-btn {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    border-color: #dc2626;
+    color: #fff;
+}
+
+.delete-btn:hover {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* =========================================================
+   Multi-select dropdown
+   ========================================================= */
+
+.multi-select {
+    position: relative;
+    display: inline-block;
+    min-width: 300px;
+}
+
+.multi-select-trigger {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    min-height: 40px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+    box-shadow: 0 2px 4px var(--shadow);
+    transition: all 0.2s;
+}
+
+.multi-select-trigger:hover {
+    border-color: var(--accent);
+}
+
+.multi-select-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    margin-top: 4px;
+    box-shadow: 0 8px 16px var(--shadow-lg);
+}
+
+.multi-select-dropdown.open {
+    display: block;
+}
+
+.multi-select-option {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.multi-select-option:hover {
+    background: var(--bg-tertiary);
+}
+
+.multi-select-option.selected {
+    background: var(--bg-tertiary);
+    border-left: 3px solid var(--accent);
+}
+
+.multi-select-tag {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+    color: #14161f;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 1px 3px var(--shadow);
+}
+
+.multi-select-tag-remove {
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.multi-select-tag-remove:hover {
+    color: #7a3319;
+}
+
+/* =========================================================
+   Utility
+   ========================================================= */
+
+[hidden] {
+    display: none !important;
+}

@@ -1,77 +1,227 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Warehouse Simulator</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-  </head>
-  <body>
-    <header>
-      <h1>Warehouse Simulator</h1>
-      <span id="simulation-state"></span>
-      <button id="pause-btn">Pause</button>
-      <button id="resume-btn">Resume</button>
-      <button id="reset-btn">Reset</button>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Warehouse Simulation v0.5</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="toolbar">
+        <strong style="font-size: 18px;">🏭 Warehouse Simulation v0.5</strong>
+        <button id="nav-setup-btn">Setup</button>
+        <button id="nav-run-btn">Run</button>
+        <button id="nav-results-btn">Results</button>
+        <button id="nav-experiments-btn">Experiments</button>
+        <button id="nav-visualization-btn">Visualization</button>
+        <button id="nav-analysis-btn">Analysis</button>
+        <button id="nav-compare-btn">Compare</button>
     </header>
 
-    <div class="layout">
-      <div class="map-column">
-        <div id="warehouse"></div>
+    <main>
+        <!-- SETUP -->
+        <section id="view-setup" class="view">
+            <h2>Experiment Setup</h2>
+            <div class="form-grid">
+                <label>Display Name (optional)<input id="cfg-display-name" type="text" placeholder="e.g., baseline_6robots"></label>
+                <label>Seed<input id="cfg-seed" type="number" value="42"></label>
+                <label>Number of robots<input id="cfg-num-robots" type="number" min="1" value="6"></label>
+                <label>Stop mode
+                    <select id="cfg-stop-mode">
+                        <option value="workload" selected>Complete workload</option>
+                        <option value="fixed_ticks">Fixed ticks</option>
+                    </select>
+                </label>
+                <label>Target tasks<input id="cfg-target-tasks" type="number" min="1" value="500"></label>
+                <label>Max ticks<input id="cfg-max-ticks" type="number" min="1" value="100000"></label>
+                <label>Tick interval (s)<input id="cfg-tick-interval" type="number" step="0.05" value="0.3"></label>
+                <label>Blocked replan (s)<input id="cfg-blocked-replan-seconds" type="number" step="0.1" value="0.7"></label>
+                <label>Replan cooldown<input id="cfg-replan-cooldown-ticks" type="number" min="1" value="7"></label>
+                <label class="checkbox-label">
+                    <input id="cfg-fast-mode" type="checkbox">
+                    Fast headless run (skip live view)
+                </label>
+            </div>
 
-        <div class="legend">
-          <div class="legend-item">
-            <span class="swatch shelf"></span>Storage racks
-          </div>
-          <div class="legend-item"><span class="swatch aisle"></span>Aisle</div>
-          <div class="legend-item">
-            <span class="swatch main_aisle"></span>Main cross-aisle
-          </div>
-          <div class="legend-item">
-            <span class="swatch receiving"></span>Receiving
-          </div>
-          <div class="legend-item">
-            <span class="swatch buffer"></span>QC / put-away buffer
-          </div>
-          <div class="legend-item">
-            <span class="swatch pick_station"></span>Pick stations
-          </div>
-          <div class="legend-item">
-            <span class="swatch consolidation"></span>Consolidation
-          </div>
-          <div class="legend-item">
-            <span class="swatch packing"></span>Packing
-          </div>
-          <div class="legend-item">
-            <span class="swatch staging"></span>Outbound staging
-          </div>
-          <div class="legend-item">
-            <span class="swatch shipping"></span>Shipping docks
-          </div>
-          <div class="legend-item">
-            <span class="swatch charging"></span>AMR charging
-          </div>
-          <div class="legend-item">
-            <span class="swatch maintenance"></span>Maintenance
-          </div>
-        </div>
-      </div>
+            <details>
+                <summary>Battery & Charging</summary>
+                <div class="form-grid">
+                    <label>Battery capacity<input id="cfg-battery-capacity" type="number" step="0.1" value="100"></label>
+                    <label>Empty move energy<input id="cfg-empty-move-energy" type="number" step="0.1" value="0.7"></label>
+                    <label>Loaded move energy<input id="cfg-loaded-move-energy" type="number" step="0.1" value="1.0"></label>
+                    <label>Critical battery<input id="cfg-critical-battery" type="number" step="0.1" value="20"></label>
+                    <label>Opportunistic threshold<input id="cfg-opportunistic-charge-threshold" type="number" step="0.1" value="40"></label>
+                    <label>Charger capacity<input id="cfg-charger-capacity" type="number" min="1" value="4"></label>
+                    <label>Charge duration (ticks)<input id="cfg-charge-duration-ticks" type="number" min="1" value="10"></label>
+                </div>
+            </details>
 
-      <div class="sidebar">
-        <div class="panel">
-          <h2>Operational Dashboard</h2>
-          <div id="dashboard-grid" class="dashboard-grid"></div>
-        </div>
-        <div class="panel">
-          <h2>Tasks</h2>
-          <div id="task-list"></div>
-        </div>
-      </div>
-    </div>
+            <details>
+                <summary>Failures</summary>
+                <div class="form-grid">
+                    <label class="checkbox-label"><input id="cfg-failure-enabled" type="checkbox"> Failure enabled</label>
+                    <label>MTBF ticks<input id="cfg-mtbf-ticks" type="number" step="1" value="0"></label>
+                    <label>MTTR ticks<input id="cfg-mttr-ticks" type="number" min="1" value="25"></label>
+                </div>
+            </details>
 
+            <button id="start-experiment-btn" style="margin-top: 16px;">Start Experiment</button>
+        </section>
+
+        <!-- RUN (live) -->
+        <section id="view-run" class="view" hidden>
+            <h2>Simulation Running</h2>
+            <div class="run-layout">
+                <div class="map-column">
+                    <div id="simulation-state">Idle</div>
+                    <div id="warehouse"></div>
+
+                    <div class="legend-container">
+                        <div>
+                            <div class="legend-section-title">Robots</div>
+                            <div class="legend-grid">
+                                <div class="legend-item"><div class="swatch robot-idle"></div> Idle</div>
+                                <div class="legend-item"><div class="swatch robot-task"></div> Active Task</div>
+                                <div class="legend-item"><div class="swatch robot-putaway"></div> Putaway</div>
+                                <div class="legend-item"><div class="swatch robot-pick"></div> Pick</div>
+                                <div class="legend-item"><div class="swatch robot-pack"></div> Pack</div>
+                                <div class="legend-item"><div class="swatch robot-ship"></div> Ship</div>
+                                <div class="legend-item"><div class="swatch robot-charging"></div> Charging</div>
+                                <div class="legend-item"><div class="swatch robot-failed"></div> Failed</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <div class="legend-section-title">Warehouse Zones</div>
+                            <div class="legend-grid">
+                                <div class="legend-item"><div class="swatch tile-shelf"></div> Storage Rack</div>
+                                <div class="legend-item"><div class="swatch tile-aisle"></div> Aisle</div>
+                                <div class="legend-item"><div class="swatch tile-receiving"></div> Receiving Dock</div>
+                                <div class="legend-item"><div class="swatch tile-shipping"></div> Shipping Dock</div>
+                                <div class="legend-item"><div class="swatch tile-packing"></div> Packing Station</div>
+                                <div class="legend-item"><div class="swatch tile-pick"></div> Pick Station</div>
+                                <div class="legend-item"><div class="swatch tile-buffer"></div> Buffer</div>
+                                <div class="legend-item"><div class="swatch tile-charging"></div> Charging Station</div>
+                                <div class="legend-item"><div class="swatch tile-maintenance"></div> Maintenance</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="toolbar" style="background: transparent; border: none; padding: 0; margin-top: 12px;">
+                        <button id="pause-btn">Pause</button>
+                        <button id="resume-btn">Resume</button>
+                        <button id="reset-btn">Reset</button>
+                    </div>
+                </div>
+                <div class="side-column">
+                    <div id="dashboard-grid"></div>
+                    <div id="task-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAST / HEADLESS -->
+        <section id="view-fast" class="view" hidden>
+            <h2>Fast Headless Run</h2>
+            <p id="fast-status">Starting…</p>
+            <div class="toolbar" style="background: transparent; border: none; padding: 0;">
+                <button id="fast-stop-btn">Stop Early</button>
+            </div>
+        </section>
+
+        <!-- RESULTS -->
+        <section id="view-results" class="view" hidden>
+            <h2>Experiment Complete</h2>
+            <div id="result-summary"></div>
+            <div class="toolbar" style="background: transparent; border: none; padding: 0; margin-top: 16px;">
+                <button id="run-again-btn">Run Again</button>
+                <button id="view-experiments-btn">Saved Experiments</button>
+                <button id="view-visualization-btn">Visualization</button>
+                <button id="view-analysis-btn">Analysis</button>
+            </div>
+        </section>
+
+        <!-- EXPERIMENTS -->
+        <section id="view-experiments" class="view" hidden>
+            <h2>Saved Experiments</h2>
+            <div id="experiment-list"></div>
+            <div class="toolbar" style="background: transparent; border: none; padding: 0; margin-top: 16px;">
+                <button id="back-to-setup-btn">Back to Setup</button>
+            </div>
+        </section>
+
+        <!-- VISUALIZATION -->
+        <section id="view-visualization" class="view" hidden>
+            <h2>Visualization</h2>
+            <div class="toolbar" style="background: transparent; border: none; padding: 0;">
+                <label>Run<select id="visualization-run-select"></select></label>
+                <label>Metric
+                    <select id="visualization-metric-select">
+                        <optgroup label="Throughput & Tasks">
+                            <option value="throughput_rolling_100">Throughput (Smoothed)</option>
+                            <option value="tasks_completed_this_tick">Throughput (Raw)</option>
+                            <option value="tasks_completed_total">Cumulative Completed</option>
+                            <option value="tasks_pending">Pending Tasks</option>
+                            <option value="tasks_outstanding">Outstanding Tasks</option>
+                        </optgroup>
+                        <optgroup label="Robot States">
+                            <option value="robot_states_stacked">Robot States (Stacked Area)</option>
+                            <option value="robots_blocked">Blocked Robots</option>
+                            <option value="robots_charging">Charging Robots</option>
+                        </optgroup>
+                        <optgroup label="Battery">
+                            <option value="battery_overlay">Battery (Avg/Min/Max Overlay)</option>
+                            <option value="average_battery">Average Battery</option>
+                        </optgroup>
+                        <optgroup label="Traffic">
+                            <option value="replans_this_tick">Replans per Tick</option>
+                            <option value="blocked_ticks_this_tick">Blocked Ticks per Tick</option>
+                        </optgroup>
+                    </select>
+                </label>
+                <button id="visualization-generate-btn">Generate</button>
+            </div>
+            <div id="visualization-chart" class="chart-container"></div>
+        </section>
+
+        <!-- ANALYSIS -->
+        <section id="view-analysis" class="view" hidden>
+            <h2>Analysis & Distributions</h2>
+            <div class="toolbar" style="background: transparent; border: none; padding: 0;">
+                <label>Run<select id="analysis-run-select"></select></label>
+                <button id="analysis-generate-btn">Generate Analysis</button>
+            </div>
+            <div id="analysis-stats"></div>
+            <div id="analysis-charts"></div>
+        </section>
+
+        <!-- COMPARE -->
+        <section id="view-compare" class="view" hidden>
+            <h2>Compare Runs</h2>
+            <div class="toolbar" style="background: transparent; border: none; padding: 0;">
+                <label>Select Runs<div id="compare-run-select" class="multi-select"></div></label>
+                <label>Metric
+                    <select id="compare-metric-select">
+                        <option value="throughput_rolling_100">Throughput (Smoothed)</option>
+                        <option value="tasks_completed_total">Cumulative Completed</option>
+                        <option value="tasks_outstanding">Outstanding Tasks</option>
+                        <option value="robots_blocked">Blocked Robots</option>
+                        <option value="robots_charging">Charging Robots</option>
+                        <option value="average_battery">Average Battery</option>
+                    </select>
+                </label>
+                <label>Chart Type
+                    <select id="compare-chart-type">
+                        <option value="line">Line Chart</option>
+                        <option value="bar">Bar Chart (Final Values)</option>
+                    </select>
+                </label>
+                <button id="compare-generate-btn">Compare</button>
+            </div>
+            <div id="compare-chart" class="chart-container"></div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='vendor/echarts.min.js') }}"></script>
     <script src="{{ url_for('static', filename='simulation.js') }}"></script>
-  </body>
+</body>
 </html>

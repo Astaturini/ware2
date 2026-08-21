@@ -1,97 +1,36 @@
 from __future__ import annotations
 
-from flask import Flask, jsonify, render_template
+import re
+import shutil
+from pathlib import Path
 
-from simulation.config import BatteryConfig, ChargingConfig, FailureConfig
-from simulation.metrics import Metrics
-from simulation.robot import Robot, RobotStatus
-from simulation.scheduler import CostBasedScheduler
-from simulation.simulation import Simulation
-from simulation.task import Task, TaskType
-from simulation.task_generator import TaskGenerator
-from simulation.warehouse import Location, Warehouse
-from simulation.warehouse_layout import build_warehouse
+from flask import Flask, jsonify, render_template, request
 
-
-def create_initial_warehouse() -> Warehouse:
-    return build_warehouse()
-
-
-def create_initial_robots() -> list[Robot]:
-    return [
-        Robot( id="R1", x=1, y=7, color="#ef4444", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-        Robot( id="R2", x=9, y=7, color="#3b82f6", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-        #Robot( id="R3", x=17, y=7, color="#10b981", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-        #Robot( id="R4", x=24, y=7, color="#f59e0b", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-        #Robot( id="R5", x=1, y=20, color="#8b5cf6", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-        #Robot( id="R6", x=9, y=20, color="#2a7016", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-        #Robot( id="R7", x=17, y=20, color="#14b8a6", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-        #Robot( id="R8", x=24, y=20, color="#f97316", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-        #Robot( id="R9", x=1, y=0, color="#e11d48", status=RobotStatus.IDLE, path=[],current_task_id=None,),
-        #Robot( id="R10", x=9, y=0, color="#2563eb", status=RobotStatus.IDLE, path=[],current_task_id=None,),
-        #Robot(id="R11", x=17, y=0, color="#22c55e", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-        #Robot(id="R12", x=12, y=1, color="#983084", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-        Robot(id="R13", x=13, y=0, color="#63431b", status=RobotStatus.IDLE, path=[], current_task_id=None,),
-    ]
-
-
-def create_initial_tasks(warehouse: Warehouse) -> list[Task]:
-    """Legacy compatibility demo tasks.
-
-    The v0.3 default simulation no longer starts with these tasks, but keeping
-    the helper avoids breaking callers that still expect the old demo dataset.
-    """
-
-    specs = [
-        ("T1", "Inbound putaway A", "RECV", "A-03", TaskType.PUTAWAY),
-        ("T2", "Inbound putaway C", "BUFFER", "C-01", TaskType.PUTAWAY),
-        ("T3", "Pick order 1", "B-02", "PICK-1", TaskType.PICK),
-        ("T4", "Pick order 2", "F-05", "PICK-2", TaskType.PICK),
-        ("T5", "Move to packing", "CONSOL", "PACK-1", TaskType.PACK),
-        ("T6", "Ship outbound", "PACK-2", "DOCK-1", TaskType.SHIP),
-    ]
-
-    return [
-        Task(
-            id=tid,
-            name=name,
-            pickup=pickup,
-            dropoff=dropoff,
-            task_type=task_type,
-        )
-        for (tid, name, pickup, dropoff, task_type) in specs
-    ]
-
-
-def create_default_simulation(
-    battery_config: BatteryConfig | None = None,
-    charging_config: ChargingConfig | None = None,
-    failure_config: FailureConfig | None = None,
-    seed: int | None = 731,
-) -> Simulation:
-    warehouse = create_initial_warehouse()
-    robots = create_initial_robots()
-
-    return Simulation(
-        warehouse=warehouse,
-        robots=robots,
-        tasks=[],
-        scheduler=CostBasedScheduler(),
-        task_generator=TaskGenerator(warehouse, seed=seed),
-        metrics=Metrics(),
-        battery_config=battery_config or BatteryConfig(),
-        charging_config=charging_config or ChargingConfig(),
-        failure_config=failure_config or FailureConfig(),
-        seed=seed,
-    )
+from analysis.web import (
+    AnalysisApiError,
+    get_compare_series,
+    get_run_distributions,
+    get_run_series,
+    get_run_summary,
+    list_runs_payload,
+)
+from experiment.config import ExperimentConfig
+from experiment.factory import create_simulation_from_config
+from experiment.runner import ExperimentRunner
 
 
 def create_app(
-    simulation: Simulation | None = None,
-    start_simulation: bool = True,
+    base_data_dir: str = "data/runs",
+    start_simulation: bool = False,
 ) -> Flask:
-    if simulation is None:
-        simulation = create_default_simulation()
+    base_dir = Path(base_data_dir)
+
+    default_simulation = create_simulation_from_config(ExperimentConfig.default())
+
+    holder = {
+        "simulation": default_simulation,
+        "runner": None,
+    }
 
     app = Flask(__name__)
 
@@ -101,25 +40,176 @@ def create_app(
 
     @app.get("/api/state")
     def state():
-        return jsonify(simulation.get_state())
+        simulation = holder["simulation"]
+        payload = simulation.get_state()
+
+        runner = holder.get("runner")
+        if runner is None:
+            payload["experiment"] = {
+                "active": False,
+                "finished": False,
+                "runId": None,
+                "stopReason": None,
+                "fastMode": False,
+            }
+        else:
+            payload["experiment"] = runner.get_state()
+
+        return jsonify(payload)
 
     @app.post("/api/pause")
     def pause():
+        simulation = holder["simulation"]
         simulation.pause()
         return jsonify({"paused": simulation.is_paused})
 
     @app.post("/api/resume")
     def resume():
+        simulation = holder["simulation"]
         simulation.resume()
         return jsonify({"paused": simulation.is_paused})
 
     @app.post("/api/reset")
     def reset():
-        simulation.reset()
-        return jsonify({"paused": simulation.is_paused})
+        runner = holder.get("runner")
+        if runner is not None:
+            runner.stop("reset_by_user")
+
+        holder["simulation"] = create_simulation_from_config(ExperimentConfig.default())
+        holder["runner"] = None
+
+        return jsonify({"paused": holder["simulation"].is_paused})
+
+    # --------------------------------------------------------------
+    # Experiment lifecycle
+    # --------------------------------------------------------------
+
+    @app.post("/api/experiment/start")
+    def experiment_start():
+        existing = holder.get("runner")
+        if existing is not None and existing.is_active:
+            return jsonify({"error": "An experiment is already running."}), 409
+
+        payload = request.get_json(force=True, silent=True) or {}
+
+        try:
+            config = ExperimentConfig.from_dict(payload)
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+
+        runner = ExperimentRunner(base_dir=str(base_dir))
+
+        try:
+            run_id = runner.start(config, create_simulation_from_config)
+        except (ValueError, RuntimeError) as exc:
+            return jsonify({"error": str(exc)}), 400
+
+        holder["runner"] = runner
+        holder["simulation"] = runner.sim
+
+        return jsonify({"runId": run_id})
+
+    @app.get("/api/experiment/state")
+    def experiment_state():
+        runner = holder.get("runner")
+        if runner is None:
+            return jsonify(
+                {
+                    "active": False,
+                    "finished": False,
+                    "runId": None,
+                    "stopReason": None,
+                    "fastMode": False,
+                }
+            )
+        return jsonify(runner.get_state())
+
+    @app.post("/api/experiment/stop")
+    def experiment_stop():
+        runner = holder.get("runner")
+        if runner is None:
+            return jsonify({"error": "No experiment has been started."}), 404
+        runner.stop("stopped_by_user")
+        return jsonify(runner.get_state())
+
+    @app.get("/api/experiment/summary")
+    def experiment_summary():
+        runner = holder.get("runner")
+        if runner is None:
+            return jsonify({"error": "No experiment has been started."}), 404
+        summary = runner.get_summary()
+        if summary is None:
+            return jsonify({"error": "Experiment has not finished yet."}), 409
+        return jsonify(summary)
+
+    # --------------------------------------------------------------
+    # Analysis API
+    # --------------------------------------------------------------
+
+    @app.get("/api/runs")
+    def api_runs():
+        return jsonify(list_runs_payload(str(base_dir)))
+
+    @app.delete("/api/runs/<run_id>")
+    def api_delete_run(run_id: str):
+        if not re.match(r"^[A-Za-z0-9_\-]+$", run_id):
+            return jsonify({"error": "Invalid run id."}), 400
+
+        run_dir = base_dir / run_id
+        if not run_dir.exists():
+            return jsonify({"error": "Run not found."}), 404
+
+        try:
+            shutil.rmtree(run_dir)
+            return jsonify({"success": True, "runId": run_id})
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 500
+
+    @app.get("/api/runs/compare/series")
+    def api_compare_series():
+        runs_param = request.args.get("runs", "")
+        column = request.args.get("column", "throughput_rolling_100")
+        max_points = request.args.get("max_points", 2000)
+
+        run_ids = [part.strip() for part in runs_param.split(",") if part.strip()]
+        if not run_ids:
+            return jsonify({"error": "No run ids provided."}), 400
+
+        try:
+            return jsonify(get_compare_series(run_ids, column, str(base_dir), max_points))
+        except AnalysisApiError as exc:
+            return jsonify({"error": str(exc)}), 404
+
+    @app.get("/api/runs/<run_id>/summary")
+    def api_run_summary(run_id: str):
+        try:
+            return jsonify(get_run_summary(run_id, str(base_dir)))
+        except AnalysisApiError as exc:
+            return jsonify({"error": str(exc)}), 404
+
+    @app.get("/api/runs/<run_id>/series")
+    def api_run_series(run_id: str):
+        columns = request.args.get("columns", "")
+        max_points = request.args.get("max_points", 2000)
+        try:
+            return jsonify(get_run_series(run_id, columns, str(base_dir), max_points))
+        except AnalysisApiError as exc:
+            return jsonify({"error": str(exc)}), 404
+
+    @app.get("/api/runs/<run_id>/distributions")
+    def api_run_distributions(run_id: str):
+        bins = request.args.get("bins", 50)
+        try:
+            bins = max(10, min(100, int(bins)))
+        except Exception:
+            bins = 50
+        try:
+            return jsonify(get_run_distributions(run_id, str(base_dir), bins))
+        except AnalysisApiError as exc:
+            return jsonify({"error": str(exc)}), 404
 
     if start_simulation:
-        simulation.start()
+        default_simulation.start()
 
     return app
 
@@ -128,4 +218,4 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=False, use_reloader=False)
