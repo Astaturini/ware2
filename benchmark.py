@@ -3,8 +3,11 @@ from __future__ import annotations
 import argparse
 import time
 
+from experiment.config import ExperimentConfig
+from experiment.factory import create_simulation_from_config
 from simulation.config import BatteryConfig, ChargingConfig, FailureConfig
 from simulation.metrics import Metrics
+from simulation.pathfinding import AStarPathPlanner, BFSPathPlanner
 from simulation.robot import Robot, RobotStatus
 from simulation.scheduler import CostBasedScheduler
 from simulation.simulation import Simulation
@@ -17,40 +20,44 @@ Headless benchmark for the warehouse simulation.
 
 Examples:
 
-v0.3-style benchmark:
+Default v0.5-style seeded spawn with BFS:
 
-    python benchmark.py --robots 8 --block-replan 0.7 --cooldown 7 --target 200
+    python benchmark.py --robots 6 --seed 42 --target 50 --path-planner bfs
 
-v0.4 benchmark with battery/charging:
+A* path planning:
 
-    python benchmark.py \
-        --robots 8 \
-        --seed 42 \
-        --target 200 \
-        --battery-capacity 100 \
-        --empty-move-energy 0.7 \
-        --loaded-move-energy 1.0 \
-        --critical-battery 20 \
-        --opportunistic-charge-threshold 40 \
-        --idle-opportunistic-ticks 10 \
-        --battery-safety-margin 5 \
-        --charger-capacity 4 \
-        --charge-duration-ticks 10
+    python benchmark.py --robots 6 --seed 42 --target 50 --path-planner astar
 
-v0.4 benchmark with failures:
+Weighted A*:
+
+    python benchmark.py --robots 6 --seed 42 --target 50 --path-planner weighted_astar
+
+Legacy hardcoded spawn points, comparable with old benchmark runs:
 
     python benchmark.py \
-        --robots 8 \
+        --robots 6 \
         --seed 42 \
-        --target 200 \
-        --failure-enabled \
-        --mtbf-ticks 1500 \
-        --mttr-ticks 25
+        --target 50 \
+        --spawn legacy \
+        --path-planner bfs
 """
 
 
-def create_robots(num_robots: int) -> list[Robot]:
-    # Spawn points as app.py has them.
+def create_path_planner(name: str):
+    if name == "bfs":
+        return BFSPathPlanner()
+
+    if name == "astar":
+        return AStarPathPlanner(weight=1.0)
+
+    if name == "weighted_astar":
+        return AStarPathPlanner(weight=1.2)
+
+    raise ValueError(f"Unknown path planner: {name!r}")
+
+
+def create_legacy_robots(num_robots: int) -> list[Robot]:
+    """Old hardcoded spawn points from pre-v0.5 benchmark/app behavior."""
     spawn_points = [
         (1, 7),
         (9, 7),
@@ -98,81 +105,151 @@ def safe_divide(numerator: float, denominator: float) -> float:
     return numerator / denominator if denominator else 0.0
 
 
-def run_benchmark(
-    num_robots: int,
-    blocked_replan_seconds: float,
-    replan_cooldown_ticks: int,
-    target_completed: int,
-    max_ticks: int,
-    seed: int | None,
-    battery_config: BatteryConfig,
-    charging_config: ChargingConfig,
-    failure_config: FailureConfig,
-) -> None:
+def run_benchmark(args: argparse.Namespace) -> None:
+    mtbf_ticks = args.mtbf_ticks if args.failure_enabled else 0.0
+
     print("--- Starting Benchmark ---")
-    print(f"Robots: {num_robots}")
+    print(f"Robots: {args.robots}")
+    print(f"Spawn mode: {args.spawn}")
+    print(f"Path planner: {args.path_planner}")
+    print("Scheduler: baseline")
+    print("Conflict manager: local_yield")
     print(
         "Replan Params: "
-        f"block={blocked_replan_seconds}s, "
-        f"cooldown={replan_cooldown_ticks} ticks"
+        f"block={args.block_replan}s, "
+        f"cooldown={args.cooldown} ticks"
     )
-    print(f"Target: {target_completed} completed tasks")
-    print(f"Max ticks: {max_ticks}")
-    print(f"Seed: {seed}")
+    print(f"Target: {args.target} completed tasks")
+    print(f"Max ticks: {args.max_ticks}")
+    print(f"Seed: {args.seed}")
     print()
 
     print("--- v0.4 Config ---")
-    print(f"Battery capacity: {battery_config.capacity}")
-    print(f"Empty move energy: {battery_config.empty_move_energy}")
-    print(f"Loaded move energy: {battery_config.loaded_move_energy}")
-    print(f"Critical battery: {battery_config.critical_battery}")
-    print(
-        "Opportunistic threshold: "
-        f"{battery_config.opportunistic_charge_threshold}"
-    )
+    print(f"Battery capacity: {args.battery_capacity}")
+    print(f"Empty move energy: {args.empty_move_energy}")
+    print(f"Loaded move energy: {args.loaded_move_energy}")
+    print(f"Critical battery: {args.critical_battery}")
+    print(f"Opportunistic threshold: {args.opportunistic_charge_threshold}")
     print(
         "Idle ticks before opportunistic charge: "
-        f"{battery_config.idle_ticks_before_opportunistic_charge}"
+        f"{args.idle_opportunistic_ticks}"
     )
-    print(f"Battery safety margin: {battery_config.safety_margin}")
-    print(f"Charger capacity: {charging_config.capacity}")
-    print(f"Charge duration ticks: {charging_config.charge_duration_ticks}")
-    print(f"Failure enabled: {failure_config.enabled}")
-    print(f"MTBF ticks: {failure_config.mtbf_ticks}")
-    print(f"MTTR ticks: {failure_config.mttr_ticks}")
+    print(f"Battery safety margin: {args.battery_safety_margin}")
+    print(f"Charger capacity: {args.charger_capacity}")
+    print(f"Charge duration ticks: {args.charge_duration_ticks}")
+    print(f"Failure enabled: {args.failure_enabled}")
+    print(f"MTBF ticks: {mtbf_ticks}")
+    print(f"MTTR ticks: {args.mttr_ticks}")
     print()
 
-    warehouse = build_warehouse()
-    robots = create_robots(num_robots)
-    metrics = Metrics()
+    if args.spawn == "legacy":
+        if args.robots > 13:
+            print(
+                "WARNING: legacy spawn supports only 13 hardcoded positions. "
+                "Robot count will be capped at 13."
+            )
 
-    sim = Simulation(
-        warehouse=warehouse,
-        robots=robots,
-        tasks=[],
-        tick_interval=0.3,
-        scheduler=CostBasedScheduler(),
-        task_generator=TaskGenerator(warehouse=warehouse, seed=seed),
-        metrics=metrics,
-        blocked_replan_seconds=blocked_replan_seconds,
-        replan_cooldown_ticks=replan_cooldown_ticks,
-        battery_config=battery_config,
-        charging_config=charging_config,
-        failure_config=failure_config,
-        seed=seed,
-    )
+        battery_config = BatteryConfig(
+            capacity=args.battery_capacity,
+            empty_move_energy=args.empty_move_energy,
+            loaded_move_energy=args.loaded_move_energy,
+            critical_battery=args.critical_battery,
+            opportunistic_charge_threshold=args.opportunistic_charge_threshold,
+            idle_ticks_before_opportunistic_charge=args.idle_opportunistic_ticks,
+            safety_margin=args.battery_safety_margin,
+        )
+
+        charging_config = ChargingConfig(
+            capacity=args.charger_capacity,
+            charge_duration_ticks=args.charge_duration_ticks,
+        )
+
+        failure_config = FailureConfig(
+            enabled=args.failure_enabled,
+            mtbf_ticks=mtbf_ticks,
+            mttr_ticks=args.mttr_ticks,
+            seed=args.seed,
+            relocate_to_maintenance=True,
+        )
+
+        warehouse = build_warehouse()
+        robots = create_legacy_robots(args.robots)
+        metrics = Metrics()
+        path_planner = create_path_planner(args.path_planner)
+
+        sim = Simulation(
+            warehouse=warehouse,
+            robots=robots,
+            tasks=[],
+            tick_interval=0.3,
+            scheduler=CostBasedScheduler(),
+            task_generator=TaskGenerator(warehouse=warehouse, seed=args.seed),
+            metrics=metrics,
+            blocked_replan_seconds=args.block_replan,
+            replan_cooldown_ticks=args.cooldown,
+            battery_config=battery_config,
+            charging_config=charging_config,
+            failure_config=failure_config,
+            seed=args.seed,
+            path_planner=path_planner,
+        )
+    else:
+        config_dict = {
+            "seed": args.seed,
+            "num_robots": args.robots,
+            "display_name": args.display_name,
+            "stop_mode": "workload",
+            "target_tasks": args.target,
+            "max_ticks": args.max_ticks,
+            "tick_interval": 0.3,
+            "fast_mode": True,
+            "blocked_replan_seconds": args.block_replan,
+            "replan_cooldown_ticks": args.cooldown,
+            "battery_capacity": args.battery_capacity,
+            "empty_move_energy": args.empty_move_energy,
+            "loaded_move_energy": args.loaded_move_energy,
+            "critical_battery": args.critical_battery,
+            "opportunistic_charge_threshold": args.opportunistic_charge_threshold,
+            "idle_ticks_before_opportunistic_charge": args.idle_opportunistic_ticks,
+            "battery_safety_margin": args.battery_safety_margin,
+            "empty_battery_recovery_ticks": 15,
+            "charger_capacity": args.charger_capacity,
+            "charge_duration_ticks": args.charge_duration_ticks,
+            "failure_enabled": args.failure_enabled,
+            "mtbf_ticks": mtbf_ticks,
+            "mttr_ticks": args.mttr_ticks,
+            "relocate_to_maintenance": True,
+            "scheduler": "baseline",
+            "path_planner": args.path_planner,
+            "conflict_manager": "local_yield",
+        }
+
+        config = ExperimentConfig.from_dict(config_dict)
+        sim = create_simulation_from_config(config)
+        metrics = sim._metrics
+
+    active_path_planner = type(getattr(sim, "_path_planner", None)).__name__
+    print(f"Active path planner: {active_path_planner}")
+    print()
 
     start_time = time.perf_counter()
 
     ticks = 0
-    while metrics.tasks_completed < target_completed and ticks < max_ticks:
+    while metrics.tasks_completed < args.target and ticks < args.max_ticks:
         with sim._lock:
             sim._tick()
         ticks += 1
 
     end_time = time.perf_counter()
 
+    stop_reason = (
+        "target_reached"
+        if metrics.tasks_completed >= args.target
+        else "max_ticks_reached"
+    )
+
     print(f"--- Results after {ticks} ticks ---")
+    print(f"Stop reason: {stop_reason}")
     print(f"Wall-clock time: {end_time - start_time:.2f} seconds")
 
     print()
@@ -211,6 +288,12 @@ def run_benchmark(
         metrics.charger_wait_events,
     )
 
+    total_wait_ticks = (
+        metrics.traffic_wait_ticks
+        + metrics.charger_wait_ticks
+        + metrics.station_wait_ticks
+    )
+
     print(f"Average Battery: {average_battery:.2f} / {metrics.battery_capacity:.2f}")
     print(f"Average Battery Percent: {average_battery_percent:.2f}%")
     print(f"Charging Events: {metrics.charging_events}")
@@ -219,7 +302,7 @@ def run_benchmark(
     print(f"Charger Wait Ticks: {metrics.charger_wait_ticks}")
     print(f"Average Charger Wait: {average_charger_wait:.2f} ticks")
     print(f"Traffic Wait Ticks: {metrics.traffic_wait_ticks}")
-    print(f"Total Wait Ticks: {metrics.traffic_wait_ticks + metrics.charger_wait_ticks + metrics.station_wait_ticks}")
+    print(f"Total Wait Ticks: {total_wait_ticks}")
     print(f"Battery Task Interruptions: {metrics.battery_task_interruptions}")
     print(f"Failure Task Interruptions: {metrics.failure_task_interruptions}")
     print(f"Task Reassignments: {metrics.task_reassignments}")
@@ -229,15 +312,17 @@ def run_benchmark(
     print()
     print("Per-Robot Utilization:")
 
-    for robot_id in metrics.robot_total_ticks:
+    for robot_id in sorted(metrics.robot_total_ticks):
         busy = metrics.robot_busy_ticks.get(robot_id, 0)
-        total = metrics.robot_total_ticks.get(robot_id, 1)
+        total = metrics.robot_total_ticks.get(robot_id, 0)
         blocked = metrics.robot_blocked_ticks.get(robot_id, 0)
         replans = metrics.robot_replan_events.get(robot_id, 0)
 
+        utilization = safe_divide(busy, total)
+
         print(
             f"  {robot_id}: "
-            f"{busy / total:.1%} busy, "
+            f"{utilization:.1%} busy, "
             f"{blocked} blocked ticks, "
             f"{replans} replans"
         )
@@ -248,12 +333,33 @@ if __name__ == "__main__":
         description="Headless warehouse simulation benchmark."
     )
 
-    # Existing v0.3 parameters.
     parser.add_argument(
         "--robots",
         type=int,
-        default=4,
+        default=6,
         help="Number of robots.",
+    )
+    parser.add_argument(
+        "--spawn",
+        choices=["seeded", "legacy"],
+        default="seeded",
+        help=(
+            "Robot spawn mode. "
+            "'seeded' uses v0.5 dynamic seeded spawn positions. "
+            "'legacy' uses the old hardcoded spawn points."
+        ),
+    )
+    parser.add_argument(
+        "--path-planner",
+        choices=["bfs", "astar", "weighted_astar"],
+        default="bfs",
+        help="Path planning algorithm.",
+    )
+    parser.add_argument(
+        "--display-name",
+        type=str,
+        default="benchmark",
+        help="Display name metadata for seeded experiment config.",
     )
     parser.add_argument(
         "--block-replan",
@@ -270,7 +376,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--target",
         type=int,
-        default=1000,
+        default=50,
         help="Target completed tasks.",
     )
     parser.add_argument(
@@ -283,10 +389,9 @@ if __name__ == "__main__":
         "--seed",
         type=int,
         default=42,
-        help="RNG seed for task generator and v0.4 failure generator.",
+        help="RNG seed for task generator, failure generator, and spawn positions.",
     )
 
-    # v0.4 battery parameters.
     parser.add_argument(
         "--battery-capacity",
         type=float,
@@ -330,7 +435,6 @@ if __name__ == "__main__":
         help="Safety margin used for battery feasibility checks.",
     )
 
-    # v0.4 charging parameters.
     parser.add_argument(
         "--charger-capacity",
         type=int,
@@ -344,7 +448,6 @@ if __name__ == "__main__":
         help="Charging duration in ticks.",
     )
 
-    # v0.4 failure parameters.
     parser.add_argument(
         "--failure-enabled",
         action="store_true",
@@ -354,7 +457,7 @@ if __name__ == "__main__":
         "--mtbf-ticks",
         type=float,
         default=0.0,
-        help="Mean ticks between failures. Ignored unless --failure-enabled.",
+        help="Mean ticks between failures. Required > 0 if --failure-enabled.",
     )
     parser.add_argument(
         "--mttr-ticks",
@@ -365,36 +468,16 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    battery_config = BatteryConfig(
-        capacity=args.battery_capacity,
-        empty_move_energy=args.empty_move_energy,
-        loaded_move_energy=args.loaded_move_energy,
-        critical_battery=args.critical_battery,
-        opportunistic_charge_threshold=args.opportunistic_charge_threshold,
-        idle_ticks_before_opportunistic_charge=args.idle_opportunistic_ticks,
-        safety_margin=args.battery_safety_margin,
-    )
+    if args.robots < 1:
+        parser.error("--robots must be at least 1.")
 
-    charging_config = ChargingConfig(
-        capacity=args.charger_capacity,
-        charge_duration_ticks=args.charge_duration_ticks,
-    )
+    if args.target < 1:
+        parser.error("--target must be at least 1.")
 
-    failure_config = FailureConfig(
-        enabled=args.failure_enabled,
-        mtbf_ticks=args.mtbf_ticks if args.failure_enabled else 0.0,
-        mttr_ticks=args.mttr_ticks,
-        seed=args.seed,
-    )
+    if args.max_ticks < 1:
+        parser.error("--max-ticks must be at least 1.")
 
-    run_benchmark(
-        num_robots=args.robots,
-        blocked_replan_seconds=args.block_replan,
-        replan_cooldown_ticks=args.cooldown,
-        target_completed=args.target,
-        max_ticks=args.max_ticks,
-        seed=args.seed,
-        battery_config=battery_config,
-        charging_config=charging_config,
-        failure_config=failure_config,
-    )
+    if args.failure_enabled and args.mtbf_ticks <= 0:
+        parser.error("--mtbf-ticks must be > 0 when --failure-enabled is set.")
+
+    run_benchmark(args)

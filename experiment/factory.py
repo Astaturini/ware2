@@ -4,6 +4,11 @@ import random
 
 from simulation.config import BatteryConfig, ChargingConfig, FailureConfig
 from simulation.metrics import Metrics
+from simulation.pathfinding import (
+    AStarPathPlanner,
+    BFSPathPlanner,
+    PathPlanner,
+)
 from simulation.robot import Robot, RobotStatus
 from simulation.scheduler import CostBasedScheduler
 from simulation.simulation import Simulation
@@ -14,18 +19,32 @@ from simulation.warehouse_layout import build_warehouse
 from .config import ExperimentConfig
 
 
-# Colorblind-safe palette (Okabe-Ito) for robots
+# Colorblind-safe palette (Okabe-Ito) for robots.
 ROBOT_COLORS: list[str] = [
-    "#E69F00",  # orange
-    "#56B4E9",  # sky blue
-    "#009E73",  # bluish green
-    "#F0E442",  # yellow
-    "#0072B2",  # blue
-    "#D55E00",  # vermillion
-    "#CC79A7",  # reddish purple
-    "#999999",  # gray
-    "#000000",  # black
+    "#E69F00",
+    "#56B4E9",
+    "#009E73",
+    "#F0E442",
+    "#0072B2",
+    "#D55E00",
+    "#CC79A7",
+    "#999999",
+    "#000000",
 ]
+
+
+def create_path_planner(config: ExperimentConfig) -> PathPlanner:
+    """Create the configured path planner.
+
+    Default is BFS, preserving v0.5 behavior.
+    """
+    if config.path_planner == "astar":
+        return AStarPathPlanner(weight=1.0)
+
+    if config.path_planner == "weighted_astar":
+        return AStarPathPlanner(weight=1.2)
+
+    return BFSPathPlanner()
 
 
 def generate_spawn_positions(
@@ -35,25 +54,24 @@ def generate_spawn_positions(
 ) -> list[tuple[int, int]]:
     """
     Generate deterministic spawn positions using seeded RNG.
-    
+
     Positions are selected from passable cells, avoiding shelves and obstacles.
     """
     rng = random.Random(seed)
-    
-    # Collect all passable cells
+
     passable_cells: list[tuple[int, int]] = []
+
     for y in range(warehouse.height):
         for x in range(warehouse.width):
             if not warehouse.is_blocked(x, y):
                 passable_cells.append((x, y))
-    
+
     if len(passable_cells) < num_robots:
         raise ValueError(
             f"Not enough passable cells for {num_robots} robots. "
             f"Only {len(passable_cells)} available."
         )
-    
-    # Shuffle deterministically and take first N
+
     rng.shuffle(passable_cells)
     return passable_cells[:num_robots]
 
@@ -68,10 +86,11 @@ def create_experiment_robots(
     """
     if num_robots < 1:
         raise ValueError("num_robots must be at least 1.")
-    
+
     spawn_positions = generate_spawn_positions(num_robots, warehouse, seed)
-    
+
     robots: list[Robot] = []
+
     for i, (x, y) in enumerate(spawn_positions):
         robots.append(
             Robot(
@@ -84,13 +103,18 @@ def create_experiment_robots(
                 current_task_id=None,
             )
         )
-    
+
     return robots
 
 
 def create_simulation_from_config(config: ExperimentConfig) -> Simulation:
     warehouse = build_warehouse()
-    robots = create_experiment_robots(config.num_robots, warehouse, config.seed)
+
+    robots = create_experiment_robots(
+        config.num_robots,
+        warehouse,
+        config.seed,
+    )
 
     battery_config = BatteryConfig(
         capacity=config.battery_capacity,
@@ -116,6 +140,8 @@ def create_simulation_from_config(config: ExperimentConfig) -> Simulation:
         relocate_to_maintenance=config.relocate_to_maintenance,
     )
 
+    path_planner = create_path_planner(config)
+
     return Simulation(
         warehouse=warehouse,
         robots=robots,
@@ -130,4 +156,5 @@ def create_simulation_from_config(config: ExperimentConfig) -> Simulation:
         charging_config=charging_config,
         failure_config=failure_config,
         seed=config.seed,
+        path_planner=path_planner,
     )
