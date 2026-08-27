@@ -12,8 +12,18 @@ PATH_PLANNER_CHOICES = {
     "weighted_astar",
 }
 
+SCHEDULER_CHOICES = {
+    "baseline",
+    "priority",
+    "fifo",
+    "total_cost",
+    "auction",
+}
+
 CONFLICT_MANAGER_CHOICES = {
     "local_yield",
+    "zone_locks",
+    "priority_reservation",
 }
 
 
@@ -52,8 +62,6 @@ class ExperimentConfig:
     scheduler: str = "baseline"
 
     # v0.6 algorithm-selection fields.
-    # path_planner is now active.
-    # conflict_manager is metadata only until the conflict manager is extracted.
     path_planner: str = "bfs"
     conflict_manager: str = "local_yield"
 
@@ -113,6 +121,11 @@ class ExperimentConfig:
         if self.path_planner not in PATH_PLANNER_CHOICES:
             raise ValueError(
                 f"path_planner must be one of {sorted(PATH_PLANNER_CHOICES)}."
+            )
+
+        if self.scheduler not in SCHEDULER_CHOICES:
+            raise ValueError(
+                f"scheduler must be one of {sorted(SCHEDULER_CHOICES)}."
             )
 
         if self.conflict_manager not in CONFLICT_MANAGER_CHOICES:

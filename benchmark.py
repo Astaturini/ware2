@@ -4,12 +4,16 @@ import argparse
 import time
 
 from experiment.config import ExperimentConfig
-from experiment.factory import create_simulation_from_config
+from experiment.factory import (
+    create_conflict_manager_from_name,
+    create_path_planner_from_name,
+    create_scheduler,
+    create_scheduler_from_name,
+    create_simulation_from_config,
+)
 from simulation.config import BatteryConfig, ChargingConfig, FailureConfig
 from simulation.metrics import Metrics
-from simulation.pathfinding import AStarPathPlanner, BFSPathPlanner
 from simulation.robot import Robot, RobotStatus
-from simulation.scheduler import CostBasedScheduler
 from simulation.simulation import Simulation
 from simulation.task_generator import TaskGenerator
 from simulation.warehouse_layout import build_warehouse
@@ -20,40 +24,30 @@ Headless benchmark for the warehouse simulation.
 
 Examples:
 
-Default v0.5-style seeded spawn with BFS:
+Baseline local yield:
 
-    python benchmark.py --robots 6 --seed 42 --target 50 --path-planner bfs
+python benchmark.py \
+    --robots 8 \
+    --seed 42 \
+    --target 100 \
+    --conflict-manager local_yield
 
-A* path planning:
+Zone locks:
 
-    python benchmark.py --robots 6 --seed 42 --target 50 --path-planner astar
+python benchmark.py \
+    --robots 8 \
+    --seed 42 \
+    --target 100 \
+    --conflict-manager zone_locks
 
-Weighted A*:
+Priority reservation:
 
-    python benchmark.py --robots 6 --seed 42 --target 50 --path-planner weighted_astar
-
-Legacy hardcoded spawn points, comparable with old benchmark runs:
-
-    python benchmark.py \
-        --robots 6 \
-        --seed 42 \
-        --target 50 \
-        --spawn legacy \
-        --path-planner bfs
+python benchmark.py \
+    --robots 8 \
+    --seed 42 \
+    --target 100 \
+    --conflict-manager priority_reservation
 """
-
-
-def create_path_planner(name: str):
-    if name == "bfs":
-        return BFSPathPlanner()
-
-    if name == "astar":
-        return AStarPathPlanner(weight=1.0)
-
-    if name == "weighted_astar":
-        return AStarPathPlanner(weight=1.2)
-
-    raise ValueError(f"Unknown path planner: {name!r}")
 
 
 def create_legacy_robots(num_robots: int) -> list[Robot]:
@@ -112,8 +106,8 @@ def run_benchmark(args: argparse.Namespace) -> None:
     print(f"Robots: {args.robots}")
     print(f"Spawn mode: {args.spawn}")
     print(f"Path planner: {args.path_planner}")
-    print("Scheduler: baseline")
-    print("Conflict manager: local_yield")
+    print(f"Scheduler: {args.scheduler}")
+    print(f"Conflict manager: {args.conflict_manager}")
     print(
         "Replan Params: "
         f"block={args.block_replan}s, "
@@ -175,14 +169,16 @@ def run_benchmark(args: argparse.Namespace) -> None:
         warehouse = build_warehouse()
         robots = create_legacy_robots(args.robots)
         metrics = Metrics()
-        path_planner = create_path_planner(args.path_planner)
+
+        path_planner = create_path_planner_from_name(args.path_planner)
+        scheduler = create_scheduler_from_name(args.scheduler, path_planner)
 
         sim = Simulation(
             warehouse=warehouse,
             robots=robots,
             tasks=[],
             tick_interval=0.3,
-            scheduler=CostBasedScheduler(),
+            scheduler=scheduler,
             task_generator=TaskGenerator(warehouse=warehouse, seed=args.seed),
             metrics=metrics,
             blocked_replan_seconds=args.block_replan,
@@ -193,6 +189,12 @@ def run_benchmark(args: argparse.Namespace) -> None:
             seed=args.seed,
             path_planner=path_planner,
         )
+
+        if hasattr(sim, "set_conflict_manager"):
+            sim.set_conflict_manager(
+                create_conflict_manager_from_name(args.conflict_manager, sim)
+            )
+
     else:
         config_dict = {
             "seed": args.seed,
@@ -219,22 +221,40 @@ def run_benchmark(args: argparse.Namespace) -> None:
             "mtbf_ticks": mtbf_ticks,
             "mttr_ticks": args.mttr_ticks,
             "relocate_to_maintenance": True,
-            "scheduler": "baseline",
+            "scheduler": args.scheduler,
             "path_planner": args.path_planner,
-            "conflict_manager": "local_yield",
+            "conflict_manager": args.conflict_manager,
         }
 
         config = ExperimentConfig.from_dict(config_dict)
         sim = create_simulation_from_config(config)
+
+        # CLI arguments are authoritative for benchmarking.
+        path_planner = create_path_planner_from_name(args.path_planner)
+        sim._path_planner = path_planner
+        sim._scheduler = create_scheduler(config, path_planner)
+
+        if hasattr(sim, "set_conflict_manager"):
+            sim.set_conflict_manager(
+                create_conflict_manager_from_name(args.conflict_manager, sim)
+            )
+
         metrics = sim._metrics
 
     active_path_planner = type(getattr(sim, "_path_planner", None)).__name__
+    active_scheduler = type(getattr(sim, "_scheduler", None)).__name__
+    active_conflict_manager = type(
+        getattr(sim, "_conflict_manager", None)
+    ).__name__
+
     print(f"Active path planner: {active_path_planner}")
+    print(f"Active scheduler: {active_scheduler}")
+    print(f"Active conflict manager: {active_conflict_manager}")
     print()
 
     start_time = time.perf_counter()
-
     ticks = 0
+
     while metrics.tasks_completed < args.target and ticks < args.max_ticks:
         with sim._lock:
             sim._tick()
@@ -251,8 +271,8 @@ def run_benchmark(args: argparse.Namespace) -> None:
     print(f"--- Results after {ticks} ticks ---")
     print(f"Stop reason: {stop_reason}")
     print(f"Wall-clock time: {end_time - start_time:.2f} seconds")
-
     print()
+
     print("--- Existing v0.3 Metrics ---")
     print(f"Generated: {metrics.tasks_generated}")
     print(f"Assigned: {metrics.tasks_assigned}")
@@ -273,8 +293,8 @@ def run_benchmark(args: argparse.Namespace) -> None:
         "Avg Cycle Time: "
         f"{safe_divide(metrics.task_completion_time_total, metrics.tasks_completed):.1f} ticks"
     )
-
     print()
+
     print("--- v0.4 Battery / Charging / Failure Metrics ---")
 
     average_battery = safe_divide(metrics.battery_sum, metrics.battery_samples)
@@ -308,8 +328,8 @@ def run_benchmark(args: argparse.Namespace) -> None:
     print(f"Task Reassignments: {metrics.task_reassignments}")
     print(f"Failed Robot Events: {metrics.failed_robot_events}")
     print(f"Failure Downtime Ticks: {metrics.failure_downtime_ticks}")
-
     print()
+
     print("Per-Robot Utilization:")
 
     for robot_id in sorted(metrics.robot_total_ticks):
@@ -317,7 +337,6 @@ def run_benchmark(args: argparse.Namespace) -> None:
         total = metrics.robot_total_ticks.get(robot_id, 0)
         blocked = metrics.robot_blocked_ticks.get(robot_id, 0)
         replans = metrics.robot_replan_events.get(robot_id, 0)
-
         utilization = safe_divide(busy, total)
 
         print(
@@ -339,6 +358,7 @@ if __name__ == "__main__":
         default=6,
         help="Number of robots.",
     )
+
     parser.add_argument(
         "--spawn",
         choices=["seeded", "legacy"],
@@ -349,42 +369,73 @@ if __name__ == "__main__":
             "'legacy' uses the old hardcoded spawn points."
         ),
     )
+
     parser.add_argument(
         "--path-planner",
         choices=["bfs", "astar", "weighted_astar"],
         default="bfs",
         help="Path planning algorithm.",
     )
+
+    parser.add_argument(
+        "--scheduler",
+        choices=[
+            "baseline",
+            "priority",
+            "fifo",
+            "total_cost",
+            "auction",
+        ],
+        default="baseline",
+        help="Task allocation scheduler.",
+    )
+
+    parser.add_argument(
+        "--conflict-manager",
+        choices=[
+            "local_yield",
+            "zone_locks",
+            "priority_reservation",
+        ],
+        default="local_yield",
+        help="Conflict resolution manager.",
+    )
+
     parser.add_argument(
         "--display-name",
         type=str,
         default="benchmark",
         help="Display name metadata for seeded experiment config.",
     )
+
     parser.add_argument(
         "--block-replan",
         type=float,
         default=0.7,
         help="Blocked replan seconds.",
     )
+
     parser.add_argument(
         "--cooldown",
         type=int,
         default=7,
         help="Replan cooldown ticks.",
     )
+
     parser.add_argument(
         "--target",
         type=int,
         default=50,
         help="Target completed tasks.",
     )
+
     parser.add_argument(
         "--max-ticks",
         type=int,
         default=20_000,
         help="Safety tick limit.",
     )
+
     parser.add_argument(
         "--seed",
         type=int,
@@ -398,36 +449,42 @@ if __name__ == "__main__":
         default=100.0,
         help="Battery capacity.",
     )
+
     parser.add_argument(
         "--empty-move-energy",
         type=float,
-        default=0.7,
+        default=0.35,
         help="Energy consumed per empty movement step.",
     )
+
     parser.add_argument(
         "--loaded-move-energy",
         type=float,
-        default=1.0,
+        default=0.5,
         help="Energy consumed per loaded movement step.",
     )
+
     parser.add_argument(
         "--critical-battery",
         type=float,
-        default=20.0,
+        default=15.0,
         help="Critical battery threshold.",
     )
+
     parser.add_argument(
         "--opportunistic-charge-threshold",
         type=float,
-        default=40.0,
+        default=30.0,
         help="Opportunistic charging threshold.",
     )
+
     parser.add_argument(
         "--idle-opportunistic-ticks",
         type=int,
         default=10,
         help="Idle ticks before opportunistic charging is allowed.",
     )
+
     parser.add_argument(
         "--battery-safety-margin",
         type=float,
@@ -441,6 +498,7 @@ if __name__ == "__main__":
         default=4,
         help="Charging station capacity.",
     )
+
     parser.add_argument(
         "--charge-duration-ticks",
         type=int,
@@ -453,12 +511,14 @@ if __name__ == "__main__":
         action="store_true",
         help="Enable random robot failures.",
     )
+
     parser.add_argument(
         "--mtbf-ticks",
         type=float,
         default=0.0,
         help="Mean ticks between failures. Required > 0 if --failure-enabled.",
     )
+
     parser.add_argument(
         "--mttr-ticks",
         type=int,
