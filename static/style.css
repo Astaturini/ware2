@@ -707,3 +707,66 @@ summary:hover {
 [hidden] {
     display: none !important;
 }
+
+/* =========================================================
+   v0.6 layout patches — algorithms setup + run sidebar
+   ========================================================= */
+
+/* Setup: 2-column card grid keeps everything on one screen */
+.setup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.setup-grid .card {
+    margin: 0;
+}
+.setup-grid .card.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Run view: warehouse left, sidebar right */
+.run-layout {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+}
+.run-main {
+    flex: 0 0 auto;
+}
+.run-sidebar {
+    flex: 1 1 300px;
+    min-width: 260px;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.run-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.run-controls button {
+    flex: 1 1 0;
+    min-width: 80px;
+}
+
+/* Compact legend inside run-main */
+.run-main .legend-container {
+    font-size: 0.75em;
+    margin-top: 6px;
+}
+
+/* Stack vertically on narrow screens */
+@media (max-width: 1100px) {
+    .run-layout {
+        flex-direction: column;
+    }
+    .run-sidebar {
+        max-width: 100%;
+    }
+    .setup-grid {
+        grid-template-columns: 1fr;
+    }
+}

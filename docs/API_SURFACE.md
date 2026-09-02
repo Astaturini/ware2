@@ -6,67 +6,56 @@ file should be updated immediately.
 
 ## Project State
 
-- **Project Name:** warehouse_simulator
-- **Current Version:** v0.5.0
-- **Git Tag:** v0.5.0
-- **Python Version:** Python 3.13+
-- **Dependencies:** Flask, pandas, numpy, ECharts (frontend), Optuna (optional)
-- **Run Command:** `python app.py`
-- **Production:** `gunicorn app:app` (never the Flask dev server when hosted)
+Project Name: warehouse_simulator
+Current Version: v0.6.0
+Git Tag: v0.6.0
+Python Version: Python 3.13+
+Dependencies: Flask, pandas, numpy, ECharts (frontend), Optuna (optional)
+Run Command: `python app.py`
+Production: `gunicorn app:app` (never the Flask dev server when hosted)
 
 ## Where The Project Is Now
 
-v0.5.0 is an Experimentation, Data Recording, Visualization, and Analysis
-layer built on top of the UNCHANGED v0.4.0 simulation core.
+v0.6.0 is an Algorithm Plugin Layer built on top of the UNCHANGED v0.5.0
+experimentation, data recording, visualization, and analysis infrastructure.
 
-v0.4.0 preserves the v0.3.1 traffic/conflict-resolution system and adds
-battery simulation, charging behavior, charging-related waiting, task
-interruption/reassignment, congestion metrics, and basic robot failure/repair
-behavior.
+v0.6 extracts three simulation responsibilities into injectable plugins:
 
-The 26×21 layout, racks A–H, named storage locations, receiving, buffer, pick
-stations, consolidation, packing, staging, shipping, charging, and maintenance
-areas remain unchanged.
+- **Path Planning** — `PathPlanner` protocol with BFS, A*, and Weighted A*
+  implementations.
+- **Task Allocation / Scheduling** — `Scheduler` protocol with cost-based,
+  priority, FIFO, total-cost, and auction implementations.
+- **Conflict Resolution** — `ConflictManager` protocol with local yield,
+  zone lock, and prioritized reservation implementations.
 
-The task model now includes logical load state and interruption/recovery
-state. The robot model now includes battery, operational mode, idle time,
-charger waiting time, interrupted-task memory, and repair state.
+The v0.5 experimentation layer (config, recorder, runner, storage, analysis)
+is unchanged. The v0.4 battery/charging/failure simulation core is unchanged.
+The v0.3.1 traffic model is preserved as the `local_yield` baseline.
 
-Runtime architecture is split into task generation, baseline cost-based
-scheduling, pathfinding, robot motion, traffic resolution, battery/charging,
-failure/repair, and metrics collection.
+v0.5 separates six responsibilities (unchanged):
 
-The major change from v0.3.1 is that route feasibility is no longer assumed
-to remain valid after assignment. v0.3 conflict resolution can cause yielding,
-backtracking, detours, and replanning, so v0.4 continuously re-evaluates
-battery feasibility after route changes and during execution.
-
-If a task becomes battery-infeasible, the robot interrupts the task, preserves
-task/load state, seeks charging, and the interrupted task can later be resumed
-by the original robot or reassigned to another robot.
-
-v0.5 separates six responsibilities:
-
-1. Simulation (`simulation/`) — unchanged v0.4 core.
-2. Experiment configuration (`experiment/config.py`) — authoritative run
-   parameters.
-3. Metrics recorder (`experiment/recorder.py`) — observes, never modifies.
-4. Experiment runner (`experiment/runner.py`) — lifecycle, stopping, saving.
-5. Data storage (`data/runs/<run_id>/`) — immutable per-run artifacts.
-6. Visualization/analysis (`analysis/` + frontend) — reads saved data only.
+- Simulation (`simulation/`) — v0.4 core with v0.6 plugin injection points.
+- Experiment configuration (`experiment/config.py`) — authoritative run
+  parameters.
+- Metrics recorder (`experiment/recorder.py`) — observes, never modifies.
+- Experiment runner (`experiment/runner.py`) — lifecycle, stopping, saving.
+- Data storage (`data/runs/<run_id>/`) — immutable per-run artifacts.
+- Visualization/analysis (`analysis/` + frontend) — reads saved data only.
 
 The simulation does not depend on plotting. The plotting system never needs
 live simulation objects. A completed experiment is fully reproducible and
 analyzable from its saved files.
 
 The UI is a multi-stage workflow, not one dashboard:
+
 Setup -> Run (live) or Fast (headless) -> Results -> Experiments ->
 Visualization -> Analysis -> Compare.
+
 View transitions are a client-side state machine; the backend never redirects.
 
 ## Breaking Changes / Changes From v0.3.1 (v0.4.0)
 
-### Core Architecture
+Core Architecture
 
 - Added `simulation/config.py` containing `BatteryConfig`, `ChargingConfig`,
   and `FailureConfig`.
@@ -84,7 +73,7 @@ View transitions are a client-side state machine; the backend never redirects.
 - Added taskless routing helper `_route_robot_to_cell()` for charger and
   maintenance movement.
 
-### Data Models
+Data Models
 
 - `Robot` gained `RobotMode` and v0.4 battery/charging/failure fields.
 - `Task` gained `LoadState`, `INTERRUPTED` status, interruption count,
@@ -92,7 +81,7 @@ View transitions are a client-side state machine; the backend never redirects.
 - `Metrics` gained battery, charging, waiting-breakdown, interruption,
   failure, and congestion-related fields/methods.
 
-### Frontend / CLI
+Frontend / CLI
 
 - `benchmark.py` accepts v0.4 battery, charging, and failure parameters.
 - `optimize_optuna.py` accepts fixed v0.4 parameters and optional
@@ -124,45 +113,121 @@ View transitions are a client-side state machine; the backend never redirects.
 - New persistent storage layout under `data/runs/`.
 - `benchmark.py` and `optimize_optuna.py` unchanged.
 
-### Important Code Default Note
+## Breaking Changes / Changes From v0.5.0 (v0.6.0)
+
+Core Architecture
+
+- `simulation/pathfinding.py` UPDATED: added `PathPlanner` protocol,
+  `BFSPathPlanner`, and `AStarPathPlanner` classes. `find_shortest_path()`
+  preserved as backward-compatible wrapper delegating to `BFSPathPlanner`.
+- `simulation/scheduler.py` UPDATED: added `PriorityScheduler`,
+  `FIFOScheduler`, `TotalCostScheduler`, and `AuctionScheduler` alongside
+  existing `CostBasedScheduler`. All implement the `Scheduler` protocol.
+- Added `simulation/conflict.py` containing `ConflictManager` protocol,
+  `LocalYieldConflictManager`, `ZoneLockConflictManager`, and
+  `PrioritizedReservationConflictManager`.
+- Added `simulation/reservations.py` containing `ReservationTable`.
+- `Simulation` constructor gained keyword-only `path_planner` argument.
+- `Simulation` gained `set_conflict_manager()` public method.
+- `Simulation` gained `_conflict_manager` internal state, initialized to
+  `LocalYieldConflictManager(self)`.
+- `Simulation._tick()` now calls `self._conflict_manager.tick()` before
+  `_advance_robots()`.
+- `Simulation._advance_robots()` now calls
+  `self._conflict_manager.allow_step()` before the occupied-cell check.
+- `Simulation._congestion_snapshot()` reads
+  `self._conflict_manager.active_conflicts`.
+- All conflict-related private methods moved from `Simulation` into
+  `LocalYieldConflictManager`.
+
+Experiment Configuration
+
+- `ExperimentConfig` gained `path_planner: str = "bfs"` field.
+- `ExperimentConfig` gained `conflict_manager: str = "local_yield"` field.
+- `ExperimentConfig.__post_init__` validates `path_planner` against
+  `PATH_PLANNER_CHOICES` and `conflict_manager` against
+  `CONFLICT_MANAGER_CHOICES`.
+
+Factory
+
+- `experiment/factory.py` gained `create_path_planner_from_name(name)`.
+- `experiment/factory.py` gained
+  `create_scheduler_from_name(name, path_planner)`.
+- `experiment/factory.py` gained
+  `create_conflict_manager_from_name(name, sim)`.
+- `experiment/factory.py` gained `create_path_planner(config)`.
+- `experiment/factory.py` gained `create_scheduler(config, path_planner)`.
+- `experiment/factory.py` gained `create_conflict_manager(config, sim)`.
+- `create_simulation_from_config()` now creates and injects the configured
+  scheduler, path planner, and conflict manager.
+
+CLI
+
+- `benchmark.py` gained `--path-planner` argument
+  (choices: `bfs`, `astar`, `weighted_astar`; default: `bfs`).
+- `benchmark.py` gained `--scheduler` argument
+  (choices: `baseline`, `priority`, `fifo`, `total_cost`, `auction`;
+  default: `baseline`).
+- `benchmark.py` gained `--conflict-manager` argument
+  (choices: `local_yield`, `zone_locks`, `priority_reservation`;
+  default: `local_yield`).
+- `benchmark.py` prints active path planner, scheduler, and conflict manager
+  class names before running.
+- `benchmark.py` prints conflict manager diagnostics after running
+  (`tick_calls`, `robots_with_paths`, `locks_created`,
+  `reservations_created`, `denied_steps`).
+
+Frontend
+
+- Setup view gained three algorithm dropdowns:
+  `cfg-path-planner`, `cfg-scheduler`, `cfg-conflict-manager`.
+- Setup view uses `.setup-grid` two-column card layout.
+- Run view restructured: `.run-layout` flex container with `.run-main`
+  (warehouse + legend) and `.run-sidebar` (controls + dashboard + task list).
+- Pause/Resume/Reset buttons moved to `.run-controls` at top of sidebar.
+- `readExperimentConfig()` includes `path_planner`, `scheduler`, and
+  `conflict_manager`.
+
+CSS
+
+- Added `.setup-grid`, `.setup-grid .card`, `.setup-grid .card.full-width`.
+- Added `.run-layout`, `.run-main`, `.run-sidebar`, `.run-controls`.
+- Added responsive breakpoint at 1100px.
+
+## Important Code Default Note
 
 The actual v0.3.1 code defaults are:
 
-    blocked_replan_seconds = 0.7
-    replan_cooldown_ticks = 7
+- blocked_replan_seconds = 0.7
+- replan_cooldown_ticks = 7
 
 Older documentation may mention `0.9` and `2`. The code defaults are the
 source of truth.
 
----
-
 ## Coordinate System
 
 Coordinates are `(x, y)`.
-
-- `x` increases to the right.
-- `y` increases downward.
-- Origin is the top-left corner.
+`x` increases to the right.
+`y` increases downward.
+Origin is the top-left corner.
 
 ## Naming Rules
 
-### Python
+Python
 
 - Classes use `PascalCase`.
 - Functions and variables use `snake_case`.
 - Private methods start with `_`.
 - Enum members use `UPPER_SNAKE_CASE`.
 
-### JSON
+JSON
 
 - JSON keys use `camelCase`.
 
-### JavaScript
+JavaScript
 
 - Functions and variables use `camelCase`.
 - DOM element variables usually end with `El`.
-
----
 
 ## Python Modules
 
@@ -178,10 +243,10 @@ Configuration dataclasses for v0.4 features.
 Fields:
 
 - `capacity: float = 100.0`
-- `empty_move_energy: float = 0.7`
-- `loaded_move_energy: float = 1.0`
-- `critical_battery: float = 20.0`
-- `opportunistic_charge_threshold: float = 40.0`
+- `empty_move_energy: float = 0.35`
+- `loaded_move_energy: float = 0.5`
+- `critical_battery: float = 15.0`
+- `opportunistic_charge_threshold: float = 30.0`
 - `idle_ticks_before_opportunistic_charge: int = 10`
 - `safety_margin: float = 5.0`
 - `empty_battery_recovery_ticks: int = 15`
@@ -243,8 +308,6 @@ Important behavior:
   a `MAINTENANCE` cell.
 - If false, failed robots remain where they failed and become obstacles.
 
----
-
 ### `simulation/charging.py` (NEW in v0.4.0)
 
 Finite-capacity charging resource model.
@@ -258,14 +321,10 @@ Fields:
 
 - `capacity: int`
 - `charge_duration_ticks: int`
-- `active: dict[str, int]`
-  - robot_id → remaining charging ticks.
-- `active_cells: dict[str, tuple[int, int]]`
-  - robot_id → charging cell occupied by that robot.
-- `reserved_cells: dict[str, tuple[int, int]]`
-  - robot_id → charging cell reserved while robot is moving to charge.
-- `waiting: set[str]`
-  - robot ids waiting for charger capacity.
+- `active: dict[str, int]` — robot_id -> remaining charging ticks.
+- `active_cells: dict[str, tuple[int, int]]` — robot_id -> charging cell.
+- `reserved_cells: dict[str, tuple[int, int]]` — robot_id -> reserved cell.
+- `waiting: set[str]` — robot ids waiting for charger capacity.
 
 Properties:
 
@@ -296,8 +355,6 @@ Important behavior:
   unreserved slot if capacity allows.
 - `tick()` advances charging timers and returns robot ids that finished.
 
----
-
 ### `simulation/warehouse.py`
 
 #### `CellType`
@@ -305,28 +362,16 @@ Important behavior:
     class CellType(str, Enum)
 
 Members:
-
-- `EMPTY`
-- `SHELF`
-- `AISLE`
-- `MAIN_AISLE`
-- `PACKING`
-- `RECEIVING`
-- `SHIPPING`
-- `CHARGING`
-- `INTERSECTION`
-- `BUFFER`
-- `PICK_STATION`
-- `CONSOLIDATION`
-- `STAGING`
-- `MAINTENANCE`
+`EMPTY`, `SHELF`, `AISLE`, `MAIN_AISLE`, `PACKING`, `RECEIVING`,
+`SHIPPING`, `CHARGING`, `INTERSECTION`, `BUFFER`, `PICK_STATION`,
+`CONSOLIDATION`, `STAGING`, `MAINTENANCE`
 
 Values should be the same as member names:
 
-    CellType.EMPTY.value == "EMPTY"
-    CellType.SHELF.value == "SHELF"
-    CellType.CHARGING.value == "CHARGING"
-    CellType.MAINTENANCE.value == "MAINTENANCE"
+- CellType.EMPTY.value == "EMPTY"
+- CellType.SHELF.value == "SHELF"
+- CellType.CHARGING.value == "CHARGING"
+- CellType.MAINTENANCE.value == "MAINTENANCE"
 
 Important:
 
@@ -340,21 +385,21 @@ Important:
 
 Supported layout symbols:
 
-- `.` → `EMPTY`
-- `E` → `EMPTY`
-- `#` → `SHELF`
-- `a` → `AISLE`
-- `M` → `MAIN_AISLE`
-- `P` → `PACKING`
-- `R` → `RECEIVING`
-- `S` → `SHIPPING`
-- `C` → `CHARGING`
-- `I` → `INTERSECTION`
-- `B` → `BUFFER`
-- `K` → `PICK_STATION`
-- `O` → `CONSOLIDATION`
-- `G` → `STAGING`
-- `X` → `MAINTENANCE`
+- `.` -> `EMPTY`
+- `E` -> `EMPTY`
+- `#` -> `SHELF`
+- `a` -> `AISLE`
+- `M` -> `MAIN_AISLE`
+- `P` -> `PACKING`
+- `R` -> `RECEIVING`
+- `S` -> `SHIPPING`
+- `C` -> `CHARGING`
+- `I` -> `INTERSECTION`
+- `B` -> `BUFFER`
+- `K` -> `PICK_STATION`
+- `O` -> `CONSOLIDATION`
+- `G` -> `STAGING`
+- `X` -> `MAINTENANCE`
 
 #### `Location`
 
@@ -423,8 +468,6 @@ Important behavior:
 - `Simulation.get_state()` should strip dynamic `RESUME-*` locations from the
   serialized warehouse payload to avoid unnecessary frontend rebuilds.
 
----
-
 ### `simulation/robot.py` (UPDATED in v0.4.0)
 
 #### `RobotStatus`
@@ -436,19 +479,13 @@ Members:
 - `IDLE = "Idle"`
 - `MOVING = "Moving"`
 
-#### `RobotMode` (NEW)
+#### `RobotMode` (NEW in v0.4.0)
 
     class RobotMode(str, Enum)
 
 Members:
-
-- `IDLE`
-- `MOVING`
-- `TO_CHARGER`
-- `WAITING_FOR_CHARGER`
-- `CHARGING`
-- `FAILED`
-- `REPAIRING`
+`IDLE`, `MOVING`, `TO_CHARGER`, `WAITING_FOR_CHARGER`, `CHARGING`,
+`FAILED`, `REPAIRING`
 
 Important behavior:
 
@@ -517,21 +554,13 @@ Important behavior:
 - `interrupted_task_id` allows a robot to attempt to reclaim its own
   interrupted task after charging/repair if the task is still unassigned.
 
----
-
 ### `simulation/task.py` (UPDATED in v0.4.0)
 
 #### `TaskType`
 
     class TaskType(str, Enum)
 
-Members:
-
-- `PUTAWAY`
-- `PICK`
-- `PACK`
-- `SHIP`
-- `LEGACY`
+Members: `PUTAWAY`, `PICK`, `PACK`, `SHIP`, `LEGACY`
 
 #### `TaskStatus`
 
@@ -543,7 +572,7 @@ Members:
 - `ASSIGNED = "Assigned"`
 - `COMPLETED = "Completed"`
 - `FAILED = "Failed"`
-- `INTERRUPTED = "Interrupted"` (NEW)
+- `INTERRUPTED = "Interrupted"` (NEW in v0.4.0)
 
 #### `TaskPhase`
 
@@ -555,7 +584,7 @@ Members:
 - `TO_DROPOFF = "To dropoff"`
 - `DONE = "Done"`
 
-#### `LoadState` (NEW)
+#### `LoadState` (NEW in v0.4.0)
 
     class LoadState(str, Enum)
 
@@ -612,8 +641,6 @@ Important behavior:
 - `interruption_count` supports reassignment metrics.
 - `last_assigned_robot_id` supports reassignment detection.
 
----
-
 ### `simulation/task_generator.py`
 
 #### `TaskGenerator`
@@ -655,9 +682,57 @@ Important behavior:
 - If `seed` is None, deterministic round-robin behavior is preserved.
 - Reset re-seeds with the same seed.
 
----
+### `simulation/pathfinding.py` (UPDATED in v0.6.0)
 
-### `simulation/scheduler.py` (UPDATED in v0.4.0)
+#### `PathPlanner` (NEW in v0.6.0)
+
+    class PathPlanner(Protocol)
+
+Method:
+
+- `find_path(warehouse, start, goal, blocked_cells=None) -> list[tuple[int, int]] | None`
+
+Return meaning:
+
+- `[]` — already at the goal.
+- `[...]` — path cells after `start`.
+- `None` — no path found.
+
+#### `BFSPathPlanner` (NEW in v0.6.0)
+
+    class BFSPathPlanner
+
+Implements `PathPlanner`. Uses BFS. Returns shortest paths. This is the
+default planner and produces identical results to the v0.5
+`find_shortest_path`.
+
+#### `AStarPathPlanner` (NEW in v0.6.0)
+
+    class AStarPathPlanner
+
+Constructor: `AStarPathPlanner(weight: float = 1.0)`
+
+Implements `PathPlanner`. Uses A* with Manhattan heuristic.
+
+- `weight = 1.0`: Standard A*. On a uniform 4-connected grid, returns
+  shortest paths like BFS, but may choose a different shortest path when
+  ties exist.
+- `weight > 1.0`: Weighted A*. Faster search, but paths may be suboptimal.
+
+#### `find_shortest_path` (preserved)
+
+    find_shortest_path(
+        warehouse: Warehouse,
+        start: tuple[int, int],
+        goal: tuple[int, int],
+        blocked_cells: Iterable[tuple[int, int]] | None = None,
+    ) -> list[tuple[int, int]] | None
+
+Backward-compatible wrapper. Delegates to a module-level `BFSPathPlanner`
+instance. Existing modules that still import `find_shortest_path` will keep
+working. New code should use an injected `PathPlanner` instead.
+
+### `simulation/scheduler.py` (UPDATED in v0.6.0)
 
 #### `Assignment`
 
@@ -683,21 +758,159 @@ Method:
 
     class CostBasedScheduler
 
-Public methods:
+Baseline scheduler. Chooses the idle robot with the shortest feasible path to
+each pending task pickup. Processes tasks by `(-priority, created_at, id)`.
 
-- `select_assignments(pending_tasks, robots, warehouse, blocked_cells=None) -> list[Assignment]`
+Constructor accepts optional `path_planner` keyword argument. Defaults to
+`BFSPathPlanner()`.
+
+#### `PriorityScheduler` (NEW in v0.6.0)
+
+    class PriorityScheduler
+
+Nearest-pickup dispatcher with correct priority ordering. Processes tasks by
+`(priority, created_at, id)` where lower `priority` value = higher urgency.
+For each task, assigns the nearest feasible robot to the pickup.
+
+#### `FIFOScheduler` (NEW in v0.6.0)
+
+    class FIFOScheduler
+
+Nearest-pickup dispatcher that processes oldest tasks first. Processes tasks
+by `(created_at, priority, id)`. For each task, assigns the nearest feasible
+robot to the pickup.
+
+#### `TotalCostScheduler` (NEW in v0.6.0)
+
+    class TotalCostScheduler
+
+Battery/energy-aware scheduler. For each task, computes the estimated total
+cost as `distance_to_pickup + distance_pickup_to_dropoff`. Assigns the robot
+with the lowest total cost. Constructor accepts optional `path_planner`,
+`empty_move_energy`, `loaded_move_energy`, `safety_margin`, and
+`critical_battery` keyword arguments.
+
+#### `AuctionScheduler` (NEW in v0.6.0)
+
+    class AuctionScheduler
+
+Centralized first-price auction approximation. Each remaining task receives
+bids from each remaining robot. The lowest total bid wins. Bid cost is
+`distance_to_pickup + distance_pickup_to_dropoff`. Iterates until all tasks
+or robots are exhausted.
+
+### `simulation/conflict.py` (NEW in v0.6.0)
+
+#### `ConflictManager`
+
+    class ConflictManager(Protocol)
+
+Methods:
+
+- `handle_blocked_robot(robot, next_cell) -> None`
+- `advance_replanning_robot(robot, occupied) -> None`
+- `release_conflict(robot) -> None`
+- `clear_conflicts_for_robot(robot) -> None`
+- `reset() -> None`
+- `tick(current_tick: int, robots: list[Robot]) -> None`
+- `allow_step(robot, next_cell, occupied) -> bool`
+- `release_robot(robot_id: str) -> None`
+
+Property:
+
+- `active_conflicts -> int`
+
+#### `LocalYieldConflictManager`
+
+    class LocalYieldConflictManager
+
+Constructor: `LocalYieldConflictManager(sim: Simulation)`
+
+Baseline reactive conflict manager. Contains all the v0.3.1
+traffic/conflict resolution logic previously in `Simulation`. `tick()` and
+`allow_step()` are no-ops. `release_robot()` is a no-op.
 
 Important behavior:
 
-- Centralized baseline scheduler.
-- Chooses the idle robot with the shortest feasible path to each pending task
-  pickup.
-- v0.4 adds a backward-compatible guard: robots whose `mode` is not `Idle`
-  should not be considered available, even if `status == Idle`.
-- This prevents charging, waiting-for-charger, failed, or repairing robots
-  from being assigned tasks if a caller passes all robots directly.
+- Preserves the v0.3.1 local deadlock-recovery mechanism exactly.
+- `handle_blocked_robot()`, `advance_replanning_robot()`,
+  `release_conflict()`, `clear_conflicts_for_robot()` implement the
+  existing yield logic.
+- `_make_robot_yield()`, `_select_yielding_robot()`, `_yield_score()`,
+  `_can_yield()`, `_choose_yield_step()` are private helpers.
+- `_complete_yield()` resumes normal routing after a yield maneuver.
 
----
+#### `ZoneLockConflictManager` (NEW in v0.6.0)
+
+    class ZoneLockConflictManager
+
+Constructor: `ZoneLockConflictManager(sim: Simulation, lookahead: int = 2)`
+
+Inherits from `LocalYieldConflictManager`. Adds proactive path-corridor zone
+locks on top of the reactive local yield system.
+
+Important behavior:
+
+- `tick()` rebuilds zone locks from each robot's current path. Claims the
+  next `lookahead` cells on each robot's path. Robots are sorted by
+  `_yield_score()` (less willing to yield claims first).
+- `allow_step()` denies a step if the target cell is locked by another robot,
+  unless the robot has been blocked for too long (starvation fallback:
+  `blocked_ticks >= blocked_replan_threshold_ticks * 2`).
+- Diagnostic counters: `denied_steps`, `locks_created`, `tick_calls`,
+  `robots_with_paths`.
+- Failed, repairing, and charging robots do not create claims.
+
+#### `PrioritizedReservationConflictManager` (NEW in v0.6.0)
+
+    class PrioritizedReservationConflictManager
+
+Constructor:
+`PrioritizedReservationConflictManager(sim: Simulation, horizon: int = 32)`
+
+Inherits from `LocalYieldConflictManager`. Adds approximate prioritized
+reservation-based conflict management on top of the reactive local yield
+system.
+
+Important behavior:
+
+- `tick()` rebuilds vertex reservations from each robot's current path using
+  a `ReservationTable`. Robots are sorted by a priority score (higher score
+  reserves first). Priority score considers: robot mode, task priority,
+  loaded status, battery urgency, and blocked time.
+- `allow_step()` denies a step if the target cell is reserved by another robot
+  at the next tick, unless the robot has been blocked for too long
+  (starvation fallback: `blocked_ticks >= blocked_replan_threshold_ticks * 2`).
+- Diagnostic counters: `denied_steps`, `reservations_created`, `tick_calls`,
+  `robots_with_paths`.
+- Failed, repairing, and charging robots do not create reservations.
+- This is not full space-time MAPF. It is a practical proactive traffic
+  manager for experimentation.
+
+### `simulation/reservations.py` (NEW in v0.6.0)
+
+#### `ReservationTable`
+
+    class ReservationTable
+
+Simple vertex reservation table. Tracks which robot intends to occupy which
+cell at which tick. Does not track edge reservations (swap collisions).
+
+Fields:
+
+- `_vertex_reservations: dict[tuple[int, int], dict[int, str]]`
+  — cell -> tick -> robot_id.
+- `_robot_reservations: dict[str, set[tuple[tuple[int, int], int]]]`
+  — robot_id -> set of reserved (cell, tick) pairs.
+
+Methods:
+
+- `reset() -> None`
+- `reserve(robot_id: str, cell: tuple[int, int], tick: int) -> bool`
+- `owner(cell: tuple[int, int], tick: int) -> str | None`
+- `is_free(cell: tuple[int, int], tick: int, robot_id: str) -> bool`
+- `release_robot(robot_id: str) -> None`
+- `prune(current_tick: int) -> None`
 
 ### `simulation/metrics.py` (UPDATED in v0.4.0)
 
@@ -778,38 +991,7 @@ Important behavior:
 - Battery samples are used to compute average battery.
 - Charger waiting events are used to compute average charger wait.
 
----
-
-### `simulation/pathfinding.py`
-
-#### `find_shortest_path`
-
-    find_shortest_path(
-        warehouse: Warehouse,
-        start: tuple[int, int],
-        goal: tuple[int, int],
-        blocked_cells: Iterable[tuple[int, int]] | None = None,
-    ) -> list[tuple[int, int]] | None
-
-Return meaning:
-
-- `[]` — already at the goal.
-- `[...]` — path cells after `start`.
-- `None` — no path found.
-
-Important behavior:
-
-- Uses BFS.
-- Avoids blocked cells.
-- Treats all non-shelf cells as passable.
-- May optionally avoid additional occupied cells supplied by the caller.
-- The goal is removed from the blocked set before BFS.
-- v0.4 battery feasibility may use this helper with failed-robot cells or
-  occupied cells depending on the call site.
-
----
-
-### `simulation/simulation.py` (UPDATED in v0.4.0)
+### `simulation/simulation.py` (UPDATED in v0.6.0)
 
 #### `Simulation`
 
@@ -832,6 +1014,7 @@ Constructor:
         charging_config: ChargingConfig | None = None,
         failure_config: FailureConfig | None = None,
         seed: int | None = None,
+        path_planner: PathPlanner | None = None,
     )
 
 Public methods:
@@ -842,6 +1025,7 @@ Public methods:
 - `simulation.reset() -> None`
 - `simulation.stop() -> None`
 - `simulation.get_state() -> dict[str, Any]`
+- `simulation.set_conflict_manager(manager: ConflictManager) -> None` (NEW)
 
 Property:
 
@@ -864,7 +1048,6 @@ Existing:
 - `simulation._thread`
 - `simulation._blocked_replan_threshold_ticks`
 - `simulation._replan_cooldown_ticks`
-- `simulation._active_conflict_yielder`
 
 New v0.4:
 
@@ -878,112 +1061,39 @@ New v0.4:
 - `simulation._failure_rng`
 - `simulation._dynamic_location_names`
 
-Existing important private methods:
+New v0.6:
 
-- `simulation._validate_initial_state(robots, tasks) -> None`
-- `simulation._run() -> None`
-- `simulation._tick() -> None`
-- `simulation._prune_old_tasks() -> None`
-- `simulation._assign_pending_tasks() -> None`
-- `simulation._begin_task(robot: Robot, task: Task) -> None`
-- `simulation._advance_robots() -> None`
-- `simulation._advance_replanning_robot(robot: Robot, occupied: set[tuple[int, int]]) -> None`
-- `simulation._complete_yield(robot: Robot) -> None`
-- `simulation._handle_blocked_robot(robot: Robot, next_cell: tuple[int, int]) -> None`
-- `simulation._make_robot_yield(robot: Robot, blocker: Robot, pair_key: frozenset[str]) -> bool`
-- `simulation._select_yielding_robot(robot: Robot, blocker: Robot) -> Robot`
-- `simulation._yield_score(robot: Robot) -> int`
-- `simulation._robot_is_in_active_conflict(robot_id: str) -> bool`
-- `simulation._can_yield(robot: Robot) -> bool`
-- `simulation._choose_yield_step(robot: Robot, blocker: Robot, occupied: set[tuple[int, int]]) -> tuple[int, int] | None`
-- `simulation._claimed_cells(exclude_robot_id: str | None = None) -> set[tuple[int, int]]`
-- `simulation._attempt_resume_route(robot: Robot) -> bool`
-- `simulation._route_robot_to(robot: Robot, task: Task, destination: tuple[int, int]) -> None`
-- `simulation._handle_arrival(robot: Robot) -> None`
-- `simulation._release_conflict(robot: Robot) -> None`
-- `simulation._clear_conflicts_for_robot(robot: Robot) -> None`
-- `simulation._occupied_cells(exclude_robot_id: str | None = None) -> set[tuple[int, int]]`
-- `simulation._robot_at(cell: tuple[int, int], exclude_robot_id: str | None = None) -> Robot | None`
-- `simulation._task_priority(task_id: str | None) -> int`
-
-New v0.4 private methods:
-
-Lifecycle / safety:
-
-- `simulation._safe_metric(method_name: str, *args: Any) -> None`
-- `simulation._congestion_snapshot() -> dict[str, Any]`
-
-Cell scanning / relocation:
-
-- `simulation._scan_cells(cell_type: CellType) -> list[tuple[int, int]]`
-- `simulation._nearest_passable_cell(robot: Robot, forbidden_cell_types: set[CellType]) -> tuple[int, int] | None`
-- `simulation._relocate_robot_to_maintenance(robot: Robot) -> None`
-- `simulation._relocate_waiting_robot_off_charger(robot: Robot) -> None`
-- `simulation._try_exit_maintenance(robot: Robot) -> None`
-
-Battery:
-
-- `simulation._robot_is_loaded(robot: Robot) -> bool`
-- `simulation._consume_move_energy(robot: Robot) -> None`
-- `simulation._failed_robot_cells(exclude_robot_id: str | None = None) -> set[tuple[int, int]]`
-- `simulation._path_distance(start: tuple[int, int], goal: tuple[int, int], blocked_cells: set[tuple[int, int]] | None = None) -> int | None`
-- `simulation._remaining_task_energy(robot: Robot, task: Task) -> float | None`
-- `simulation._battery_feasible_for_new_task(robot: Robot, task: Task) -> bool`
-- `simulation._update_battery_checks() -> None`
-- `simulation._check_battery_for_active_task(robot: Robot) -> None`
-- `simulation._handle_battery_depleted(robot: Robot) -> None`
-
-Task interruption / recovery:
-
-- `simulation._add_resume_location(task: Task, cell: tuple[int, int]) -> str`
-- `simulation._interrupt_current_task(robot: Robot, reason: str) -> None`
-- `simulation._try_reclaim_interrupted_task(robot: Robot) -> None`
-
-Charging:
-
-- `simulation._enter_charging(robot: Robot, reason: str) -> None`
-- `simulation._enter_waiting_without_reservation(robot: Robot) -> None`
-- `simulation._choose_free_charging_cell(robot: Robot) -> tuple[int, int] | None`
-- `simulation._handle_charging_arrival(robot: Robot) -> None`
-- `simulation._update_charging_station() -> None`
-- `simulation._update_charger_waiting() -> None`
-- `simulation._try_dispatch_waiting_robot(robot: Robot) -> bool`
-- `simulation._update_idle_and_opportunistic_charging() -> None`
-
-Failure / repair:
-
-- `simulation._update_failures_and_repairs() -> None`
-- `simulation._fail_robot(robot: Robot) -> None`
-- `simulation._update_robot_repairs() -> None`
-
-Taskless routing:
-
-- `simulation._route_robot_to_cell(robot: Robot, destination: tuple[int, int]) -> bool`
+- `simulation._path_planner` — injected `PathPlanner` instance. Defaults to
+  `BFSPathPlanner()`.
+- `simulation._conflict_manager` — injected `ConflictManager` instance.
+  Defaults to `LocalYieldConflictManager(self)`.
 
 Important behavior:
 
 - `start()` starts the background simulation thread.
 - `pause()` stops ticking but keeps state.
 - `resume()` continues ticking.
-- `reset()` restores robots and tasks to their initial state, clears traffic
-  conflict state, clears dynamic resume locations, resets charging station
-  state, resets failure RNG, and restores robot batteries/modes.
+- `reset()` restores robots and tasks to their initial state, clears conflict
+  manager state via `self._conflict_manager.reset()`, clears dynamic resume
+  locations, resets charging station state, resets failure RNG, and restores
+  robot batteries/modes.
+- `set_conflict_manager()` replaces the active conflict manager and rebinds
+  its `_sim` reference.
 - `get_state()` returns a JSON-serializable snapshot.
 - `get_state()` should strip dynamic `RESUME-*` locations from the warehouse
   payload.
-- `_validate_initial_state()` resolves task pickup/dropoff names and raises
-  `ValueError` for unknown or blocked locations.
-- `_begin_task()` routes to `warehouse.resolve(task.pickup)` and records
-  assignment timing.
-- `_handle_arrival()` routes to `warehouse.resolve(task.dropoff)` when
-  arriving at pickup and records completion or failure.
 - `_tick()` runs failures/repairs, charging station progression, task
-  generation, assignment, battery checks, opportunistic charging, robot
-  movement, metrics, and pruning.
+  generation, assignment, battery checks, opportunistic charging,
+  **conflict manager tick (v0.6)**, robot movement, metrics, and pruning.
+- `_advance_robots()` calls `self._conflict_manager.allow_step()` before the
+  occupied-cell check. Replanning/yielding robots are NOT gated by
+  `allow_step()` so deadlock escape still works.
 - `_prune_old_tasks()` deletes completed/failed tasks whose `completed_at` is
   more than 100 ticks old. Interrupted tasks are not pruned.
 
-## Traffic / Conflict Resolution Behavior (v0.3.1 preserved)
+## Traffic / Conflict Resolution Behavior
+
+### v0.3.1 Local Yield (preserved as `local_yield`)
 
 - When a robot's next cell is occupied by another robot, the blocked robot
   increments `blocked_ticks`.
@@ -1022,7 +1132,37 @@ Important behavior:
 - Failed, repairing, and actively charging robots cannot yield.
 - Battery is one factor, not the only factor.
 
----
+### v0.6 Zone Locks (`zone_locks`)
+
+- Proactive path-corridor zone locks on top of reactive local yield.
+- Each tick, `tick()` rebuilds zone locks from each robot's current path.
+- Claims the next `lookahead` cells (default 2) on each robot's path.
+- Robots are sorted by `_yield_score()` — less willing to yield claims first.
+- `allow_step()` denies a step if the target cell is locked by another robot.
+- Starvation fallback: if `blocked_ticks >= blocked_replan_threshold_ticks * 2`,
+  the robot is allowed through regardless of locks.
+- Failed, repairing, and charging robots do not create claims.
+- Diagnostic counters: `denied_steps`, `locks_created`, `tick_calls`,
+  `robots_with_paths`.
+
+### v0.6 Priority Reservation (`priority_reservation`)
+
+- Approximate prioritized reservation-based conflict management on top of
+  reactive local yield.
+- Each tick, `tick()` rebuilds vertex reservations from each robot's current
+  path using a `ReservationTable`.
+- Robots are sorted by a priority score. Higher-priority robots reserve first.
+- Priority score considers: robot mode, task priority, loaded status, battery
+  urgency, and blocked time.
+- `allow_step()` denies a step if the target cell is reserved by another robot
+  at the next tick.
+- Starvation fallback: if `blocked_ticks >= blocked_replan_threshold_ticks * 2`,
+  the robot is allowed through regardless of reservations.
+- Failed, repairing, and charging robots do not create reservations.
+- Diagnostic counters: `denied_steps`, `reservations_created`, `tick_calls`,
+  `robots_with_paths`.
+- This is not full space-time MAPF. It is a practical proactive traffic
+  manager for experimentation.
 
 ## Battery / Charging / Failure Behavior (v0.4.0)
 
@@ -1042,12 +1182,12 @@ Important behavior:
 - During execution, the simulation estimates energy required to complete the
   current remaining route.
 - Battery feasibility is re-evaluated after:
-  task assignment,
-  arrival at pickup,
-  successful movement,
-  route resumption,
-  yield-step assignment,
-  replanning or detours.
+  - task assignment,
+  - arrival at pickup,
+  - successful movement,
+  - route resumption,
+  - yield-step assignment,
+  - replanning or detours.
 - If the remaining task becomes infeasible, the robot interrupts the task and
   seeks charging.
 - The robot must not blindly continue until battery reaches zero.
@@ -1072,11 +1212,11 @@ Insufficient for task:
 Opportunistic charging:
 
 - Idle robots may charge if:
-  they have no task,
-  they have been idle for `idle_ticks_before_opportunistic_charge`,
-  battery is below `opportunistic_charge_threshold`,
-  charger capacity is available,
-  a usable charging cell is available.
+  - they have no task,
+  - they have been idle for `idle_ticks_before_opportunistic_charge`,
+  - battery is below `opportunistic_charge_threshold`,
+  - charger capacity is available,
+  - a usable charging cell is available.
 - Idle robots do not charge immediately.
 
 ### Charging Station Behavior
@@ -1124,12 +1264,13 @@ Load behavior:
 
 ### Empty Battery Behavior
 
-- If battery reaches zero:
-  active task is interrupted,
-  robot becomes failed/down,
-  robot is relocated to maintenance if enabled,
-  robot remains down for at least `empty_battery_recovery_ticks`,
-  after recovery, battery is restored.
+If battery reaches zero:
+
+- active task is interrupted,
+- robot becomes failed/down,
+- robot is relocated to maintenance if enabled,
+- robot remains down for at least `empty_battery_recovery_ticks`,
+- after recovery, battery is restored.
 
 ### Failure / Repair Behavior
 
@@ -1145,8 +1286,6 @@ Load behavior:
 - After repair, robots may reclaim their interrupted task if still available.
 - If no task is reclaimed and the robot is on a maintenance cell, it tries to
   move out of maintenance.
-
----
 
 ## Experiment Lifecycle (v0.5.0)
 
@@ -1166,58 +1305,54 @@ in fast mode).
 
 ## Reproducibility And Seeding (v0.5.0)
 
-`same config + same seed = same result`.
-
-The seed controls:
-- `TaskGenerator(warehouse, seed=seed)` location selection,
-- failure RNG (`FailureConfig.seed` / `Simulation(seed=...)`),
-- robot spawn positions (seeded shuffle of passable cells in
-  `experiment/factory.generate_spawn_positions()`).
-
-No global RNG reliance. No new randomness introduced in v0.5.
-`fast_mode` removes wall-clock pacing only; tick semantics and results are
-identical in live and fast mode.
+- `same config + same seed = same result`.
+- The seed controls:
+  - `TaskGenerator(warehouse, seed=seed)` location selection,
+  - failure RNG (`FailureConfig.seed` / `Simulation(seed=...)`),
+  - robot spawn positions (seeded shuffle of passable cells in
+    `experiment/factory.generate_spawn_positions()`).
+- No global RNG reliance. No new randomness introduced in v0.5.
+- `fast_mode` removes wall-clock pacing only; tick semantics and results are
+  identical in live and fast mode.
 
 ## Stopping Conditions (v0.5.0)
 
-`stop_mode = "fixed_ticks"`: run until `max_ticks`. Answers "how much work in
-the same time?".
-`stop_mode = "workload"`: run until `target_tasks` completed, with `max_ticks`
-as safety horizon. Answers "how long for the same workload?".
-
-`stop_reason` values written to summary.json:
-`target_reached`, `max_ticks_reached`, `stopped_by_user`, `reset_by_user`,
-`error: <message>`.
+- `stop_mode = "fixed_ticks"`: run until `max_ticks`. Answers "how much work in
+  the same time?".
+- `stop_mode = "workload"`: run until `target_tasks` completed, with `max_ticks`
+  as safety horizon. Answers "how long for the same workload?".
+- `stop_reason` values written to summary.json:
+  `target_reached`, `max_ticks_reached`, `stopped_by_user`, `reset_by_user`,
+  `error: <message>`.
 
 ## Fast / Headless Mode (v0.5.0)
 
-`ExperimentConfig.fast_mode: bool = False`.
-
-When true, `ExperimentRunner._run()` does not sleep `tick_interval`; it yields
-with `time.sleep(0)` every 500 ticks so the web server thread can answer polls.
-`tick_interval` is untouched (it feeds `_blocked_replan_threshold_ticks`), so
-results stay reproducible.
-
-UI: Setup checkbox `cfg-fast-mode`; start shows `view-fast` (progress text
-`fast-status`, `fast-stop-btn` -> POST /api/experiment/stop) instead of the
-live map; on finish the poller auto-transitions to Results.
-Recorded as metadata in config.json and summary.json (`fast_mode`).
-Fast mode pins one CPU core for its duration; that is expected.
+- `ExperimentConfig.fast_mode: bool = False`.
+- When true, `ExperimentRunner._run()` does not sleep `tick_interval`; it yields
+  with `time.sleep(0)` every 500 ticks so the web server thread can answer polls.
+- `tick_interval` is untouched (it feeds `_blocked_replan_threshold_ticks`), so
+  results stay reproducible.
+- UI: Setup checkbox `cfg-fast-mode`; start shows `view-fast` (progress text
+  `fast-status`, `fast-stop-btn` -> POST /api/experiment/stop) instead of the
+  live map; on finish the poller auto-transitions to Results.
+- Recorded as metadata in config.json and summary.json (`fast_mode`).
+- Fast mode pins one CPU core for its duration; that is expected.
 
 ## Run Identity And Storage Format (v0.5.0)
 
 run_id format: `YYYYMMDD_HHMMSS_<6 hex>`, e.g. `20260821_013526_a83f21`.
 Never seed-only; runs are never overwritten. `display_name` is metadata only.
 
-data/
-└── runs/
-    └── <run_id>/
-        ├── config.json
-        ├── timeseries.csv
-        ├── events.csv
-        └── summary.json
+    data/
+    └── runs/
+        └── <run_id>/
+            ├── config.json
+            ├── timeseries.csv
+            ├── events.csv
+            └── summary.json
 
 config.json keys (ExperimentConfig.to_dict()):
+
 `seed`, `num_robots`, `display_name`, `stop_mode`, `target_tasks`,
 `max_ticks`, `tick_interval`, `fast_mode`, `blocked_replan_seconds`,
 `replan_cooldown_ticks`, `battery_capacity`, `empty_move_energy`,
@@ -1225,9 +1360,11 @@ config.json keys (ExperimentConfig.to_dict()):
 `opportunistic_charge_threshold`, `idle_ticks_before_opportunistic_charge`,
 `battery_safety_margin`, `empty_battery_recovery_ticks`, `charger_capacity`,
 `charge_duration_ticks`, `failure_enabled`, `mtbf_ticks`, `mttr_ticks`,
-`relocate_to_maintenance`, `scheduler`.
+`relocate_to_maintenance`, `scheduler`, `path_planner` (v0.6),
+`conflict_manager` (v0.6).
 
 timeseries.csv headers (one row per tick):
+
 `tick`, `tasks_pending`, `tasks_outstanding`, `tasks_created_this_tick`,
 `tasks_completed_this_tick`, `tasks_completed_total`, `tasks_failed_total`,
 `robots_active`, `robots_idle`, `robots_blocked`, `robots_charging`,
@@ -1236,6 +1373,7 @@ timeseries.csv headers (one row per tick):
 `replans_total`, `blocked_ticks_this_tick`, `blocked_ticks_total`.
 
 Definitions:
+
 - `tasks_pending` = live tasks with status Pending (unassigned only).
 - `tasks_outstanding` = generated - completed - failed (Pending + Assigned +
   Interrupted). Never counts completed tasks awaiting pruning.
@@ -1243,13 +1381,15 @@ Definitions:
   failed/repairing > charging > waiting-for-charger > blocked
   (blocked_ticks > 0) > to-charger > active (Moving) > idle.
 - Throughput stays per-tick: `throughput[t] = tasks_completed_this_tick`.
-  Averages/rolling windows exist only in the analysis layer.
+- Averages/rolling windows exist only in the analysis layer.
 
 events.csv headers:
+
 `run_id`, `tick`, `event_type`, `robot_id`, `task_id`, `details`.
 Missing fields are empty strings, never invented.
 
 Event types (inferred from primitive snapshots at tick resolution):
+
 `task_created`, `task_assigned`, `task_completed`, `task_failed`,
 `task_interrupted`, `task_reassigned`, `robot_blocked`, `robot_unblocked`,
 `robot_replanned`, `robot_started_charging`, `robot_finished_charging`,
@@ -1259,6 +1399,7 @@ Known limitation: multiple transitions inside one tick can be coalesced.
 Live task pruning never deletes history; CSVs are written independently.
 
 summary.json keys:
+
 `run_id`, `seed`, `scheduler`, `stop_reason`, `fast_mode`,
 `simulation_ticks`, `simulation_seconds`, `robot_count`, `tasks_created`,
 `tasks_assigned`, `tasks_completed`, `tasks_failed`, `average_throughput`,
@@ -1270,58 +1411,96 @@ summary.json keys:
 `failure_downtime_ticks`, `robot_utilization` (dict robot_id -> 0..1),
 `robot_busy_ticks`, `robot_total_ticks`, `robot_blocked_ticks`,
 `robot_distance_travelled`.
+
 Summary is for quick comparison; the CSVs are authoritative.
 
----
-
-## experiment/config.py (NEW in v0.5.0)
+## experiment/config.py (UPDATED in v0.6.0)
 
 `ExperimentConfig` — @dataclass(frozen=True), validated in `__post_init__`.
 
 Fields (defaults):
+
 `seed: int`, `num_robots: int`, `display_name: str = ""`,
 `stop_mode: Literal["fixed_ticks", "workload"]`, `target_tasks: int | None`,
 `max_ticks: int`, `tick_interval: float = 0.3`, `fast_mode: bool = False`,
 `blocked_replan_seconds: float = 0.7`, `replan_cooldown_ticks: int = 7`,
-`battery_capacity: float = 100.0`, `empty_move_energy: float = 0.7`,
-`loaded_move_energy: float = 1.0`, `critical_battery: float = 20.0`,
-`opportunistic_charge_threshold: float = 40.0`,
+`battery_capacity: float = 100.0`, `empty_move_energy: float = 0.35`,
+`loaded_move_energy: float = 0.5`, `critical_battery: float = 15.0`,
+`opportunistic_charge_threshold: float = 30.0`,
 `idle_ticks_before_opportunistic_charge: int = 10`,
 `battery_safety_margin: float = 5.0`, `empty_battery_recovery_ticks: int = 15`,
 `charger_capacity: int = 4`, `charge_duration_ticks: int = 10`,
 `failure_enabled: bool = False`, `mtbf_ticks: float = 0.0`,
 `mttr_ticks: int = 25`, `relocate_to_maintenance: bool = True`,
-`scheduler: str = "baseline"`.
+`scheduler: str = "baseline"`,
+`path_planner: str = "bfs"` (NEW in v0.6.0),
+`conflict_manager: str = "local_yield"` (NEW in v0.6.0).
+
+Module-level constants (NEW in v0.6.0):
+
+- `PATH_PLANNER_CHOICES = {"bfs", "astar", "weighted_astar"}`
+- `CONFLICT_MANAGER_CHOICES = {"local_yield", "zone_locks", "priority_reservation"}`
 
 Methods: `default()`, `to_dict()`, `save(directory)`, `load(directory)`,
 `from_dict(data)` (merges over defaults then validates).
 
 Validation highlights: seed required; num_robots >= 1; workload requires
 target_tasks >= 1; max_ticks >= 1; tick_interval > 0; failure_enabled requires
-mtbf_ticks > 0. No fake toggles (no `battery_enabled`/`congestion_enabled`;
-v0.4 has no such switches).
+mtbf_ticks > 0; path_planner must be in PATH_PLANNER_CHOICES;
+conflict_manager must be in CONFLICT_MANAGER_CHOICES.
 
-## experiment/factory.py (NEW in v0.5.0)
+## experiment/factory.py (UPDATED in v0.6.0)
 
 `ROBOT_COLORS: list[str]` — Okabe-Ito-style palette, cycled by index.
+
 `generate_spawn_positions(num_robots, warehouse, seed) -> list[tuple[int,int]]`
 — collects passable cells, shuffles with `random.Random(seed)`, takes N;
 ValueError if fewer passable cells than requested.
+
 `create_experiment_robots(num_robots, warehouse, seed) -> list[Robot]` —
 ids `R1..RN`, clean strings, deterministic seeded positions.
+
+`create_path_planner_from_name(name: str) -> PathPlanner` (NEW in v0.6.0)
+— creates a path planner from a string name. Raises ValueError for unknown
+names. Used by benchmark.py and tests.
+
+`create_scheduler_from_name(name: str, path_planner: PathPlanner) -> Scheduler`
+(NEW in v0.6.0) — creates a scheduler from a string name. Raises ValueError
+for unknown names. Used by benchmark.py and tests.
+
+`create_conflict_manager_from_name(name: str, sim: Simulation) -> ConflictManager`
+(NEW in v0.6.0) — creates a conflict manager from a string name. Raises
+ValueError for unknown names. Used by benchmark.py and tests.
+
+`create_path_planner(config: ExperimentConfig) -> PathPlanner` (NEW in v0.6.0)
+— reads `config.path_planner` and delegates to `create_path_planner_from_name`.
+
+`create_scheduler(config: ExperimentConfig, path_planner: PathPlanner) -> Scheduler`
+(NEW in v0.6.0) — reads `config.scheduler` and delegates to
+`create_scheduler_from_name`. For `total_cost`, passes battery config fields
+to `TotalCostScheduler`.
+
+`create_conflict_manager(config: ExperimentConfig, sim: Simulation) -> ConflictManager`
+(NEW in v0.6.0) — reads `config.conflict_manager` and delegates to
+`create_conflict_manager_from_name`.
+
 `create_simulation_from_config(config) -> Simulation` — builds warehouse,
 robots, `BatteryConfig`, `ChargingConfig`, `FailureConfig` from config;
-`CostBasedScheduler`, `TaskGenerator(warehouse, seed=config.seed)`,
-`Metrics()`, `Simulation(..., seed=config.seed)`.
+creates path planner, scheduler, and conflict manager from config;
+`TaskGenerator(warehouse, seed=config.seed)`, `Metrics()`,
+`Simulation(..., seed=config.seed, path_planner=path_planner)`;
+injects conflict manager via `sim.set_conflict_manager()`.
 
 ## experiment/recorder.py (NEW in v0.5.0)
 
 `MetricsRecorder(run_dir: str, run_id: str)`.
+
 Public: `record(snapshot: dict)`, `close()`.
 Opens `timeseries.csv` / `events.csv`, writes headers; flushes every 100
 records; `close()` flushes and closes.
 Receives primitive snapshots only (ints/floats/strings); never stores live
 object references.
+
 `record()` writes one time-series row, then infers task/robot events by
 diffing previous-tick primitive state (`_prev_metrics`, `_prev_tasks`,
 `_prev_robots`).
@@ -1332,35 +1511,40 @@ failed/repairing/charging/waiting transitions.
 ## experiment/runner.py (NEW in v0.5.0)
 
 `ExperimentRunner(base_dir: str = "data/runs")`.
+
 Properties: `is_active`, `finished`.
+
 `start(config, sim_factory) -> run_id` — creates run dir, saves config,
 creates recorder, `sim.resume()`, starts daemon thread; RuntimeError if a run
 is active.
 `stop(reason="stopped_by_user")` — sets stop reason, `sim.stop()`, joins.
-`get_state() -> dict` — `{active, finished, runId, runDir, stopReason,
-paused, tick, fastMode}`.
+`get_state() -> dict` — `{active, finished, runId, runDir, stopReason, paused, tick, fastMode}`.
 `get_summary() -> dict | None` — in-memory or reads summary.json.
 
 Internal:
+
 `_run()` — loop while not `sim._stop_event`; skip while `sim.is_paused`;
 under `sim._lock`: `_tick()`, `_snapshot()`, `recorder.record()`, stop
 evaluation; pacing: fast_mode -> `time.sleep(0)` every 500 ticks, else
 `time.sleep(sim._tick_interval)`; exceptions set
 `stop_reason = "error: ..."`.
+
 `_snapshot()` — primitive extraction of metrics counters, per-task
 (id/status/assigned_robot_id/task_type/pickup/dropoff/created_at/completed_at),
 per-robot (id/status/mode/blocked_ticks/replanning/battery).
+
 `_evaluate_stop_condition()` — fixed_ticks: tick >= max_ticks; workload:
 completed >= target_tasks, else tick >= max_ticks.
-`_finalize()` — closes recorder, computes and writes summary.json once.
 
----
+`_finalize()` — closes recorder, computes and writes summary.json once.
 
 ## analysis/loader.py (NEW in v0.5.0)
 
 `DEFAULT_RUNS_DIR = "data/runs"`.
+
 `RunData` dataclass: `run_id`, `run_dir`, `config`, `summary`, `timeseries`,
 `events` (pandas DataFrames).
+
 `list_runs(base_dir)` — newest first, `{run_id, run_dir, config, summary}`.
 `load_run(run_id, base_dir) -> RunData` — FileNotFoundError if missing.
 
@@ -1370,14 +1554,18 @@ completed >= target_tasks, else tick >= max_ticks.
 `tasks_completed_total` (cumsum if absent), `throughput`
 (= tasks_completed_this_tick), `throughput_rolling_50`,
 `throughput_rolling_100`; never alters recorded columns.
+
 `percentile_summary(series)` — `{count, mean, median, p90, p95, max}`.
+
 `task_lifecycle_from_events(events)` — per task `created_tick`,
 `first_assigned_tick`, `completed_tick`, `failed_tick`, `waiting_time`
 (= first_assigned - created), `cycle_time` (= completed - created).
+
 `blocked_episodes_from_events(events, final_tick=None)` — pairs
 robot_blocked/robot_unblocked into episodes
 `{robot_id, start_tick, end_tick, duration_ticks, open_at_end}`; unclosed
 episodes censored at final_tick.
+
 `event_counts(events)`, `utilization_from_summary(summary)`,
 `robot_count_from_run(run)`, `distribution_stats(run)` (percentile summaries
 for task_waiting_time, task_cycle_time, robot_blocked_episode_ticks,
@@ -1387,13 +1575,16 @@ system_active_fraction, robot_utilization).
 
 `RUN_ID_PATTERN = ^[A-Za-z0-9_\-]+$`; invalid ids raise `AnalysisApiError`
 (mapped to 404 by Flask routes).
+
 `DEFAULT_MAX_POINTS = 2000`, `MAX_POINTS_LIMIT = 5000` (clamped, min 50).
+
 `_sanitize()` — JSON safety; NaN/Inf become null; numpy scalars converted.
 `_downsample(df, column, max_points)` — bucket-mean to `[[tick, value], ...]`;
 raw points when under the limit.
 `_histogram(series, bins)` — `{bin_centers, bin_edges, counts}`.
 
 Payload builders:
+
 `list_runs_payload(base_dir)` -> `{runs: [...]}`.
 `get_run_summary(run_id, base_dir)` -> `{run_id, config, summary}`.
 `get_run_series(run_id, columns, base_dir, max_points)` ->
@@ -1401,22 +1592,18 @@ Payload builders:
 `get_compare_series(run_ids, column, base_dir, max_points)` ->
 `{column, max_points, runs: [{run_id, points}]}`; skips missing runs/columns.
 `get_run_distributions(run_id, base_dir, bins)` (bins clamped 10..100) ->
-`{run_id, stats, histograms: {task_waiting_time, task_cycle_time,
-robot_blocked_episode_ticks}, robot_utilization: [{robot_id, utilization}] |
-null}`.
+`{run_id, stats, histograms: {task_waiting_time, task_cycle_time, robot_blocked_episode_ticks}, robot_utilization: [{robot_id, utilization}] | null}`.
 
 Full CSVs are never sent to the browser; only downsampled payloads.
 
----
-
 ## Flask Layer (UPDATED in v0.5.0)
 
-`app.py`
+### `app.py`
 
 Important functions:
 
-- `create_app(base_data_dir: str = "data/runs", start_simulation: bool = False) -> Flask`
-- module-level `app = create_app()`
+`create_app(base_data_dir: str = "data/runs", start_simulation: bool = False) -> Flask`
+module-level `app = create_app()`
 
 Holder pattern (replaces v0.4 closure wiring):
 
@@ -1430,8 +1617,7 @@ Routes (legacy semantics preserved):
 - `GET /`
 - `GET /api/state` — v0.4 payload plus top-level `experiment` key:
   runner present -> `runner.get_state()`; else
-  `{active: false, finished: false, runId: null, stopReason: null,
-  fastMode: false}`.
+  `{active: false, finished: false, runId: null, stopReason: null, fastMode: false}`.
 - `POST /api/pause`
 - `POST /api/resume`
 - `POST /api/reset` — stops active runner with `reset_by_user`, recreates
@@ -1462,9 +1648,9 @@ Important behavior:
   `analysis/`.
 - The raw `data/runs` directory is NOT served statically.
 
-## CLI Layer (unchanged in v0.5.0)
+## CLI Layer (UPDATED in v0.6.0)
 
-`benchmark.py`
+### `benchmark.py`
 
 Purpose:
 
@@ -1497,21 +1683,39 @@ v0.4 arguments:
 - `--mtbf-ticks`
 - `--mttr-ticks`
 
+v0.5 arguments:
+
+- `--spawn` (choices: `seeded`, `legacy`; default: `seeded`)
+- `--display-name`
+
+v0.6 arguments (NEW):
+
+- `--path-planner` (choices: `bfs`, `astar`, `weighted_astar`; default: `bfs`)
+- `--scheduler` (choices: `baseline`, `priority`, `fifo`, `total_cost`,
+  `auction`; default: `baseline`)
+- `--conflict-manager` (choices: `local_yield`, `zone_locks`,
+  `priority_reservation`; default: `local_yield`)
+
+v0.6 output additions:
+
+- Prints active path planner class name before running.
+- Prints active scheduler class name before running.
+- Prints active conflict manager class name before running.
+- Prints conflict manager diagnostics after running:
+  `Conflict tick calls`, `Robots seen with paths`,
+  `Proactive locks created` (zone_locks),
+  `Proactive reservations created` (priority_reservation),
+  `Proactive denied steps`.
+
 Example:
 
     python benchmark.py \
       --robots 8 \
       --seed 42 \
       --target 200 \
-      --battery-capacity 100 \
-      --empty-move-energy 0.7 \
-      --loaded-move-energy 1.0 \
-      --critical-battery 20 \
-      --opportunistic-charge-threshold 40 \
-      --idle-opportunistic-ticks 10 \
-      --battery-safety-margin 5 \
-      --charger-capacity 4 \
-      --charge-duration-ticks 10
+      --path-planner astar \
+      --scheduler priority \
+      --conflict-manager priority_reservation
 
 Example with failures:
 
@@ -1523,7 +1727,7 @@ Example with failures:
       --mtbf-ticks 1500 \
       --mttr-ticks 25
 
-`optimize_optuna.py`
+### `optimize_optuna.py`
 
 Purpose:
 
@@ -1560,248 +1764,233 @@ Important behavior:
 - v0.4 metrics are logged as Optuna user attributes.
 - Study name includes a v0.4 suffix when `--search-v04` is used.
 
----
-
 ## JSON API
 
-`GET /api/state`
+### `GET /api/state`
 
 Returns the v0.4 payload (below) plus the v0.5 top-level `experiment` key
 described in the Flask Layer section.
 
-{
-  "paused": false,
-  "tick": 150,
-  "warehouse": {
-    "width": 26,
-    "height": 21,
-    "layout": [["EMPTY"]],
-    "obstacles": [[2, 2]],
-    "locations": {
-      "A-01": { "cell": [2, 2], "access": [2, 4] },
-      "PICK-1": { "cell": [4, 8], "access": [4, 8] }
-    },
-    "racks": { "A": [2, 2] }
-  },
-  "robots": [
     {
-      "id": "R1",
-      "x": 5,
-      "y": 7,
-      "color": "#ef4444",
-      "status": "Moving",
-      "mode": "To charger",
-      "currentTaskId": null,
-      "currentTarget": [10, 7],
-      "blockedTicks": 0,
-      "replanning": false,
-      "yieldingTo": null,
-      "replanCooldown": 0,
-      "battery": 18.5,
-      "idleTicks": 0,
-      "chargerWaitTicks": 0,
-      "interruptedTaskId": "G00042",
-      "chargeTarget": [10, 7],
-      "chargeStartBattery": null,
-      "repairRemainingTicks": 0
+      "paused": false,
+      "tick": 150,
+      "warehouse": {
+        "width": 26,
+        "height": 21,
+        "layout": [["EMPTY"]],
+        "obstacles": [[2, 2]],
+        "locations": {
+          "A-01": { "cell": [2, 2], "access": [2, 4] },
+          "PICK-1": { "cell": [4, 8], "access": [4, 8] }
+        },
+        "racks": { "A": [2, 2] }
+      },
+      "robots": [
+        {
+          "id": "R1",
+          "x": 5,
+          "y": 7,
+          "color": "#ef4444",
+          "status": "Moving",
+          "mode": "To charger",
+          "currentTaskId": null,
+          "currentTarget": [10, 7],
+          "blockedTicks": 0,
+          "replanning": false,
+          "yieldingTo": null,
+          "replanCooldown": 0,
+          "battery": 18.5,
+          "idleTicks": 0,
+          "chargerWaitTicks": 0,
+          "interruptedTaskId": "G00042",
+          "chargeTarget": [10, 7],
+          "chargeStartBattery": null,
+          "repairRemainingTicks": 0
+        }
+      ],
+      "tasks": [
+        {
+          "id": "G00042",
+          "name": "Pick order G00042",
+          "pickup": "RESUME-G00042",
+          "dropoff": "PICK-1",
+          "taskType": "PICK",
+          "priority": 2,
+          "createdAt": 100,
+          "completedAt": null,
+          "status": "Interrupted",
+          "assignedRobotId": null,
+          "phase": "To pickup",
+          "loadState": "Staged",
+          "interruptionCount": 1,
+          "lastAssignedRobotId": "R1",
+          "resumeLocationName": "RESUME-G00042"
+        }
+      ],
+      "metrics": {
+        "tasksGenerated": 50,
+        "tasksAssigned": 45,
+        "tasksCompleted": 40,
+        "tasksFailed": 0,
+        "blockedTimeTicks": 12,
+        "blockedTimeSeconds": 3.6,
+        "replanningCount": 2,
+        "deadlockResolutions": 2,
+        "replanEvents": 2,
+        "throughputPerTick": 0.26,
+        "averageTaskWaitingTime": 4.0,
+        "averageTaskCompletionTime": 19.0,
+        "simulationTicks": 150,
+        "simulationSeconds": 45.0,
+        "robotDistanceTravelled": { "R1": 120 },
+        "robotBusyTicks": { "R1": 110 },
+        "robotBlockedTicks": { "R1": 12 },
+        "robotReplanEvents": { "R1": 2 },
+        "robotUtilization": { "R1": 0.73 },
+        "averageBattery": 65.4,
+        "averageBatteryPercent": 65.4,
+        "chargingEvents": 5,
+        "totalChargingTicks": 50,
+        "totalChargingSeconds": 15.0,
+        "chargerWaitTicks": 10,
+        "chargerWaitSeconds": 3.0,
+        "chargerWaitEvents": 2,
+        "averageChargerWaitTicks": 5.0,
+        "averageChargerWaitSeconds": 1.5,
+        "trafficWaitTicks": 12,
+        "trafficWaitSeconds": 3.6,
+        "stationWaitTicks": 0,
+        "stationWaitSeconds": 0.0,
+        "totalWaitTicks": 22,
+        "totalWaitSeconds": 6.6,
+        "batteryTaskInterruptions": 1,
+        "failureTaskInterruptions": 0,
+        "taskReassignments": 0,
+        "failedRobotEvents": 0,
+        "failureDowntimeTicks": 0,
+        "failureDowntimeSeconds": 0.0,
+        "congestion": {
+          "blockedRobots": 1,
+          "waitingForChargerRobots": 0,
+          "chargingRobots": 2,
+          "toChargerRobots": 1,
+          "failedRobots": 0,
+          "replanningRobots": 0,
+          "activeConflicts": 1,
+          "chargerOccupancy": 2,
+          "chargerWaiting": 0,
+          "averageBlockedTicks": 0.1,
+          "robotsByRow": { "row-07": 3, "row-08": 1 }
+        }
+      }
     }
-  ],
-  "tasks": [
-    {
-      "id": "G00042",
-      "name": "Pick order G00042",
-      "pickup": "RESUME-G00042",
-      "dropoff": "PICK-1",
-      "taskType": "PICK",
-      "priority": 2,
-      "createdAt": 100,
-      "completedAt": null,
-      "status": "Interrupted",
-      "assignedRobotId": null,
-      "phase": "To pickup",
-      "loadState": "Staged",
-      "interruptionCount": 1,
-      "lastAssignedRobotId": "R1",
-      "resumeLocationName": "RESUME-G00042"
-    }
-  ],
-  "metrics": {
-    "tasksGenerated": 50,
-    "tasksAssigned": 45,
-    "tasksCompleted": 40,
-    "tasksFailed": 0,
-    "blockedTimeTicks": 12,
-    "blockedTimeSeconds": 3.6,
-    "replanningCount": 2,
-    "deadlockResolutions": 2,
-    "replanEvents": 2,
-    "throughputPerTick": 0.26,
-    "averageTaskWaitingTime": 4.0,
-    "averageTaskCompletionTime": 19.0,
-    "simulationTicks": 150,
-    "simulationSeconds": 45.0,
-    "robotDistanceTravelled": { "R1": 120 },
-    "robotBusyTicks": { "R1": 110 },
-    "robotBlockedTicks": { "R1": 12 },
-    "robotReplanEvents": { "R1": 2 },
-    "robotUtilization": { "R1": 0.73 },
-    "averageBattery": 65.4,
-    "averageBatteryPercent": 65.4,
-    "chargingEvents": 5,
-    "totalChargingTicks": 50,
-    "totalChargingSeconds": 15.0,
-    "chargerWaitTicks": 10,
-    "chargerWaitSeconds": 3.0,
-    "chargerWaitEvents": 2,
-    "averageChargerWaitTicks": 5.0,
-    "averageChargerWaitSeconds": 1.5,
-    "trafficWaitTicks": 12,
-    "trafficWaitSeconds": 3.6,
-    "stationWaitTicks": 0,
-    "stationWaitSeconds": 0.0,
-    "totalWaitTicks": 22,
-    "totalWaitSeconds": 6.6,
-    "batteryTaskInterruptions": 1,
-    "failureTaskInterruptions": 0,
-    "taskReassignments": 0,
-    "failedRobotEvents": 0,
-    "failureDowntimeTicks": 0,
-    "failureDowntimeSeconds": 0.0,
-    "congestion": {
-      "blockedRobots": 1,
-      "waitingForChargerRobots": 0,
-      "chargingRobots": 2,
-      "toChargerRobots": 1,
-      "failedRobots": 0,
-      "replanningRobots": 0,
-      "activeConflicts": 1,
-      "chargerOccupancy": 2,
-      "chargerWaiting": 0,
-      "averageBlockedTicks": 0.1,
-      "robotsByRow": { "row-07": 3, "row-08": 1 }
-    }
-  }
-}
 
 Important top-level keys:
 
-- `paused`
-- `tick`
-- `warehouse`
-- `robots`
-- `tasks`
-- `metrics`
-- `experiment` (v0.5)
+`paused`, `tick`, `warehouse`, `robots`, `tasks`, `metrics`,
+`experiment` (v0.5)
 
-Robot JSON keys
+Robot JSON keys:
 
 Existing:
-
-- `id`, `x`, `y`, `color`, `status`, `currentTaskId`, `currentTarget`,
-  `blockedTicks`, `replanning`, `yieldingTo`, `replanCooldown`
+`id`, `x`, `y`, `color`, `status`, `currentTaskId`, `currentTarget`,
+`blockedTicks`, `replanning`, `yieldingTo`, `replanCooldown`
 
 v0.4:
+`battery`, `mode`, `idleTicks`, `chargerWaitTicks`, `interruptedTaskId`,
+`chargeTarget`, `chargeStartBattery`, `repairRemainingTicks`
 
-- `battery`, `mode`, `idleTicks`, `chargerWaitTicks`, `interruptedTaskId`,
-  `chargeTarget`, `chargeStartBattery`, `repairRemainingTicks`
-
-Task JSON keys
+Task JSON keys:
 
 Existing:
-
-- `id`, `name`, `pickup`, `dropoff`, `taskType`, `priority`, `createdAt`,
-  `completedAt`, `status`, `assignedRobotId`, `phase`
+`id`, `name`, `pickup`, `dropoff`, `taskType`, `priority`, `createdAt`,
+`completedAt`, `status`, `assignedRobotId`, `phase`
 
 v0.4:
-
-- `loadState`, `interruptionCount`, `lastAssignedRobotId`,
-  `resumeLocationName`
+`loadState`, `interruptionCount`, `lastAssignedRobotId`,
+`resumeLocationName`
 
 Important: `status` can be `"Interrupted"`.
 
-Warehouse JSON keys
+Warehouse JSON keys:
 
-- `width`, `height`, `layout`, `obstacles`, `locations`, `racks`
+`width`, `height`, `layout`, `obstacles`, `locations`, `racks`
 
 Important: dynamic `RESUME-*` locations must not appear in the serialized
 warehouse payload.
 
-Metrics JSON keys
+Metrics JSON keys:
 
 Existing:
-
-- `tasksGenerated`, `tasksAssigned`, `tasksCompleted`, `tasksFailed`,
-  `blockedTimeTicks`, `blockedTimeSeconds`, `replanningCount`,
-  `deadlockResolutions`, `replanEvents`, `throughputPerTick`,
-  `averageTaskWaitingTime`, `averageTaskCompletionTime`, `simulationTicks`,
-  `simulationSeconds`, `robotDistanceTravelled`, `robotBusyTicks`,
-  `robotBlockedTicks`, `robotReplanEvents`, `robotUtilization`
+`tasksGenerated`, `tasksAssigned`, `tasksCompleted`, `tasksFailed`,
+`blockedTimeTicks`, `blockedTimeSeconds`, `replanningCount`,
+`deadlockResolutions`, `replanEvents`, `throughputPerTick`,
+`averageTaskWaitingTime`, `averageTaskCompletionTime`, `simulationTicks`,
+`simulationSeconds`, `robotDistanceTravelled`, `robotBusyTicks`,
+`robotBlockedTicks`, `robotReplanEvents`, `robotUtilization`
 
 v0.4:
-
-- `averageBattery`, `averageBatteryPercent`, `chargingEvents`,
-  `totalChargingTicks`, `totalChargingSeconds`, `chargerWaitTicks`,
-  `chargerWaitSeconds`, `chargerWaitEvents`, `averageChargerWaitTicks`,
-  `averageChargerWaitSeconds`, `trafficWaitTicks`, `trafficWaitSeconds`,
-  `stationWaitTicks`, `stationWaitSeconds`, `totalWaitTicks`,
-  `totalWaitSeconds`, `batteryTaskInterruptions`,
-  `failureTaskInterruptions`, `taskReassignments`, `failedRobotEvents`,
-  `failureDowntimeTicks`, `failureDowntimeSeconds`, `congestion`
+`averageBattery`, `averageBatteryPercent`, `chargingEvents`,
+`totalChargingTicks`, `totalChargingSeconds`, `chargerWaitTicks`,
+`chargerWaitSeconds`, `chargerWaitEvents`, `averageChargerWaitTicks`,
+`averageChargerWaitSeconds`, `trafficWaitTicks`, `trafficWaitSeconds`,
+`stationWaitTicks`, `stationWaitSeconds`, `totalWaitTicks`,
+`totalWaitSeconds`, `batteryTaskInterruptions`,
+`failureTaskInterruptions`, `taskReassignments`, `failedRobotEvents`,
+`failureDowntimeTicks`, `failureDowntimeSeconds`, `congestion`
 
 `replanEvents` duplicates `replanningCount` for backward compatibility.
 
 Congestion JSON keys (inside `metrics.congestion`):
 
-- `blockedRobots`, `waitingForChargerRobots`, `chargingRobots`,
-  `toChargerRobots`, `failedRobots`, `replanningRobots`, `activeConflicts`,
-  `chargerOccupancy`, `chargerWaiting`, `averageBlockedTicks`, `robotsByRow`
+`blockedRobots`, `waitingForChargerRobots`, `chargingRobots`,
+`toChargerRobots`, `failedRobots`, `replanningRobots`, `activeConflicts`,
+`chargerOccupancy`, `chargerWaiting`, `averageBlockedTicks`, `robotsByRow`
 
 Important: congestion emerges from robot interactions; it is measured, not
 artificially imposed.
 
-v0.5 analysis endpoint examples
+### v0.5 analysis endpoint examples
 
 `GET /api/runs/<run_id>/series`:
 
-{
-  "run_id": "20260821_013526_a83f21",
-  "max_points": 2000,
-  "series": [
-    {"name": "throughput_rolling_100", "points": [[0, 0.0], [50, 0.12]]}
-  ]
-}
+    {
+      "run_id": "20260821_013526_a83f21",
+      "max_points": 2000,
+      "series": [
+        {"name": "throughput_rolling_100", "points": [[0, 0.0], [50, 0.12]]}
+      ]
+    }
 
 `GET /api/runs/compare/series`:
 
-{
-  "column": "robots_blocked",
-  "max_points": 2000,
-  "runs": [
-    {"run_id": "runA", "points": [[0, 0], [10, 1]]},
-    {"run_id": "runB", "points": [[0, 0], [10, 3]]}
-  ]
-}
+    {
+      "column": "robots_blocked",
+      "max_points": 2000,
+      "runs": [
+        { "run_id": "runA", "points": [[0, 0], [10, 1]]},
+        { "run_id": "runB", "points": [[0, 0], [10, 3]]}
+      ]
+    }
 
 `GET /api/runs/<run_id>/distributions`:
 
-{
-  "run_id": "...",
-  "stats": {
-    "task_waiting_time": {"count": 500, "mean": 12.4, "median": 10.0,
-                          "p90": 25.0, "p95": 31.0, "max": 60.0}
-  },
-  "histograms": {
-    "task_waiting_time": {"bin_centers": [1.0], "bin_edges": [0.0, 2.0],
-                          "counts": [12]}
-  },
-  "robot_utilization": [{"robot_id": "R1", "utilization": 0.74}]
-}
+    {
+      "run_id": "...",
+      "stats": {
+        "task_waiting_time": { "count": 500, "mean": 12.4, "median": 10.0,
+          "p90": 25.0, "p95": 31.0, "max": 60.0}
+      },
+      "histograms": {
+        "task_waiting_time": { "bin_centers": [1.0], "bin_edges": [0.0, 2.0],
+          "counts": [12]}
+      },
+      "robot_utilization": [{ "robot_id": "R1", "utilization": 0.74}]
+    }
 
----
+## Frontend JavaScript (UPDATED in v0.6.0)
 
-## Frontend JavaScript (UPDATED in v0.5.0)
-
-`static/simulation.js`
+### `static/simulation.js`
 
 Important constants:
 
@@ -1819,70 +2008,83 @@ Important state variables:
 
 View DOM ids (v0.5):
 
-- `view-setup`, `view-run`, `view-fast`, `view-results`, `view-experiments`,
-  `view-visualization`, `view-analysis`, `view-compare`
+`view-setup`, `view-run`, `view-fast`, `view-results`, `view-experiments`,
+`view-visualization`, `view-analysis`, `view-compare`
 
 Legacy DOM ids (unchanged):
 
-- `warehouse`, `dashboard-grid`, `task-list`, `simulation-state`,
-  `pause-btn`, `resume-btn`, `reset-btn`
+`warehouse`, `dashboard-grid`, `task-list`, `simulation-state`,
+`pause-btn`, `resume-btn`, `reset-btn`
 
 New v0.5 DOM ids:
 
-- Nav: `nav-setup-btn`, `nav-run-btn`, `nav-results-btn`,
-  `nav-experiments-btn`, `nav-visualization-btn`, `nav-analysis-btn`,
-  `nav-compare-btn`
-- Setup: `cfg-display-name`, `cfg-seed`, `cfg-num-robots`, `cfg-stop-mode`,
-  `cfg-target-tasks`, `cfg-max-ticks`, `cfg-tick-interval`,
-  `cfg-blocked-replan-seconds`, `cfg-replan-cooldown-ticks`, `cfg-fast-mode`,
-  `cfg-battery-capacity`, `cfg-empty-move-energy`, `cfg-loaded-move-energy`,
-  `cfg-critical-battery`, `cfg-opportunistic-charge-threshold`,
-  `cfg-charger-capacity`, `cfg-charge-duration-ticks`, `cfg-failure-enabled`,
-  `cfg-mtbf-ticks`, `cfg-mttr-ticks`, `start-experiment-btn`
-- Fast: `fast-status`, `fast-stop-btn`
-- Results/experiments: `result-summary`, `experiment-list`, `run-again-btn`,
-  `view-experiments-btn`, `view-visualization-btn`, `view-analysis-btn`,
-  `back-to-setup-btn`
-- Visualization: `visualization-run-select`, `visualization-metric-select`,
-  `visualization-generate-btn`, `visualization-chart`
-- Analysis: `analysis-run-select`, `analysis-generate-btn`, `analysis-stats`,
-  `analysis-charts`
-- Compare: `compare-run-select` (MultiSelect), `compare-metric-select`,
-  `compare-chart-type`, `compare-generate-btn`, `compare-chart`
+Nav: `nav-setup-btn`, `nav-run-btn`, `nav-results-btn`,
+`nav-experiments-btn`, `nav-visualization-btn`, `nav-analysis-btn`,
+`nav-compare-btn`
+
+Setup: `cfg-display-name`, `cfg-seed`, `cfg-num-robots`, `cfg-stop-mode`,
+`cfg-target-tasks`, `cfg-max-ticks`, `cfg-tick-interval`,
+`cfg-blocked-replan-seconds`, `cfg-replan-cooldown-ticks`, `cfg-fast-mode`,
+`cfg-battery-capacity`, `cfg-empty-move-energy`, `cfg-loaded-move-energy`,
+`cfg-critical-battery`, `cfg-opportunistic-charge-threshold`,
+`cfg-charger-capacity`, `cfg-charge-duration-ticks`, `cfg-failure-enabled`,
+`cfg-mtbf-ticks`, `cfg-mttr-ticks`, `start-experiment-btn`
+
+New v0.6 Setup DOM ids:
+
+`cfg-path-planner`, `cfg-scheduler`, `cfg-conflict-manager`
+
+Fast: `fast-status`, `fast-stop-btn`
+
+Results/experiments: `result-summary`, `experiment-list`, `run-again-btn`,
+`view-experiments-btn`, `view-visualization-btn`, `view-analysis-btn`,
+`back-to-setup-btn`
+
+Visualization: `visualization-run-select`, `visualization-metric-select`,
+`visualization-generate-btn`, `visualization-chart`
+
+Analysis: `analysis-run-select`, `analysis-generate-btn`, `analysis-stats`,
+`analysis-charts`
+
+Compare: `compare-run-select` (MultiSelect), `compare-metric-select`,
+`compare-chart-type`, `compare-generate-btn`, `compare-chart`
 
 Important functions:
 
 Core (preserved from v0.4):
 
-- `refresh()`, `fetchState()`, `postCommand(url)`, `render(state)`,
-  `buildStaticLayer(warehouse)`, `addCell(x, y, className)`,
-  `updateRobots(robots, tasks)`, `updateTaskHighlights(state)`,
-  `highlightLocation(locations, locationName, className)`,
-  `addTileClass(coord, className)`, `updateSidePanel(state)`,
-  `createTaskRow(task, isHistory)`, `createMetricCard(title, value, detail)`,
-  `safeString(value)`, `toNumber(value, fallback)`,
-  `staticWarehouseKey(warehouse)`
+`refresh()`, `fetchState()`, `postCommand(url)`, `render(state)`,
+`buildStaticLayer(warehouse)`, `addCell(x, y, className)`,
+`updateRobots(robots, tasks)`, `updateTaskHighlights(state)`,
+`highlightLocation(locations, locationName, className)`,
+`addTileClass(coord, className)`, `updateSidePanel(state)`,
+`createTaskRow(task, isHistory)`, `createMetricCard(title, value, detail)`,
+`safeString(value)`, `toNumber(value, fallback)`,
+`staticWarehouseKey(warehouse)`
 
 New v0.5:
 
-- `initViews()`, `showView(name)`, `on(id, event, handler)`
-- `formatValue(value)`, `formValue(id)`, `formNumber(id, fallback)`,
-  `formNumberOrNull(id)`, `formBool(id)`
-- `readExperimentConfig()` (includes `display_name`, `fast_mode`)
-- `startExperiment()` — reads config once;
-  `showView(config.fast_mode ? "fast" : "run")`
-- `showResults()`, `renderSummary(summary)`
-- `loadExperiments()` (Open + Delete buttons), `deleteExperiment(runId)`
-  (confirm + DELETE)
-- `populateRunSelects()`
-- `generateVisualization()`, `generateAnalysis()`, `generateComparison()`
-- Chart helpers: `getBaseChartOption()`,
-  `renderLineChart(containerId, series, options)` (smooth by default),
-  `renderStackedAreaChart(containerId, series)`,
-  `renderBarChart(containerId, categories, values, title)`,
-  `renderHistogramChart(containerEl, histogram)`
-- `class MultiSelect` — checkbox dropdown with removable tags;
-  `setOptions()`, `getSelected()`, `clear()`
+`initViews()`, `showView(name)`, `on(id, event, handler)`
+`formatValue(value)`, `formValue(id)`, `formNumber(id, fallback)`,
+`formNumberOrNull(id)`, `formBool(id)`
+`readExperimentConfig()` (includes `display_name`, `fast_mode`,
+`path_planner`, `scheduler`, `conflict_manager`)
+`startExperiment()` — reads config once;
+`showView(config.fast_mode ? "fast" : "run")`
+`showResults()`, `renderSummary(summary)`
+`loadExperiments()` (Open + Delete buttons), `deleteExperiment(runId)`
+(confirm + DELETE)
+`populateRunSelects()`
+`generateVisualization()`, `generateAnalysis()`, `generateComparison()`
+
+Chart helpers: `getBaseChartOption()`,
+`renderLineChart(containerId, series, options)` (smooth by default),
+`renderStackedAreaChart(containerId, series)`,
+`renderBarChart(containerId, categories, values, title)`,
+`renderHistogramChart(containerEl, histogram)`
+
+`class MultiSelect` — checkbox dropdown with removable tags;
+`setOptions()`, `getSelected()`, `clear()`
 
 Note: v0.4 helpers `shortLabel()` and `addMarker()` were removed in the v0.5
 rewrite; no caller remains.
@@ -1911,23 +2113,21 @@ Important behavior:
 - Comparison selection uses the MultiSelect dropdown, never typed ids.
 - Event listeners use clean strings: `"click"`, `"/api/pause"`, etc.
 
----
+## CSS Classes (UPDATED in v0.6.0)
 
-## CSS Classes (UPDATED in v0.5.0)
-
-`static/style.css`
+### `static/style.css`
 
 Theme variables:
 
-- `--bg-primary #1a1a2e`, `--bg-secondary #16213e`, `--bg-tertiary #1e2233`,
-  `--bg-elevated #252a3a`, `--accent #f59e0b`, `--success #10b981`,
-  `--warning #f59e0b`, `--error #ef4444`, `--border rgba(255,255,255,0.08)`
+`--bg-primary #1a1a2e`, `--bg-secondary #16213e`, `--bg-tertiary #1e2233`,
+`--bg-elevated #252a3a`, `--accent #f59e0b`, `--success #10b981`,
+`--warning #f59e0b`, `--error #ef4444`, `--border rgba(255,255,255,0.08)`
 
 Tile classes (names unchanged):
 
-- `.tile`, `.empty`, `.shelf`, `.aisle`, `.main_aisle`, `.packing`,
-  `.receiving`, `.shipping`, `.charging`, `.intersection`, `.buffer`,
-  `.pick_station`, `.consolidation`, `.staging`, `.maintenance`
+`.tile`, `.empty`, `.shelf`, `.aisle`, `.main_aisle`, `.packing`,
+`.receiving`, `.shipping`, `.charging`, `.intersection`, `.buffer`,
+`.pick_station`, `.consolidation`, `.staging`, `.maintenance`
 
 v0.5 tile behavior: flat, `border: none`, solid colors, no grid lines;
 `#warehouse` background `#0d0f16`, `overflow: hidden`.
@@ -1935,91 +2135,118 @@ v0.5 tile behavior: flat, `border: none`, solid colors, no grid lines;
 Task location highlight classes (v0.5: OUTER GLOW ONLY via box-shadow rings;
 no background change; no `!important`):
 
-- `.tile.task-pickup-active`, `.tile.task-dropoff-active`,
-  `.tile.task-pickup-faint`, `.tile.task-dropoff-faint`
+`.tile.task-pickup-active`, `.tile.task-dropoff-active`,
+`.tile.task-pickup-faint`, `.tile.task-dropoff-faint`
 
 Robot classes:
 
 Existing:
-
-- `.robot`, `.robot.idle`, `.robot.has-task`, `.robot.task-putaway`,
-  `.robot.task-pick`, `.robot.task-pack`, `.robot.task-ship`
+`.robot`, `.robot.idle`, `.robot.has-task`, `.robot.task-putaway`,
+`.robot.task-pick`, `.robot.task-pack`, `.robot.task-ship`
 
 v0.4:
-
-- `.robot.low-battery`, `.robot.to-charger`, `.robot.waiting-for-charger`,
-  `.robot.charging`, `.robot.failed`
+`.robot.low-battery`, `.robot.to-charger`, `.robot.waiting-for-charger`,
+`.robot.charging`, `.robot.failed`
 
 v0.5: `.robot` is square (`border-radius: 4px`), identity background color,
 white border; task-type classes are glow-only (no border color change).
 
 Legend classes (v0.5):
 
-- `.legend-container`, `.legend-section-title`, `.legend-grid`,
-  `.legend-item`, `.swatch` plus variants (`.robot-idle`, `.robot-task`,
-  `.robot-putaway`, `.robot-pick`, `.robot-pack`, `.robot-ship`,
-  `.robot-charging`, `.robot-failed`, `.tile-shelf`, `.tile-aisle`,
-  `.tile-main-aisle`, `.tile-receiving`, `.tile-shipping`, `.tile-packing`,
-  `.tile-pick`, `.tile-buffer`, `.tile-consolidation`, `.tile-staging`,
-  `.tile-charging`, `.tile-maintenance`)
+`.legend-container`, `.legend-section-title`, `.legend-grid`,
+`.legend-item`, `.swatch` plus variants (`.robot-idle`, `.robot-task`,
+`.robot-putaway`, `.robot-pick`, `.robot-pack`, `.robot-ship`,
+`.robot-charging`, `.robot-failed`, `.tile-shelf`, `.tile-aisle`,
+`.tile-main-aisle`, `.tile-receiving`, `.tile-shipping`, `.tile-packing`,
+`.tile-pick`, `.tile-buffer`, `.tile-consolidation`, `.tile-staging`,
+`.tile-charging`, `.tile-maintenance`)
 
 Multi-select classes (v0.5):
 
-- `.multi-select`, `.multi-select-trigger`, `.multi-select-dropdown`
-  (+ `.open`), `.multi-select-option` (+ `.selected`), `.multi-select-tag`,
-  `.multi-select-tag-remove`
+`.multi-select`, `.multi-select-trigger`, `.multi-select-dropdown`
+(+ `.open`), `.multi-select-option` (+ `.selected`), `.multi-select-tag`,
+`.multi-select-tag-remove`
 
 Chart / analysis classes (v0.5):
 
-- `.chart-container`, `.analysis-chart-wrapper`, `.analysis-chart`,
-  `#analysis-charts`
+`.chart-container`, `.analysis-chart-wrapper`, `.analysis-chart`,
+`#analysis-charts`
 
 Experiment list classes (v0.5):
 
-- `.experiment-row`, `.experiment-info`, `.delete-btn`
+`.experiment-row`, `.experiment-info`, `.delete-btn`
 
 Map classes (preserved):
 
-- `.rack-label`, `.marker`, `.map-column`
+`.rack-label`, `.marker`, `.map-column`
 
 Sidebar / dashboard classes (preserved):
 
-- `.panel`, `.metric-card`, `.metric-title`, `.metric-value`,
-  `.metric-detail`, `.card`, `.card-title`, `.row`, `.label`, `.value`
+`.panel`, `.metric-card`, `.metric-title`, `.metric-value`,
+`.metric-detail`, `.card`, `.card-title`, `.row`, `.label`, `.value`
 
 Task list classes (preserved):
 
-- `.section-header`, `.empty-msg`, `.task-row` (+ `.pending`, `.assigned`,
-  `.completed`, `.failed`, `.interrupted`, `.history`), `.task-badge`
-  (+ `.putaway`, `.pick`, `.pack`, `.ship`, `.legacy`), `.task-info`,
-  `.task-title`, `.task-sub`
+`.section-header`, `.empty-msg`, `.task-row` (+ `.pending`, `.assigned`,
+`.completed`, `.failed`, `.interrupted`, `.history`), `.task-badge`
+(+ `.putaway`, `.pick`, `.pack`, `.ship`, `.legacy`), `.task-info`,
+`.task-title`, `.task-sub`
 
 Important ids styled directly:
 
-- `#warehouse`, `#dashboard-grid`, `#task-list`, `#simulation-state`
+`#warehouse`, `#dashboard-grid`, `#task-list`, `#simulation-state`
 
----
+New v0.6 layout classes:
 
-## UI / Visualization (UPDATED in v0.5.0)
+`.setup-grid` — two-column CSS grid for Setup view cards.
+`.setup-grid .card` — removes default card margin inside grid.
+`.setup-grid .card.full-width` — spans both grid columns.
+`.run-layout` — flex container for Run view (warehouse left, sidebar right).
+`.run-main` — left column containing warehouse map and legend.
+`.run-sidebar` — right column containing controls, dashboard, and task list.
+`.run-controls` — flex row for Pause/Resume/Reset buttons at top of sidebar.
 
-- Multi-stage workflow: Setup -> Run (live) or Fast (headless) -> Results ->
-  Experiments -> Visualization -> Analysis -> Compare.
-- Dark theme; warehouse map flat and borderless; zones by solid color.
-- Legend below the map lists robot states and warehouse zones.
-- Robot body color = identity; task type = outer glow only.
-- Task location = outer glow only (amber pickup, green dropoff; faint
-  variants for interrupted).
-- Charts: ECharts dark theme, Okabe-Ito colors; line charts smooth by default
-  to tame spikes; dataZoom sliders for range control; raw per-tick series
-  remain selectable.
-- Chart types: line (time-series), stacked area (robot state composition),
-  bar (final-value comparison, robot utilization), histogram (distributions).
-- Phase `To pickup`: strong amber glow on pickup/access, faint green on
-  dropoff. Phase `To dropoff`: strong green glow on dropoff/access.
-- Dashboard is a compact metric grid at the top of the sidebar.
-- Active Queue includes `Pending`, `Assigned`, `Interrupted` tasks.
-- Recent History includes completed/failed tasks.
-- Robot battery/mode exposed through tooltip and CSS state classes.
+Responsive breakpoint at 1100px: `.run-layout` stacks vertically,
+`.run-sidebar` expands to full width, `.setup-grid` becomes single column.
+
+## UI / Visualization (UPDATED in v0.6.0)
+
+Multi-stage workflow: Setup -> Run (live) or Fast (headless) -> Results ->
+Experiments -> Visualization -> Analysis -> Compare.
+
+Dark theme; warehouse map flat and borderless; zones by solid color.
+Legend below the map lists robot states and warehouse zones.
+Robot body color = identity; task type = outer glow only.
+Task location = outer glow only (amber pickup, green dropoff; faint
+variants for interrupted).
+Charts: ECharts dark theme, Okabe-Ito colors; line charts smooth by default
+to tame spikes; dataZoom sliders for range control; raw per-tick series
+remain selectable.
+Chart types: line (time-series), stacked area (robot state composition),
+bar (final-value comparison, robot utilization), histogram (distributions).
+Phase `To pickup`: strong amber glow on pickup/access, faint green on
+dropoff. Phase `To dropoff`: strong green glow on dropoff/access.
+Dashboard is a compact metric grid at the top of the sidebar.
+Active Queue includes `Pending`, `Assigned`, `Interrupted` tasks.
+Recent History includes completed/failed tasks.
+Robot battery/mode exposed through tooltip and CSS state classes.
+
+Setup view layout (v0.6):
+
+- Two-column card grid (`.setup-grid`).
+- Top row: Experiment card + Algorithms card.
+- Bottom row: Battery & Charging card + Failures card.
+- Algorithms card contains three dropdowns: Path Planner, Scheduler,
+  Conflict Manager.
+- Start Experiment button below the grid.
+
+Run view layout (v0.6):
+
+- Flex container (`.run-layout`): warehouse map + legend on the left
+  (`.run-main`), controls + dashboard + task list on the right
+  (`.run-sidebar`).
+- Pause/Resume/Reset buttons at the top of the sidebar (`.run-controls`).
+- Dashboard metric grid and task list below the controls.
 
 ## Deployment Notes (v0.5.0)
 
@@ -2032,28 +2259,24 @@ Important ids styled directly:
 - If the public can start experiments, add authentication/rate limiting;
   experiments consume CPU and disk. Fast mode pins one core for its duration.
 
----
-
 ## Extension Points
 
 Preserved v0.4 extension points (intentionally not or only partially
 implemented):
 
-- `INTERSECTION` → formal intersection traffic control.
-- `MAIN_AISLE` → priority routing or speed changes.
-- `PACKING` → packing queue or processing delay.
-- `RECEIVING` → inbound task generation coupling.
-- `SHIPPING` → outbound task completion coupling.
-- `EMPTY` → dynamic obstacles or editor placement.
-- `BUFFER` → QC delay or put-away scheduling.
-- `PICK_STATION` → pick processing time or queueing.
-- `CONSOLIDATION` → order merge logic.
-- `STAGING` → carrier lane assignment.
-- Physical load handoff → v0.4 uses logical task recovery, not physical
+- `INTERSECTION` -> formal intersection traffic control.
+- `MAIN_AISLE` -> priority routing or speed changes.
+- `PACKING` -> packing queue or processing delay.
+- `RECEIVING` -> inbound task generation coupling.
+- `SHIPPING` -> outbound task completion coupling.
+- `EMPTY` -> dynamic obstacles or editor placement.
+- `BUFFER` -> QC delay or put-away scheduling.
+- `PICK_STATION` -> pick processing time or queueing.
+- `CONSOLIDATION` -> order merge logic.
+- `STAGING` -> carrier lane assignment.
+- Physical load handoff -> v0.4 uses logical task recovery, not physical
   pallet transfer.
-- Reservation-based pathfinding → v0.4 uses local single-yielder deadlock
-  recovery plus charger slot reservations, not full time-windowed MAPF.
-- Predictive maintenance → not implemented.
+- Predictive maintenance -> not implemented.
 
 New v0.5 extension points:
 
@@ -2061,9 +2284,20 @@ New v0.5 extension points:
 - Explicit in-simulation event hooks to replace tick-resolution inference.
 - Per-robot time-series utilization/blocked columns if summary-level
   distributions become insufficient.
-- v0.6 alternative schedulers (auction, MARL, swarm) plug in through
-  `ExperimentConfig.scheduler` + `create_simulation_from_config` while
-  reusing recorder, storage, and analysis infrastructure.
 - Server-side analysis caching if hosted traffic grows.
 
+New v0.6 extension points:
 
+- Additional `PathPlanner` implementations (D* Lite, LPA*, congestion-aware
+  A*) plug in through `ExperimentConfig.path_planner` and
+  `create_path_planner_from_name`.
+- Additional `Scheduler` implementations (Hungarian assignment, rolling
+  horizon optimizer, reinforcement learning) plug in through
+  `ExperimentConfig.scheduler` and `create_scheduler_from_name`.
+- Additional `ConflictManager` implementations (one-way aisle policies,
+  intersection signal control, full CBS/ECBS) plug in through
+  `ExperimentConfig.conflict_manager` and
+  `create_conflict_manager_from_name`.
+- Edge reservations in `ReservationTable` to prevent swap collisions.
+- Conflict manager diagnostics could be persisted to summary.json for
+  cross-run comparison.

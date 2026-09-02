@@ -2,24 +2,86 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
-from .reservations import ReservationTable
 from .robot import RobotMode, RobotStatus
 from .task import TaskPhase
-from .warehouse import CellType
 
 if TYPE_CHECKING:
     from .robot import Robot
     from .simulation import Simulation
 
 
+class ReservationTable:
+    """Simple vertex reservation table."""
+
+    def __init__(self) -> None:
+        self._vertex_reservations: dict[
+            tuple[int, int],
+            dict[int, str],
+        ] = {}
+
+        self._robot_reservations: dict[
+            str,
+            set[tuple[tuple[int, int], int]],
+        ] = {}
+
+    def reset(self) -> None:
+        self._vertex_reservations.clear()
+        self._robot_reservations.clear()
+
+    def reserve(
+        self,
+        robot_id: str,
+        cell: tuple[int, int],
+        tick: int,
+    ) -> bool:
+        owners = self._vertex_reservations.setdefault(cell, {})
+        existing_owner = owners.get(tick)
+
+        if existing_owner is not None and existing_owner != robot_id:
+            return False
+
+        owners[tick] = robot_id
+        self._robot_reservations.setdefault(robot_id, set()).add((cell, tick))
+        return True
+
+    def owner(
+        self,
+        cell: tuple[int, int],
+        tick: int,
+    ) -> str | None:
+        owners = self._vertex_reservations.get(cell)
+
+        if owners is None:
+            return None
+
+        return owners.get(tick)
+
+    def is_free(
+        self,
+        cell: tuple[int, int],
+        tick: int,
+        robot_id: str,
+    ) -> bool:
+        owner = self.owner(cell, tick)
+        return owner is None or owner == robot_id
+
+    def release_robot(self, robot_id: str) -> None:
+        reserved = self._robot_reservations.pop(robot_id, set())
+
+        for cell, tick in reserved:
+            owners = self._vertex_reservations.get(cell)
+
+            if owners is None:
+                continue
+
+            if owners.get(tick) == robot_id:
+                owners.pop(tick, None)
+
+            if not owners:
+                self._vertex_reservations.pop(cell, None)
+
+
 class ConflictManager(Protocol):
-    """Conflict-resolution plugin interface.
-
-    Existing reactive methods remain for occupied-cell conflicts.
-    New proactive methods allow zone locking and reservation-based denial
-    before the occupied-cell check.
-    """
-
     def handle_blocked_robot(
         self,
         robot: "Robot",
@@ -63,11 +125,7 @@ class ConflictManager(Protocol):
 
 
 class LocalYieldConflictManager:
-    """Baseline conflict manager.
-
-    This preserves the existing local deadlock recovery behavior.
-    It adds no proactive restrictions.
-    """
+    """Baseline reactive local deadlock recovery."""
 
     def __init__(self, sim: "Simulation") -> None:
         self._sim = sim
@@ -215,11 +273,7 @@ class LocalYieldConflictManager:
             return robot if robot_score > blocker_score else blocker
 
         if robot.blocked_ticks != blocker.blocked_ticks:
-            return (
-                robot
-                if robot.blocked_ticks > blocker.blocked_ticks
-                else blocker
-            )
+            return robot if robot.blocked_ticks > blocker.blocked_ticks else blocker
 
         return robot if robot.id < blocker.id else blocker
 
@@ -514,59 +568,82 @@ class LocalYieldConflictManager:
 
 
 class ZoneLockConflictManager(LocalYieldConflictManager):
-    """Intersection zone-lock conflict manager.
+    """Path-corridor zone locks.
 
-    This keeps the existing local yield behavior for occupied-cell conflicts
-    and adds a proactive rule:
-
-    - INTERSECTION cells are lockable zones.
-    - A robot currently on an intersection locks it.
-    - A robot whose immediate next target is an intersection claims it.
-    - Robots are processed deterministically by robot id when claiming.
-    - If another robot already owns the lock, entry is denied temporarily.
-
-    If a robot is denied for too long, it is allowed to fall back to the
-    normal occupied/local-yield system to avoid starvation.
+    Claims the next few cells on each robot's path. If another robot already
+    owns the claim, entry is denied until the waiter has been blocked too long.
     """
 
-    def __init__(self, sim: "Simulation") -> None:
+    def __init__(self, sim: "Simulation", lookahead: int = 2) -> None:
         super().__init__(sim)
+
+        if lookahead < 1:
+            raise ValueError("Zone lock lookahead must be >= 1.")
+
+        self._lookahead = int(lookahead)
         self._locks: dict[tuple[int, int], str] = {}
+
+        # Diagnostics.
+        self.denied_steps = 0
+        self.locks_created = 0
+        self.tick_calls = 0
+        self.robots_with_paths = 0
 
     def reset(self) -> None:
         super().reset()
+
         self._locks.clear()
 
-    def _is_intersection(self, cell: tuple[int, int]) -> bool:
-        warehouse = self._sim._warehouse
-
-        if not warehouse.in_bounds(*cell):
-            return False
-
-        return warehouse.cell_type(*cell) == CellType.INTERSECTION
+        self.denied_steps = 0
+        self.locks_created = 0
+        self.tick_calls = 0
+        self.robots_with_paths = 0
 
     def tick(self, current_tick: int, robots: list["Robot"]) -> None:
-        super().tick(current_tick, robots)
-
+        self.tick_calls += 1
         self._locks.clear()
 
-        # Deterministic claim order.
-        for robot in sorted(robots, key=lambda r: r.id):
+        warehouse = self._sim._warehouse
+
+        claimable: list["Robot"] = []
+
+        for robot in robots:
             mode = getattr(robot, "mode", RobotMode.IDLE)
 
-            # Failed and repairing robots are handled by occupied-cell logic.
-            if mode in (RobotMode.FAILED, RobotMode.REPAIRING):
+            if mode in (
+                RobotMode.FAILED,
+                RobotMode.REPAIRING,
+                RobotMode.CHARGING,
+            ):
                 continue
 
-            current = (robot.x, robot.y)
+            claimable.append(robot)
 
-            if self._is_intersection(current):
-                self._locks.setdefault(current, robot.id)
+            if robot.path:
+                self.robots_with_paths += 1
 
-            next_cell = getattr(robot, "current_target", None)
+        # Less-willing-to-yield robots claim first.
+        claimable.sort(key=lambda r: (self._yield_score(r), r.id))
 
-            if next_cell is not None and self._is_intersection(next_cell):
-                self._locks.setdefault(next_cell, robot.id)
+        for robot in claimable:
+            path = robot.path or []
+
+            if not path:
+                continue
+
+            for cell in path[: self._lookahead]:
+                if not warehouse.in_bounds(*cell):
+                    break
+
+                if warehouse.is_blocked(*cell):
+                    break
+
+                if cell in self._locks:
+                    break
+
+                self._locks[cell] = robot.id
+
+        self.locks_created += len(self._locks)
 
     def allow_step(
         self,
@@ -574,17 +651,8 @@ class ZoneLockConflictManager(LocalYieldConflictManager):
         next_cell: tuple[int, int],
         occupied: set[tuple[int, int]],
     ) -> bool:
-        if not super().allow_step(robot, next_cell, occupied):
-            return False
-
-        # Fallback to avoid starvation.
-        if (
-            robot.blocked_ticks
-            >= self._sim._blocked_replan_threshold_ticks * 2
-        ):
-            return True
-
-        if not self._is_intersection(next_cell):
+        # Starvation fallback.
+        if robot.blocked_ticks >= self._sim._blocked_replan_threshold_ticks * 2:
             return True
 
         owner = self._locks.get(next_cell)
@@ -592,6 +660,7 @@ class ZoneLockConflictManager(LocalYieldConflictManager):
         if owner is None or owner == robot.id:
             return True
 
+        self.denied_steps += 1
         return False
 
     def release_robot(self, robot_id: str) -> None:
@@ -603,38 +672,38 @@ class ZoneLockConflictManager(LocalYieldConflictManager):
 
 
 class PrioritizedReservationConflictManager(LocalYieldConflictManager):
-    """Approximate prioritized reservation conflict manager.
+    """Approximate prioritized reservation manager.
 
-    This rebuilds short-horizon vertex reservations every tick from each
-    robot's current path.
-
-    Robots are sorted by a priority score. Higher-priority robots reserve
-    their future cells first. Lower-priority robots cannot reserve cells
-    already reserved by higher-priority robots.
-
-    This is not full space-time MAPF. It is a practical proactive traffic
-    manager for experimentation.
+    Rebuilds short-horizon vertex reservations every tick from each robot's
+    current path. Higher-priority robots reserve first.
     """
 
-    def __init__(
-        self,
-        sim: "Simulation",
-        horizon: int = 32,
-    ) -> None:
+    def __init__(self, sim: "Simulation", horizon: int = 32) -> None:
         super().__init__(sim)
 
         if horizon < 1:
             raise ValueError("Reservation horizon must be >= 1.")
 
-        self._horizon = horizon
+        self._horizon = int(horizon)
         self._table = ReservationTable()
+
+        # Diagnostics.
+        self.denied_steps = 0
+        self.reservations_created = 0
+        self.tick_calls = 0
+        self.robots_with_paths = 0
 
     def reset(self) -> None:
         super().reset()
+
         self._table.reset()
 
+        self.denied_steps = 0
+        self.reservations_created = 0
+        self.tick_calls = 0
+        self.robots_with_paths = 0
+
     def _robot_priority(self, robot: "Robot") -> int:
-        """Higher score means higher reservation priority."""
         sim = self._sim
         mode = getattr(robot, "mode", RobotMode.IDLE)
 
@@ -647,63 +716,42 @@ class PrioritizedReservationConflictManager(LocalYieldConflictManager):
 
         score = 0
 
-        cfg = getattr(sim, "_battery_cfg", None)
-        critical_battery = (
-            getattr(cfg, "critical_battery", 20.0)
-            if cfg is not None
-            else 20.0
-        )
-        capacity = (
-            getattr(cfg, "capacity", 100.0)
-            if cfg is not None
-            else 100.0
-        )
+        cfg = sim._battery_cfg
+        battery = float(getattr(robot, "battery", cfg.capacity))
 
-        battery = float(getattr(robot, "battery", capacity))
-
-        # Critical charging movement gets very high priority.
         if mode == RobotMode.TO_CHARGER:
             score += 800_000
 
-            if battery <= critical_battery:
+            if battery <= cfg.critical_battery:
                 score += 400_000
 
-        task_id = getattr(robot, "current_task_id", None)
-
-        if task_id is not None:
-            task = sim._tasks.get(task_id)
+        if robot.current_task_id is not None:
+            task = sim._tasks.get(robot.current_task_id)
 
             if task is not None:
-                # Loaded robots are protected.
                 if getattr(task, "phase", None) == TaskPhase.TO_DROPOFF:
                     score += 500_000
 
-                # Lower task.priority value means higher urgency.
                 priority = int(getattr(task, "priority", 3) or 3)
                 score -= priority * 10_000
         else:
-            # Empty idle robots yield to task-carrying robots.
             score -= 100_000
 
-        # Robots that have already been blocked for a while get pressure.
         blocked_pressure = min(int(getattr(robot, "blocked_ticks", 0)), 20) * 100
         score += blocked_pressure
 
-        # Low battery increases urgency.
-        if battery <= critical_battery:
+        if battery <= cfg.critical_battery:
             score += 200_000
 
-        # Small tie pressure: preserve higher battery robots slightly.
-        score += int(max(0.0, capacity - battery))
+        score += int(max(0.0, cfg.capacity - battery))
 
         return score
 
     def tick(self, current_tick: int, robots: list["Robot"]) -> None:
-        super().tick(current_tick, robots)
-
+        self.tick_calls += 1
         self._table.reset()
 
-        active_robots: list["Robot"] = []
+        active: list["Robot"] = []
 
         for robot in robots:
             mode = getattr(robot, "mode", RobotMode.IDLE)
@@ -715,31 +763,34 @@ class PrioritizedReservationConflictManager(LocalYieldConflictManager):
             ):
                 continue
 
-            active_robots.append(robot)
+            active.append(robot)
 
-        # High priority first. Tie-break by robot id for determinism.
-        active_robots.sort(
-            key=lambda r: (-self._robot_priority(r), r.id)
-        )
+            if robot.path:
+                self.robots_with_paths += 1
 
-        for robot in active_robots:
+        active.sort(key=lambda r: (-self._robot_priority(r), r.id))
+
+        for robot in active:
             current = (robot.x, robot.y)
 
-            # Reserve current position at current tick.
             self._table.reserve(robot.id, current, current_tick)
 
-            path = getattr(robot, "path", None) or []
+            path = robot.path or []
 
             if not path:
                 continue
+
+            reserved_cells = 1
 
             for offset, cell in enumerate(path[: self._horizon], start=1):
                 tick = current_tick + offset
 
                 if not self._table.reserve(robot.id, cell, tick):
-                    # If this robot cannot reserve its next planned step,
-                    # do not reserve further future cells for this path.
                     break
+
+                reserved_cells += 1
+
+            self.reservations_created += reserved_cells
 
     def allow_step(
         self,
@@ -747,23 +798,17 @@ class PrioritizedReservationConflictManager(LocalYieldConflictManager):
         next_cell: tuple[int, int],
         occupied: set[tuple[int, int]],
     ) -> bool:
-        if not super().allow_step(robot, next_cell, occupied):
-            return False
-
-        # Fallback to avoid starvation.
-        if (
-            robot.blocked_ticks
-            >= self._sim._blocked_replan_threshold_ticks * 2
-        ):
+        # Starvation fallback.
+        if robot.blocked_ticks >= self._sim._blocked_replan_threshold_ticks * 2:
             return True
 
         next_tick = self._sim._tick_count + 1
-
         owner = self._table.owner(next_cell, next_tick)
 
         if owner is None or owner == robot.id:
             return True
 
+        self.denied_steps += 1
         return False
 
     def release_robot(self, robot_id: str) -> None:

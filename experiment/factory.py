@@ -34,33 +34,25 @@ from .config import ExperimentConfig
 
 # Colorblind-safe palette (Okabe-Ito) for robots.
 ROBOT_COLORS: list[str] = [
-    "#E69F00",  # orange
-    "#56B4E9",  # sky blue
-    "#009E73",  # bluish green
-    "#F0E442",  # yellow
-    "#0072B2",  # blue
-    "#D55E00",  # vermillion
-    "#CC79A7",  # reddish purple
-    "#999999",  # gray
-    "#000000",  # black
+    "#E69F00",
+    "#56B4E9",
+    "#009E73",
+    "#F0E442",
+    "#0072B2",
+    "#D55E00",
+    "#CC79A7",
+    "#999999",
+    "#000000",
 ]
 
 
-# ------------------------------------------------------------------
-# Path planner factory helpers
-# ------------------------------------------------------------------
-
 def create_path_planner_from_name(name: str) -> PathPlanner:
-    """Create a path planner from a plain string name."""
     if name == "bfs":
         return BFSPathPlanner()
-
     if name == "astar":
         return AStarPathPlanner(weight=1.0)
-
     if name == "weighted_astar":
         return AStarPathPlanner(weight=1.2)
-
     raise ValueError(
         f"Unknown path planner: {name!r}. "
         "Expected one of: bfs, astar, weighted_astar."
@@ -68,35 +60,24 @@ def create_path_planner_from_name(name: str) -> PathPlanner:
 
 
 def create_path_planner(config: ExperimentConfig) -> PathPlanner:
-    """Create the configured path planner."""
     name = getattr(config, "path_planner", "bfs")
     return create_path_planner_from_name(name)
 
-
-# ------------------------------------------------------------------
-# Scheduler factory helpers
-# ------------------------------------------------------------------
 
 def create_scheduler_from_name(
     name: str,
     path_planner: PathPlanner,
 ) -> Scheduler:
-    """Create a scheduler from a plain string name."""
     if name == "baseline":
         return CostBasedScheduler(path_planner=path_planner)
-
     if name == "priority":
         return PriorityScheduler(path_planner=path_planner)
-
     if name == "fifo":
         return FIFOScheduler(path_planner=path_planner)
-
     if name == "total_cost":
         return TotalCostScheduler(path_planner=path_planner)
-
     if name == "auction":
         return AuctionScheduler(path_planner=path_planner)
-
     raise ValueError(
         f"Unknown scheduler: {name!r}. "
         "Expected one of: baseline, priority, fifo, total_cost, auction."
@@ -107,9 +88,7 @@ def create_scheduler(
     config: ExperimentConfig,
     path_planner: PathPlanner,
 ) -> Scheduler:
-    """Create the configured task allocation scheduler."""
     name = getattr(config, "scheduler", "baseline")
-
     if name == "total_cost":
         return TotalCostScheduler(
             path_planner=path_planner,
@@ -118,28 +97,19 @@ def create_scheduler(
             safety_margin=config.battery_safety_margin,
             critical_battery=config.critical_battery,
         )
-
     return create_scheduler_from_name(name, path_planner)
 
-
-# ------------------------------------------------------------------
-# Conflict manager factory helpers
-# ------------------------------------------------------------------
 
 def create_conflict_manager_from_name(
     name: str,
     sim: Simulation,
 ) -> ConflictManager:
-    """Create a conflict manager from a plain string name."""
     if name == "local_yield":
         return LocalYieldConflictManager(sim)
-
     if name == "zone_locks":
         return ZoneLockConflictManager(sim)
-
     if name == "priority_reservation":
         return PrioritizedReservationConflictManager(sim)
-
     raise ValueError(
         f"Unknown conflict manager: {name!r}. "
         "Expected one of: local_yield, zone_locks, priority_reservation."
@@ -150,25 +120,18 @@ def create_conflict_manager(
     config: ExperimentConfig,
     sim: Simulation,
 ) -> ConflictManager:
-    """Create the configured conflict manager."""
     name = getattr(config, "conflict_manager", "local_yield")
     return create_conflict_manager_from_name(name, sim)
 
-
-# ------------------------------------------------------------------
-# Robot creation
-# ------------------------------------------------------------------
 
 def generate_spawn_positions(
     num_robots: int,
     warehouse: Warehouse,
     seed: int,
 ) -> list[tuple[int, int]]:
-    """Generate deterministic spawn positions using seeded RNG."""
     rng = random.Random(seed)
 
     passable_cells: list[tuple[int, int]] = []
-
     for y in range(warehouse.height):
         for x in range(warehouse.width):
             if not warehouse.is_blocked(x, y):
@@ -189,12 +152,10 @@ def create_experiment_robots(
     warehouse: Warehouse,
     seed: int,
 ) -> list[Robot]:
-    """Create robots with deterministic seeded spawn positions."""
     if num_robots < 1:
         raise ValueError("num_robots must be at least 1.")
 
     spawn_positions = generate_spawn_positions(num_robots, warehouse, seed)
-
     robots: list[Robot] = []
 
     for i, (x, y) in enumerate(spawn_positions):
@@ -213,13 +174,8 @@ def create_experiment_robots(
     return robots
 
 
-# ------------------------------------------------------------------
-# Simulation creation
-# ------------------------------------------------------------------
-
 def create_simulation_from_config(config: ExperimentConfig) -> Simulation:
     warehouse = build_warehouse()
-
     robots = create_experiment_robots(
         config.num_robots,
         warehouse,
@@ -270,8 +226,6 @@ def create_simulation_from_config(config: ExperimentConfig) -> Simulation:
         path_planner=path_planner,
     )
 
-    # Conflict manager is injected after Simulation exists because the
-    # conflict managers need a reference to the simulation.
     if hasattr(sim, "set_conflict_manager"):
         sim.set_conflict_manager(create_conflict_manager(config, sim))
 

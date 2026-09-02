@@ -21,32 +21,6 @@ from simulation.warehouse_layout import build_warehouse
 
 """
 Headless benchmark for the warehouse simulation.
-
-Examples:
-
-Baseline local yield:
-
-python benchmark.py \
-    --robots 8 \
-    --seed 42 \
-    --target 100 \
-    --conflict-manager local_yield
-
-Zone locks:
-
-python benchmark.py \
-    --robots 8 \
-    --seed 42 \
-    --target 100 \
-    --conflict-manager zone_locks
-
-Priority reservation:
-
-python benchmark.py \
-    --robots 8 \
-    --seed 42 \
-    --target 100 \
-    --conflict-manager priority_reservation
 """
 
 
@@ -97,6 +71,39 @@ def create_legacy_robots(num_robots: int) -> list[Robot]:
 
 def safe_divide(numerator: float, denominator: float) -> float:
     return numerator / denominator if denominator else 0.0
+
+
+def print_conflict_diagnostics(sim: Simulation) -> None:
+    cm = getattr(sim, "_conflict_manager", None)
+
+    print("--- Conflict Manager Diagnostics After Run ---")
+
+    if cm is None:
+        print("No conflict manager attached.")
+        print()
+        return
+
+    print(f"Active conflict manager: {type(cm).__name__}")
+
+    counters = [
+        ("Conflict tick calls", "tick_calls"),
+        ("Robots seen with paths", "robots_with_paths"),
+        ("Proactive locks created", "locks_created"),
+        ("Proactive reservations created", "reservations_created"),
+        ("Proactive denied steps", "denied_steps"),
+    ]
+
+    found = False
+
+    for label, attr in counters:
+        if hasattr(cm, attr):
+            print(f"{label}: {getattr(cm, attr)}")
+            found = True
+
+    if not found:
+        print("No proactive counters present. This is normal for local_yield.")
+
+    print()
 
 
 def run_benchmark(args: argparse.Namespace) -> None:
@@ -250,6 +257,7 @@ def run_benchmark(args: argparse.Namespace) -> None:
     print(f"Active path planner: {active_path_planner}")
     print(f"Active scheduler: {active_scheduler}")
     print(f"Active conflict manager: {active_conflict_manager}")
+    print("Conflict diagnostics will be printed after the run.")
     print()
 
     start_time = time.perf_counter()
@@ -345,6 +353,9 @@ def run_benchmark(args: argparse.Namespace) -> None:
             f"{blocked} blocked ticks, "
             f"{replans} replans"
         )
+
+    print()
+    print_conflict_diagnostics(sim)
 
 
 if __name__ == "__main__":

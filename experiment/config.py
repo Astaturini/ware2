@@ -12,14 +12,6 @@ PATH_PLANNER_CHOICES = {
     "weighted_astar",
 }
 
-SCHEDULER_CHOICES = {
-    "baseline",
-    "priority",
-    "fifo",
-    "total_cost",
-    "auction",
-}
-
 CONFLICT_MANAGER_CHOICES = {
     "local_yield",
     "zone_locks",
@@ -61,73 +53,51 @@ class ExperimentConfig:
 
     scheduler: str = "baseline"
 
-    # v0.6 algorithm-selection fields.
     path_planner: str = "bfs"
     conflict_manager: str = "local_yield"
 
     def __post_init__(self) -> None:
         if self.seed is None:
             raise ValueError("seed is required for reproducible experiments.")
-
         if self.num_robots < 1:
             raise ValueError("num_robots must be at least 1.")
-
         if self.stop_mode not in {"fixed_ticks", "workload"}:
             raise ValueError(
                 "stop_mode must be either 'fixed_ticks' or 'workload'."
             )
-
         if self.stop_mode == "workload":
             if self.target_tasks is None or self.target_tasks < 1:
                 raise ValueError(
                     "target_tasks must be a positive integer in workload mode."
                 )
-
         if self.max_ticks < 1:
             raise ValueError("max_ticks must be at least 1.")
-
         if self.tick_interval <= 0:
             raise ValueError("tick_interval must be positive.")
-
         if self.blocked_replan_seconds < 0:
             raise ValueError("blocked_replan_seconds must be >= 0.")
-
         if self.replan_cooldown_ticks < 1:
             raise ValueError("replan_cooldown_ticks must be at least 1.")
-
         if self.battery_capacity <= 0:
             raise ValueError("battery_capacity must be positive.")
-
         if self.empty_move_energy < 0 or self.loaded_move_energy < 0:
             raise ValueError("move energy values must be >= 0.")
-
         if self.charger_capacity < 1:
             raise ValueError("charger_capacity must be at least 1.")
-
         if self.charge_duration_ticks < 1:
             raise ValueError("charge_duration_ticks must be at least 1.")
-
         if self.mtbf_ticks < 0:
             raise ValueError("mtbf_ticks must be >= 0.")
-
         if self.mttr_ticks < 1:
             raise ValueError("mttr_ticks must be at least 1.")
-
         if self.failure_enabled and self.mtbf_ticks <= 0:
             raise ValueError(
                 "mtbf_ticks must be > 0 when failure_enabled is true."
             )
-
         if self.path_planner not in PATH_PLANNER_CHOICES:
             raise ValueError(
                 f"path_planner must be one of {sorted(PATH_PLANNER_CHOICES)}."
             )
-
-        if self.scheduler not in SCHEDULER_CHOICES:
-            raise ValueError(
-                f"scheduler must be one of {sorted(SCHEDULER_CHOICES)}."
-            )
-
         if self.conflict_manager not in CONFLICT_MANAGER_CHOICES:
             raise ValueError(
                 f"conflict_manager must be one of {sorted(CONFLICT_MANAGER_CHOICES)}."
@@ -150,24 +120,19 @@ class ExperimentConfig:
     def save(self, directory: str | Path) -> None:
         directory = Path(directory)
         directory.mkdir(parents=True, exist_ok=True)
-
         with open(directory / "config.json", "w", encoding="utf-8") as f:
             json.dump(self.to_dict(), f, indent=2)
 
     @classmethod
     def load(cls, directory: str | Path) -> "ExperimentConfig":
-        with open(
-            Path(directory) / "config.json", "r", encoding="utf-8"
-        ) as f:
+        with open(Path(directory) / "config.json", "r", encoding="utf-8") as f:
             return cls.from_dict(json.load(f))
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ExperimentConfig":
         base = cls.default().to_dict()
         known = set(cls.__dataclass_fields__.keys())
-
         for key, value in (data or {}).items():
             if key in known:
                 base[key] = value
-
         return cls(**base)

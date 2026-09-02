@@ -350,6 +350,13 @@ class Simulation:
         self._assign_pending_tasks()
         self._update_battery_checks()
         self._update_idle_and_opportunistic_charging()
+
+        # Proactive conflict layer syncs before movement.
+        self._conflict_manager.tick(
+            self._tick_count,
+            list(self._robots.values()),
+        )
+
         self._advance_robots()
 
         self._metrics.record_tick(list(self._robots.values()))
@@ -518,17 +525,28 @@ class Simulation:
             if next_cell is None:
                 continue
 
-            if next_cell in occupied:
-                self._conflict_manager.handle_blocked_robot(robot, next_cell)
+                next_cell = robot.current_target
+            if next_cell is None:
                 continue
 
+            # Proactive conflict managers can deny a step before the
+            # occupied-cell check. Replanning/yield robots above are NOT
+            # gated, so deadlock escape still works.
+            if not self._conflict_manager.allow_step(robot, next_cell, occupied):
+                robot.blocked_ticks += 1
+                self._metrics.record_blocked(robot)
+                continue
+
+            if next_cell in occupied:
+                self._conflict_manager.handle_blocked_robot(robot, next_cell)
+                continue        
             arrived = self._step_robot_forward(robot, occupied)
 
             if arrived:
                 self._handle_arrival(robot)
             else:
                 self._check_battery_for_active_task(robot)
-
+    
     def _step_robot_forward(
         self,
         robot: Robot,
@@ -926,6 +944,9 @@ class Simulation:
         robot.route_goal = None
         robot.travel_history = []
 
+        self._conflict_manager.release_robot(robot.id)
+
+
     def _relocate_waiting_robot_off_charger(self, robot: Robot) -> None:
         if (robot.x, robot.y) not in self._charging_cells:
             return
@@ -1167,6 +1188,7 @@ class Simulation:
         self._conflict_manager.clear_conflicts_for_robot(robot)
         self._safe_metric("record_failed_robot_event")
         self._relocate_robot_to_maintenance(robot)
+        self._conflict_manager.release_robot(robot.id)
 
     # ------------------------------------------------------------------
     # v0.4 task interruption / recovery
@@ -1607,6 +1629,7 @@ class Simulation:
         self._conflict_manager.clear_conflicts_for_robot(robot)
         self._safe_metric("record_failed_robot_event")
         self._relocate_robot_to_maintenance(robot)
+        self._conflict_manager.release_robot(robot.id)
 
     def _update_robot_repairs(self) -> None:
         for robot in list(self._robots.values()):

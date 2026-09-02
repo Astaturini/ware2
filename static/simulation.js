@@ -1,6 +1,5 @@
 const CELL_SIZE = 32;
 const POLL_INTERVAL_MS = 300;
-
 const CHART_COLORS = [
     '#E69F00', '#56B4E9', '#009E73', '#F0E442',
     '#0072B2', '#D55E00', '#CC79A7', '#999999'
@@ -19,7 +18,6 @@ let activeRunId = null;
 let robotElements = {};
 let previousWarehouseKey = null;
 let updateInProgress = false;
-
 let visualizationChart = null;
 let compareChart = null;
 let analysisCharts = [];
@@ -44,16 +42,13 @@ class MultiSelect {
         `;
         this.trigger = this.container.querySelector('.multi-select-trigger');
         this.dropdown = this.container.querySelector('.multi-select-dropdown');
-
         this.trigger.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggle();
         });
-
         document.addEventListener('click', (e) => {
             if (!this.container.contains(e.target)) this.close();
         });
-
         this.updateDisplay();
     }
 
@@ -68,7 +63,6 @@ class MultiSelect {
                 <span>${opt.label}</span>
             </div>
         `).join('');
-
         this.dropdown.querySelectorAll('.multi-select-option').forEach(el => {
             el.addEventListener('click', () => {
                 const val = el.dataset.value;
@@ -84,9 +78,7 @@ class MultiSelect {
             const opt = this.options.find(o => o.value === val);
             return `<span class="multi-select-tag">${opt?.label || val}<span class="multi-select-tag-remove" data-value="${val}">×</span></span>`;
         }).join('');
-
         this.trigger.innerHTML = tags || '<span style="color: var(--text-secondary);">Select runs...</span>';
-
         this.trigger.querySelectorAll('.multi-select-tag-remove').forEach(el => {
             el.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -139,10 +131,8 @@ function getBaseChartOption() {
 function renderLineChart(containerId, series, options = {}) {
     const el = document.getElementById(containerId);
     if (!el || typeof echarts === 'undefined') return null;
-
     if (options.existingChart) options.existingChart.dispose();
     const chart = echarts.init(el, 'dark');
-
     const opt = getBaseChartOption();
     opt.series = series.map(item => ({
         name: item.name,
@@ -152,7 +142,6 @@ function renderLineChart(containerId, series, options = {}) {
         smooth: options.smooth !== false,
         lineStyle: item.lineStyle || { width: 2 }
     }));
-
     chart.setOption(opt);
     return chart;
 }
@@ -160,10 +149,8 @@ function renderLineChart(containerId, series, options = {}) {
 function renderStackedAreaChart(containerId, series) {
     const el = document.getElementById(containerId);
     if (!el || typeof echarts === 'undefined') return null;
-
     if (visualizationChart) visualizationChart.dispose();
     const chart = echarts.init(el, 'dark');
-
     const opt = getBaseChartOption();
     opt.series = series.map(item => ({
         name: item.name,
@@ -175,7 +162,6 @@ function renderStackedAreaChart(containerId, series) {
         smooth: true,
         emphasis: { focus: 'series' }
     }));
-
     chart.setOption(opt);
     return chart;
 }
@@ -183,16 +169,13 @@ function renderStackedAreaChart(containerId, series) {
 function renderBarChart(containerId, categories, values, title) {
     const el = document.getElementById(containerId);
     if (!el || typeof echarts === 'undefined') return null;
-
     if (compareChart) compareChart.dispose();
     const chart = echarts.init(el, 'dark');
-
     const opt = getBaseChartOption();
     opt.xAxis = { type: 'category', data: categories, axisLabel: { color: '#a8a8a8', rotate: 30 } };
     opt.yAxis = { type: 'value', axisLine: { lineStyle: { color: '#2d3748' } }, splitLine: { lineStyle: { color: '#2d3748' } } };
     opt.dataZoom = [];
     opt.series = [{ name: title, type: 'bar', data: values, itemStyle: { borderRadius: [4, 4, 0, 0] } }];
-
     chart.setOption(opt);
     return chart;
 }
@@ -200,13 +183,11 @@ function renderBarChart(containerId, categories, values, title) {
 function renderHistogramChart(containerEl, histogram) {
     if (!containerEl || typeof echarts === 'undefined') return;
     const chart = echarts.init(containerEl, 'dark');
-
     const opt = getBaseChartOption();
     opt.xAxis = { type: 'category', data: (histogram.bin_centers || []).map(v => Number(v).toFixed(1)), axisLabel: { color: '#a8a8a8' } };
     opt.yAxis = { type: 'value', axisLine: { lineStyle: { color: '#2d3748' } }, splitLine: { lineStyle: { color: '#2d3748' } } };
     opt.dataZoom = [];
     opt.series = [{ type: 'bar', data: histogram.counts || [], itemStyle: { color: '#E69F00' } }];
-
     chart.setOption(opt);
     analysisCharts.push(chart);
 }
@@ -236,7 +217,6 @@ function formatValue(value) {
     if (typeof value === 'number') return Number.isInteger(value) ? String(value) : value.toFixed(4);
     return value == null ? "-" : String(value);
 }
-
 function formValue(id) { const el = document.getElementById(id); return el ? el.value : ""; }
 function formNumber(id, fallback = 0) { return toNumber(formValue(id), fallback); }
 function formNumberOrNull(id) { const raw = formValue(id); if (raw === "") return null; return toNumber(raw, 0); }
@@ -250,11 +230,9 @@ async function refresh() {
     updateInProgress = true;
     try {
         const state = await fetch("/api/state").then(r => r.json());
-
         if (currentView === "run") {
             render(state);
         }
-
         if (currentView === "fast") {
             const el = document.getElementById("fast-status");
             if (el) {
@@ -263,7 +241,6 @@ async function refresh() {
                     `Completed ${state.metrics?.tasksCompleted ?? 0}`;
             }
         }
-
         const finished = state.experiment?.finished;
         if ((currentView === "run" || currentView === "fast") && finished) {
             await showResults();
@@ -291,11 +268,16 @@ function readExperimentConfig() {
         fast_mode: formBool("cfg-fast-mode"),
         blocked_replan_seconds: formNumber("cfg-blocked-replan-seconds", 0.7),
         replan_cooldown_ticks: formNumber("cfg-replan-cooldown-ticks", 7),
+
+        path_planner: safeString(formValue("cfg-path-planner")) || "bfs",
+        scheduler: safeString(formValue("cfg-scheduler")) || "baseline",
+        conflict_manager: safeString(formValue("cfg-conflict-manager")) || "local_yield",
+
         battery_capacity: formNumber("cfg-battery-capacity", 100),
-        empty_move_energy: formNumber("cfg-empty-move-energy", 0.7),
-        loaded_move_energy: formNumber("cfg-loaded-move-energy", 1.0),
-        critical_battery: formNumber("cfg-critical-battery", 20),
-        opportunistic_charge_threshold: formNumber("cfg-opportunistic-charge-threshold", 40),
+        empty_move_energy: formNumber("cfg-empty-move-energy", 0.35),
+        loaded_move_energy: formNumber("cfg-loaded-move-energy", 0.5),
+        critical_battery: formNumber("cfg-critical-battery", 15),
+        opportunistic_charge_threshold: formNumber("cfg-opportunistic-charge-threshold", 30),
         charger_capacity: formNumber("cfg-charger-capacity", 4),
         charge_duration_ticks: formNumber("cfg-charge-duration-ticks", 10),
         failure_enabled: formBool("cfg-failure-enabled"),
@@ -314,7 +296,6 @@ async function startExperiment() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to start");
-
         activeRunId = data.runId;
         robotElements = {};
         previousWarehouseKey = null;
@@ -354,26 +335,21 @@ async function loadExperiments() {
         experimentListEl.innerHTML = "";
         const runs = data.runs || [];
         if (runs.length === 0) { experimentListEl.textContent = "No saved experiments."; return; }
-
         runs.forEach(run => {
             const row = document.createElement("div");
             row.className = "experiment-row";
-
             const config = run.config || {};
             const summary = run.summary || {};
             const displayName = config.display_name || run.run_id;
-
             const info = document.createElement("div");
             info.className = "experiment-info";
             info.innerHTML =
                 `<strong>${displayName}</strong><br>` +
                 `<small>${run.run_id} | robots=${config.num_robots || '?'} | ` +
                 `completed=${summary.tasks_completed || '?'} | stop=${summary.stop_reason || 'not finished'}</small>`;
-
             const btnGroup = document.createElement("div");
             btnGroup.style.display = "flex";
             btnGroup.style.gap = "8px";
-
             const openBtn = document.createElement("button");
             openBtn.textContent = "Open";
             openBtn.onclick = async () => {
@@ -384,7 +360,6 @@ async function loadExperiments() {
                     showView("results");
                 }
             };
-
             const delBtn = document.createElement("button");
             delBtn.textContent = "Delete";
             delBtn.className = "delete-btn";
@@ -393,7 +368,6 @@ async function loadExperiments() {
                 await fetch(`/api/runs/${encodeURIComponent(run.run_id)}`, { method: "DELETE" });
                 loadExperiments();
             };
-
             btnGroup.append(openBtn, delBtn);
             row.append(info, btnGroup);
             experimentListEl.appendChild(row);
@@ -407,7 +381,6 @@ async function populateRunSelects() {
     try {
         const data = await fetch("/api/runs").then(r => r.json());
         const runs = data.runs || [];
-
         const fillSelect = (id) => {
             const sel = document.getElementById(id);
             if (!sel) return;
@@ -420,10 +393,8 @@ async function populateRunSelects() {
                 sel.appendChild(opt);
             });
         };
-
         fillSelect("visualization-run-select");
         fillSelect("analysis-run-select");
-
         if (compareMultiSelect) {
             compareMultiSelect.setOptions(runs.map(r => ({
                 value: r.run_id,
@@ -442,10 +413,8 @@ async function generateVisualization() {
     const runId = document.getElementById("visualization-run-select").value;
     const metric = document.getElementById("visualization-metric-select").value;
     if (!runId) return alert("Select a run.");
-
     try {
         let url = `/api/runs/${encodeURIComponent(runId)}/series?max_points=2000`;
-
         if (metric === "battery_overlay") {
             url += "&columns=average_battery,min_battery,max_battery";
         } else if (metric === "robot_states_stacked") {
@@ -453,10 +422,8 @@ async function generateVisualization() {
         } else {
             url += `&columns=${metric}`;
         }
-
         const data = await fetch(url).then(r => r.json());
         const series = data.series || [];
-
         if (metric === "battery_overlay") {
             series.forEach((s, i) => {
                 s.lineStyle = { width: i === 0 ? 3 : 1, type: i === 0 ? 'solid' : 'dashed' };
@@ -477,15 +444,12 @@ async function generateAnalysis() {
     const statsEl = document.getElementById("analysis-stats");
     const chartsEl = document.getElementById("analysis-charts");
     if (!runId) return alert("Select a run.");
-
     analysisCharts.forEach(c => c.dispose());
     analysisCharts = [];
     statsEl.innerHTML = "";
     chartsEl.innerHTML = "";
-
     try {
         const data = await fetch(`/api/runs/${encodeURIComponent(runId)}/distributions?bins=50`).then(r => r.json());
-
         Object.entries(data.stats || {}).forEach(([name, vals]) => {
             statsEl.appendChild(createMetricCard(
                 name,
@@ -493,7 +457,6 @@ async function generateAnalysis() {
                 `median=${formatValue(vals.median)} p95=${formatValue(vals.p95)}`
             ));
         });
-
         const hists = data.histograms || {};
         const createChartBox = (title) => {
             const wrap = document.createElement("div");
@@ -502,11 +465,9 @@ async function generateAnalysis() {
             chartsEl.appendChild(wrap);
             return wrap.querySelector('.analysis-chart');
         };
-
         if (hists.task_waiting_time) renderHistogramChart(createChartBox("Task Waiting Time"), hists.task_waiting_time);
         if (hists.task_cycle_time) renderHistogramChart(createChartBox("Task Cycle Time"), hists.task_cycle_time);
         if (hists.robot_blocked_episode_ticks) renderHistogramChart(createChartBox("Robot Blocked Duration"), hists.robot_blocked_episode_ticks);
-
         if (Array.isArray(data.robot_utilization) && data.robot_utilization.length > 0) {
             const el = createChartBox("Robot Utilization");
             const chart = echarts.init(el, 'dark');
@@ -528,11 +489,9 @@ async function generateComparison() {
     const metric = document.getElementById("compare-metric-select").value;
     const chartType = document.getElementById("compare-chart-type").value;
     if (runIds.length === 0) return alert("Select at least one run.");
-
     try {
         const url = `/api/runs/compare/series?runs=${encodeURIComponent(runIds.join(','))}&column=${metric}&max_points=2000`;
         const data = await fetch(url).then(r => r.json());
-
         if (chartType === "bar") {
             const categories = data.runs.map(r => r.run_id);
             const values = data.runs.map(r => {
@@ -569,11 +528,9 @@ function render(state) {
         buildStaticLayer(warehouse);
         previousWarehouseKey = warehouseKey;
     }
-
     updateRobots(state.robots || [], state.tasks || []);
     updateTaskHighlights(state);
     updateSidePanel(state);
-
     const exp = state.experiment || {};
     if (exp.active) {
         simulationStateEl.textContent = state.paused ? `Paused | Tick ${state.tick}` : `Tick ${state.tick}`;
@@ -588,11 +545,9 @@ function buildStaticLayer(warehouse) {
     warehouseEl.innerHTML = "";
     warehouseEl.style.width = `${toNumber(warehouse?.width) * CELL_SIZE}px`;
     warehouseEl.style.height = `${toNumber(warehouse?.height) * CELL_SIZE}px`;
-
     (warehouse?.layout || []).forEach((row, y) =>
         row.forEach((cell, x) => addCell(x, y, safeString(cell).toLowerCase()))
     );
-
     Object.entries(warehouse?.racks || {}).forEach(([rack, [x, y]]) => {
         const label = document.createElement("div");
         label.className = "rack-label";
@@ -618,7 +573,6 @@ function addCell(x, y, className) {
 function updateRobots(robots, tasks) {
     const seen = new Set();
     const tasksById = new Map(tasks.map(t => [t.id, t]));
-
     robots.forEach(robot => {
         seen.add(robot.id);
         let el = robotElements[robot.id];
@@ -628,30 +582,24 @@ function updateRobots(robots, tasks) {
             warehouseEl.appendChild(el);
             robotElements[robot.id] = el;
         }
-
         el.style.backgroundColor = safeString(robot.color) || "#888";
         el.style.left = `${toNumber(robot.x) * CELL_SIZE}px`;
         el.style.top = `${toNumber(robot.y) * CELL_SIZE}px`;
         el.classList.toggle("idle", safeString(robot.status) === "Idle");
-
         el.classList.remove(
             "has-task", "task-putaway", "task-pick", "task-pack", "task-ship",
             "low-battery", "to-charger", "waiting-for-charger", "charging", "failed"
         );
-
         const mode = safeString(robot.mode);
         const battery = typeof robot.battery === "number" ? robot.battery : null;
-
         if (mode === "To charger") el.classList.add("to-charger");
         else if (mode === "Waiting for charger") el.classList.add("waiting-for-charger");
         else if (mode === "Charging") el.classList.add("charging");
         else if (mode === "Failed" || mode === "Repairing") el.classList.add("failed");
         if (battery !== null && battery <= 20) el.classList.add("low-battery");
-
         const task = robot.currentTaskId ? tasksById.get(robot.currentTaskId) : null;
         const batteryText = battery !== null ? ` | battery ${battery.toFixed(1)}` : "";
         const modeText = mode && mode !== "Idle" && mode !== "Moving" ? ` | ${mode}` : "";
-
         if (task) {
             el.classList.add("has-task");
             const tt = safeString(task.taskType).toLowerCase();
@@ -664,7 +612,6 @@ function updateRobots(robots, tasks) {
             el.title = `${safeString(robot.id)} | ${mode || "Idle"}${batteryText}`;
         }
     });
-
     Object.keys(robotElements).forEach(id => {
         if (!seen.has(id)) {
             robotElements[id].remove();
@@ -677,10 +624,8 @@ function updateTaskHighlights(state) {
     document.querySelectorAll(".task-pickup-active, .task-dropoff-active, .task-pickup-faint, .task-dropoff-faint").forEach(el => {
         el.classList.remove("task-pickup-active", "task-dropoff-active", "task-pickup-faint", "task-dropoff-faint");
     });
-
     const tasks = state.tasks || [];
     const locs = state.warehouse?.locations || {};
-
     tasks.filter(t => safeString(t.status) === "Assigned" && t.assignedRobotId).forEach(task => {
         const phase = safeString(task.phase);
         if (phase === "To pickup") {
@@ -690,7 +635,6 @@ function updateTaskHighlights(state) {
             highlightLocation(locs, task.dropoff, "task-dropoff-active");
         }
     });
-
     tasks.filter(t => safeString(t.status) === "Interrupted").forEach(task => {
         highlightLocation(locs, task.pickup, "task-pickup-faint");
         highlightLocation(locs, task.dropoff, "task-dropoff-faint");
@@ -715,15 +659,12 @@ function updateSidePanel(state) {
     if (!dashboardGridEl || !taskListEl) return;
     const metrics = state.metrics || {};
     const tasks = state.tasks || [];
-
     dashboardGridEl.innerHTML = "";
-
     const assignedCount = tasks.filter(t => safeString(t.status) === "Assigned").length;
     const pendingCount = tasks.filter(t => safeString(t.status) === "Pending").length;
     const interruptedCount = tasks.filter(t => safeString(t.status) === "Interrupted").length;
     const avgBatt = toNumber(metrics.averageBatteryPercent, 0);
     const avgChargerWait = toNumber(metrics.averageChargerWaitTicks, 0);
-
     const cards = [
         ["Generated", metrics.tasksGenerated ?? 0, "total"],
         ["Completed", metrics.tasksCompleted ?? 0, "tasks"],
@@ -743,15 +684,12 @@ function updateSidePanel(state) {
         ["Downtime", toNumber(metrics.failureDowntimeSeconds).toFixed(1), "secs"],
     ];
     cards.forEach(([t, v, d]) => dashboardGridEl.appendChild(createMetricCard(t, v, d)));
-
     taskListEl.innerHTML = "";
-
     const activeTasks = tasks.filter(t => ["Pending", "Assigned", "Interrupted"].includes(safeString(t.status)));
     const recentDone = tasks
         .filter(t => ["Completed", "Failed"].includes(safeString(t.status)))
         .sort((a, b) => toNumber(b.completedAt) - toNumber(a.completedAt))
         .slice(0, 5);
-
     taskListEl.appendChild(Object.assign(document.createElement("h3"), {
         className: "section-header", textContent: `Active Queue (${activeTasks.length})`
     }));
@@ -760,7 +698,6 @@ function updateSidePanel(state) {
     } else {
         activeTasks.forEach(t => taskListEl.appendChild(createTaskRow(t)));
     }
-
     taskListEl.appendChild(Object.assign(document.createElement("h3"), {
         className: "section-header", textContent: `Recent History (${metrics.tasksCompleted ?? 0} completed)`
     }));
@@ -774,17 +711,14 @@ function updateSidePanel(state) {
 function createTaskRow(task, isHistory = false) {
     const row = document.createElement("div");
     row.className = `task-row ${safeString(task.status).toLowerCase()} ${isHistory ? "history" : ""}`;
-
     const badge = document.createElement("span");
     badge.className = `task-badge ${safeString(task.taskType).toLowerCase() || "legacy"}`;
     badge.textContent = (safeString(task.taskType) || "?").substring(0, 4);
-
     const info = document.createElement("div");
     info.className = "task-info";
     info.innerHTML =
         `<div class="task-title">${safeString(task.pickup)} → ${safeString(task.dropoff)}</div>` +
         `<div class="task-sub">${safeString(task.assignedRobotId) || safeString(task.status)} • ${safeString(task.phase)}</div>`;
-
     row.append(badge, info);
     return row;
 }
@@ -807,7 +741,6 @@ showView("setup");
 compareMultiSelect = new MultiSelect("compare-run-select");
 
 on("start-experiment-btn", "click", startExperiment);
-
 on("pause-btn", "click", async () => { await fetch("/api/pause", { method: "POST" }); refresh(); });
 on("resume-btn", "click", async () => { await fetch("/api/resume", { method: "POST" }); refresh(); });
 on("reset-btn", "click", async () => {
@@ -818,7 +751,6 @@ on("reset-btn", "click", async () => {
     showView("setup");
     refresh();
 });
-
 on("fast-stop-btn", "click", async () => {
     await fetch("/api/experiment/stop", { method: "POST" });
     refresh();
