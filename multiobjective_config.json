@@ -1,0 +1,45 @@
+{
+  "from_run_id": "20260903_065649_ef7246",
+  "n_trials": 30,
+  "reps": 1,
+  "base_seed": 42,
+  "cost_config": "cost_config.json",
+  "sla_target_ticks": 300,
+  "constraints": {
+    "sla_compliance_rate_min": 0.95
+  },
+  "objectives": [
+    {
+      "metric": "cost_per_task",
+      "direction": "minimize"
+    },
+    {
+      "metric": "p95_cycle_time",
+      "direction": "minimize"
+    }
+  ],
+  "search_space": [
+    {
+      "name": "num_robots",
+      "type": "int",
+      "low": 4,
+      "high": 16
+    },
+    {
+      "name": "charger_capacity",
+      "type": "int",
+      "low": 2,
+      "high": 8
+    },
+    {
+      "name": "conflict_manager",
+      "type": "categorical",
+      "choices": ["local_yield", "zone_locks", "priority_reservation"]
+    },
+    {
+      "name": "scheduler",
+      "type": "categorical",
+      "choices": ["baseline", "priority", "fifo", "total_cost", "auction"]
+    }
+  ]
+}

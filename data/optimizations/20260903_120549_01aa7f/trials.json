@@ -1,0 +1,462 @@
+[
+  {
+    "number": 0,
+    "params": {
+      "num_robots": 7,
+      "charger_capacity": 8,
+      "conflict_manager": "local_yield",
+      "scheduler": "fifo"
+    },
+    "value": 0.031,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.031,
+      "p95_cycle_time": 63.29999999999998,
+      "average_throughput": 0.26881720430107525,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": false,
+    "constraints": [
+      3.299999999999983
+    ],
+    "error": null
+  },
+  {
+    "number": 1,
+    "params": {
+      "num_robots": 4,
+      "charger_capacity": 8,
+      "conflict_manager": "local_yield",
+      "scheduler": "fifo"
+    },
+    "value": 0.03861333333333333,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.03861333333333333,
+      "p95_cycle_time": 230.64999999999998,
+      "average_throughput": 0.13812154696132597,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": false,
+    "constraints": [
+      170.64999999999998
+    ],
+    "error": null
+  },
+  {
+    "number": 2,
+    "params": {
+      "num_robots": 9,
+      "charger_capacity": 2,
+      "conflict_manager": "priority_reservation",
+      "scheduler": "baseline"
+    },
+    "value": 0.03304,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.03304,
+      "p95_cycle_time": 61.84999999999998,
+      "average_throughput": 0.2824858757062147,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": false,
+    "constraints": [
+      1.84999999999998
+    ],
+    "error": null
+  },
+  {
+    "number": 3,
+    "params": {
+      "num_robots": 9,
+      "charger_capacity": 3,
+      "conflict_manager": "priority_reservation",
+      "scheduler": "baseline"
+    },
+    "value": 0.03363,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.03363,
+      "p95_cycle_time": 61.84999999999998,
+      "average_throughput": 0.2824858757062147,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": false,
+    "constraints": [
+      1.84999999999998
+    ],
+    "error": null
+  },
+  {
+    "number": 4,
+    "params": {
+      "num_robots": 5,
+      "charger_capacity": 5,
+      "conflict_manager": "zone_locks",
+      "scheduler": "baseline"
+    },
+    "value": 0.04293333333333333,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.04293333333333333,
+      "p95_cycle_time": 123.39999999999998,
+      "average_throughput": 0.1358695652173913,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": false,
+    "constraints": [
+      63.39999999999998
+    ],
+    "error": null
+  },
+  {
+    "number": 5,
+    "params": {
+      "num_robots": 12,
+      "charger_capacity": 7,
+      "conflict_manager": "local_yield",
+      "scheduler": "baseline"
+    },
+    "value": 0.04002666666666666,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.04002666666666666,
+      "p95_cycle_time": 40.55,
+      "average_throughput": 0.32894736842105265,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -19.450000000000003
+    ],
+    "error": null
+  },
+  {
+    "number": 6,
+    "params": {
+      "num_robots": 7,
+      "charger_capacity": 3,
+      "conflict_manager": "local_yield",
+      "scheduler": "auction"
+    },
+    "value": 0.0258,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.0258,
+      "p95_cycle_time": 53.29999999999998,
+      "average_throughput": 0.29069767441860467,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -6.700000000000017
+    ],
+    "error": null
+  },
+  {
+    "number": 7,
+    "params": {
+      "num_robots": 10,
+      "charger_capacity": 3,
+      "conflict_manager": "zone_locks",
+      "scheduler": "priority"
+    },
+    "value": 0.035280000000000006,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.035280000000000006,
+      "p95_cycle_time": 52.749999999999986,
+      "average_throughput": 0.2976190476190476,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -7.250000000000014
+    ],
+    "error": null
+  },
+  {
+    "number": 8,
+    "params": {
+      "num_robots": 11,
+      "charger_capacity": 6,
+      "conflict_manager": "local_yield",
+      "scheduler": "total_cost"
+    },
+    "value": 0.03741176470588235,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.03741176470588235,
+      "p95_cycle_time": 43.5,
+      "average_throughput": 0.32075471698113206,
+      "tasks_completed": 51.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -16.5
+    ],
+    "error": null
+  },
+  {
+    "number": 9,
+    "params": {
+      "num_robots": 5,
+      "charger_capacity": 6,
+      "conflict_manager": "priority_reservation",
+      "scheduler": "priority"
+    },
+    "value": 0.029159999999999995,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.029159999999999995,
+      "p95_cycle_time": 56.0,
+      "average_throughput": 0.205761316872428,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -4.0
+    ],
+    "error": null
+  },
+  {
+    "number": 10,
+    "params": {
+      "num_robots": 7,
+      "charger_capacity": 4,
+      "conflict_manager": "local_yield",
+      "scheduler": "auction"
+    },
+    "value": 0.026373333333333332,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.026373333333333332,
+      "p95_cycle_time": 53.29999999999998,
+      "average_throughput": 0.29069767441860467,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -6.700000000000017
+    ],
+    "error": null
+  },
+  {
+    "number": 11,
+    "params": {
+      "num_robots": 7,
+      "charger_capacity": 4,
+      "conflict_manager": "local_yield",
+      "scheduler": "auction"
+    },
+    "value": 0.026373333333333332,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.026373333333333332,
+      "p95_cycle_time": 53.29999999999998,
+      "average_throughput": 0.29069767441860467,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -6.700000000000017
+    ],
+    "error": null
+  },
+  {
+    "number": 12,
+    "params": {
+      "num_robots": 7,
+      "charger_capacity": 4,
+      "conflict_manager": "local_yield",
+      "scheduler": "auction"
+    },
+    "value": 0.026373333333333332,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.026373333333333332,
+      "p95_cycle_time": 53.29999999999998,
+      "average_throughput": 0.29069767441860467,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -6.700000000000017
+    ],
+    "error": null
+  },
+  {
+    "number": 13,
+    "params": {
+      "num_robots": 8,
+      "charger_capacity": 2,
+      "conflict_manager": "local_yield",
+      "scheduler": "auction"
+    },
+    "value": 0.028000000000000004,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.028000000000000004,
+      "p95_cycle_time": 63.69999999999996,
+      "average_throughput": 0.2976190476190476,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": false,
+    "constraints": [
+      3.69999999999996
+    ],
+    "error": null
+  },
+  {
+    "number": 14,
+    "params": {
+      "num_robots": 5,
+      "charger_capacity": 4,
+      "conflict_manager": "local_yield",
+      "scheduler": "auction"
+    },
+    "value": 0.021193333333333335,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.021193333333333335,
+      "p95_cycle_time": 43.55,
+      "average_throughput": 0.26737967914438504,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -16.450000000000003
+    ],
+    "error": null
+  },
+  {
+    "number": 15,
+    "params": {
+      "num_robots": 5,
+      "charger_capacity": 3,
+      "conflict_manager": "zone_locks",
+      "scheduler": "auction"
+    },
+    "value": 0.020490196078431375,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.020490196078431375,
+      "p95_cycle_time": 62.5,
+      "average_throughput": 0.26842105263157895,
+      "tasks_completed": 51.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": false,
+    "constraints": [
+      2.5
+    ],
+    "error": null
+  },
+  {
+    "number": 16,
+    "params": {
+      "num_robots": 6,
+      "charger_capacity": 5,
+      "conflict_manager": "local_yield",
+      "scheduler": "total_cost"
+    },
+    "value": 0.02692333333333333,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.02692333333333333,
+      "p95_cycle_time": 55.55,
+      "average_throughput": 0.25380710659898476,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -4.450000000000003
+    ],
+    "error": null
+  },
+  {
+    "number": 17,
+    "params": {
+      "num_robots": 4,
+      "charger_capacity": 5,
+      "conflict_manager": "local_yield",
+      "scheduler": "auction"
+    },
+    "value": 0.019429999999999996,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.019429999999999996,
+      "p95_cycle_time": 81.74999999999987,
+      "average_throughput": 0.24875621890547264,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": false,
+    "constraints": [
+      21.749999999999872
+    ],
+    "error": null
+  },
+  {
+    "number": 18,
+    "params": {
+      "num_robots": 6,
+      "charger_capacity": 2,
+      "conflict_manager": "zone_locks",
+      "scheduler": "auction"
+    },
+    "value": 0.021533333333333335,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.021533333333333335,
+      "p95_cycle_time": 62.39999999999998,
+      "average_throughput": 0.29411764705882354,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": false,
+    "constraints": [
+      2.3999999999999773
+    ],
+    "error": null
+  },
+  {
+    "number": 19,
+    "params": {
+      "num_robots": 6,
+      "charger_capacity": 3,
+      "conflict_manager": "priority_reservation",
+      "scheduler": "auction"
+    },
+    "value": 0.021840000000000002,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.021840000000000002,
+      "p95_cycle_time": 42.099999999999994,
+      "average_throughput": 0.2976190476190476,
+      "tasks_completed": 50.0,
+      "sla_compliance_rate": 1.0
+    },
+    "feasible": true,
+    "constraints": [
+      -17.900000000000006
+    ],
+    "error": null
+  }
+]

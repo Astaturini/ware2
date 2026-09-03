@@ -1,0 +1,15 @@
+{
+  "from_multiobjective": "data/multiobjective/<study_id>/summary.json",
+  "max_candidates": 3,
+  "reps": 20,
+  "base_seed": 123,
+  "constraints": {
+    "p95_cycle_time_max": 60.0,
+    "sla_compliance_rate_min": 0.95
+  },
+  "objective": "cost_per_task",
+  "direction": "minimize",
+  "min_pass_probability": 0.90,
+  "cost_config": "cost_config.json",
+  "sla_target_ticks": 300
+}

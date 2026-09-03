@@ -1,0 +1,8 @@
+trial_number,feasible,objective:cost_per_task,objective:p95_cycle_time,num_robots,charger_capacity,conflict_manager,scheduler,constraint_values
+29,True,0.02574,87.84999999999998,4,2,local_yield,priority,[-0.050000000000000044]
+11,True,0.02835,81.24999999999996,7,3,local_yield,total_cost,[-0.050000000000000044]
+9,True,0.029159999999999995,56.0,5,6,priority_reservation,priority,[-0.050000000000000044]
+6,True,0.030019999999999998,47.099999999999994,9,3,local_yield,auction,[-0.050000000000000044]
+2,True,0.034444444444444444,44.0,11,2,priority_reservation,baseline,[-0.050000000000000044]
+21,True,0.03648,39.099999999999994,11,6,priority_reservation,auction,[-0.050000000000000044]
+15,True,0.045570000000000006,37.55,15,3,priority_reservation,fifo,[-0.050000000000000044]
