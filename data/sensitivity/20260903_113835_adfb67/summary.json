@@ -1,0 +1,505 @@
+{
+  "study_id": "20260903_113835_adfb67",
+  "generated_at": "2026-09-03T11:38:48",
+  "reps": 3,
+  "seeds": [
+    478163327,
+    107420369,
+    1181241943
+  ],
+  "effective_sla_target_ticks": 300,
+  "base_config": {
+    "seed": 4,
+    "num_robots": 12,
+    "stop_mode": "workload",
+    "target_tasks": 50,
+    "max_ticks": 3000,
+    "display_name": "benchmark",
+    "tick_interval": 0.3,
+    "fast_mode": true,
+    "blocked_replan_seconds": 0.7,
+    "replan_cooldown_ticks": 7,
+    "battery_capacity": 100.0,
+    "empty_move_energy": 0.35,
+    "loaded_move_energy": 0.5,
+    "critical_battery": 15.0,
+    "opportunistic_charge_threshold": 30.0,
+    "idle_ticks_before_opportunistic_charge": 10,
+    "battery_safety_margin": 5.0,
+    "empty_battery_recovery_ticks": 15,
+    "charger_capacity": 4,
+    "charge_duration_ticks": 10,
+    "failure_enabled": false,
+    "mtbf_ticks": 0.0,
+    "mttr_ticks": 25,
+    "relocate_to_maintenance": true,
+    "scheduler": "baseline",
+    "path_planner": "bfs",
+    "conflict_manager": "zone_locks",
+    "demand_mode": "legacy",
+    "demand_rate_per_tick": 0.0,
+    "demand_task_weights": {},
+    "demand_segments": [],
+    "demand_csv_path": null,
+    "demand_events": [],
+    "layout_preset": "default",
+    "layout_file": null
+  },
+  "factors": [
+    {
+      "name": "num_robots",
+      "values": [
+        6,
+        8,
+        10
+      ]
+    }
+  ],
+  "baseline": {
+    "runs": 3,
+    "aggregate": {
+      "runs": 3,
+      "feasible_runs": 3,
+      "cost_feasible_runs": 3,
+      "tasks_created": {
+        "count": 3,
+        "mean": 58.0,
+        "stdev": 0.0,
+        "min": 58.0,
+        "max": 58.0
+      },
+      "tasks_completed": {
+        "count": 3,
+        "mean": 50.0,
+        "stdev": 0.0,
+        "min": 50.0,
+        "max": 50.0
+      },
+      "simulation_ticks": {
+        "count": 3,
+        "mean": 153.66666666666666,
+        "stdev": 0.5773502691896257,
+        "min": 153.0,
+        "max": 154.0
+      },
+      "average_cycle_time": {
+        "count": 3,
+        "mean": 22.86,
+        "stdev": 3.3428730158353295,
+        "min": 20.6,
+        "max": 26.7
+      },
+      "p95_cycle_time": {
+        "count": 3,
+        "mean": 49.533333333333324,
+        "stdev": 0.6658328118479342,
+        "min": 49.099999999999994,
+        "max": 50.29999999999998
+      },
+      "average_throughput": {
+        "count": 3,
+        "mean": 0.32538267832385476,
+        "stdev": 0.001225172458173389,
+        "min": 0.3246753246753247,
+        "max": 0.32679738562091504
+      },
+      "total_blocked_ticks": {
+        "count": 3,
+        "mean": 118.0,
+        "stdev": 36.75595189897821,
+        "min": 88.0,
+        "max": 159.0
+      },
+      "total_replans": {
+        "count": 3,
+        "mean": 27.666666666666668,
+        "stdev": 1.1547005383792515,
+        "min": 27.0,
+        "max": 29.0
+      },
+      "total_operating_cost": {
+        "count": 3,
+        "mean": 1.9464444444444442,
+        "stdev": 0.007313103409735095,
+        "min": 1.938,
+        "max": 1.9506666666666663
+      },
+      "cost_per_task": {
+        "count": 3,
+        "mean": 0.03892888888888888,
+        "stdev": 0.0001462620681947019,
+        "min": 0.038759999999999996,
+        "max": 0.039013333333333323
+      },
+      "sla_compliance_rate": {
+        "count": 3,
+        "mean": 1.0,
+        "stdev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    "cost_per_task": 0.03892888888888888,
+    "p95_cycle_time": 49.533333333333324
+  },
+  "factor_results": [
+    {
+      "factor": "num_robots",
+      "baseline_value": 12,
+      "levels": [
+        {
+          "value": 6,
+          "reused_baseline": false,
+          "runs": 3,
+          "aggregate": {
+            "runs": 3,
+            "feasible_runs": 3,
+            "cost_feasible_runs": 3,
+            "tasks_created": {
+              "count": 3,
+              "mean": 124.66666666666667,
+              "stdev": 5.8594652770823155,
+              "min": 118.0,
+              "max": 129.0
+            },
+            "tasks_completed": {
+              "count": 3,
+              "mean": 50.0,
+              "stdev": 0.0,
+              "min": 50.0,
+              "max": 50.0
+            },
+            "simulation_ticks": {
+              "count": 3,
+              "mean": 326.6666666666667,
+              "stdev": 17.616280348965084,
+              "min": 307.0,
+              "max": 341.0
+            },
+            "average_cycle_time": {
+              "count": 3,
+              "mean": 46.42666666666667,
+              "stdev": 4.853754560475153,
+              "min": 41.16,
+              "max": 50.72
+            },
+            "p95_cycle_time": {
+              "count": 3,
+              "mean": 101.16666666666667,
+              "stdev": 13.02366435890196,
+              "min": 89.64999999999999,
+              "max": 115.29999999999998
+            },
+            "average_throughput": {
+              "count": 3,
+              "mean": 0.15336547504411988,
+              "stdev": 0.008464705097854802,
+              "min": 0.1466275659824047,
+              "max": 0.16286644951140064
+            },
+            "total_blocked_ticks": {
+              "count": 3,
+              "mean": 125.66666666666667,
+              "stdev": 53.724606404638585,
+              "min": 75.0,
+              "max": 182.0
+            },
+            "total_replans": {
+              "count": 3,
+              "mean": 28.333333333333332,
+              "stdev": 12.342339054382412,
+              "min": 18.0,
+              "max": 42.0
+            },
+            "total_operating_cost": {
+              "count": 3,
+              "mean": 2.1777777777777776,
+              "stdev": 0.11744186899310025,
+              "min": 2.046666666666667,
+              "max": 2.273333333333333
+            },
+            "cost_per_task": {
+              "count": 3,
+              "mean": 0.04355555555555555,
+              "stdev": 0.0023488373798620063,
+              "min": 0.040933333333333335,
+              "max": 0.04546666666666666
+            },
+            "sla_compliance_rate": {
+              "count": 3,
+              "mean": 1.0,
+              "stdev": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          "cost_per_task": 0.04355555555555555,
+          "p95_cycle_time": 101.16666666666667,
+          "delta_cost_per_task": 0.004626666666666668,
+          "delta_percent_cost_per_task": 0.1188491836967691,
+          "delta_p95_cycle_time": 51.63333333333335,
+          "delta_percent_p95_cycle_time": 1.042395693135936
+        },
+        {
+          "value": 8,
+          "reused_baseline": false,
+          "runs": 3,
+          "aggregate": {
+            "runs": 3,
+            "feasible_runs": 3,
+            "cost_feasible_runs": 3,
+            "tasks_created": {
+              "count": 3,
+              "mean": 78.66666666666667,
+              "stdev": 11.239810200058244,
+              "min": 69.0,
+              "max": 91.0
+            },
+            "tasks_completed": {
+              "count": 3,
+              "mean": 50.0,
+              "stdev": 0.0,
+              "min": 50.0,
+              "max": 50.0
+            },
+            "simulation_ticks": {
+              "count": 3,
+              "mean": 206.33333333333334,
+              "stdev": 28.04163571073081,
+              "min": 182.0,
+              "max": 237.0
+            },
+            "average_cycle_time": {
+              "count": 3,
+              "mean": 34.02,
+              "stdev": 6.306282581679954,
+              "min": 28.14,
+              "max": 40.68
+            },
+            "p95_cycle_time": {
+              "count": 3,
+              "mean": 60.133333333333326,
+              "stdev": 14.380658306674746,
+              "min": 48.19999999999999,
+              "max": 76.1
+            },
+            "average_throughput": {
+              "count": 3,
+              "mean": 0.24523191295343194,
+              "stdev": 0.03214373903130308,
+              "min": 0.2109704641350211,
+              "max": 0.27472527472527475
+            },
+            "total_blocked_ticks": {
+              "count": 3,
+              "mean": 132.33333333333334,
+              "stdev": 71.76582287783881,
+              "min": 86.0,
+              "max": 215.0
+            },
+            "total_replans": {
+              "count": 3,
+              "mean": 28.0,
+              "stdev": 17.320508075688775,
+              "min": 18.0,
+              "max": 48.0
+            },
+            "total_operating_cost": {
+              "count": 3,
+              "mean": 1.7882222222222222,
+              "stdev": 0.24302750949300028,
+              "min": 1.5773333333333333,
+              "max": 2.054
+            },
+            "cost_per_task": {
+              "count": 3,
+              "mean": 0.03576444444444444,
+              "stdev": 0.004860550189860006,
+              "min": 0.03154666666666667,
+              "max": 0.04108
+            },
+            "sla_compliance_rate": {
+              "count": 3,
+              "mean": 1.0,
+              "stdev": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          "cost_per_task": 0.03576444444444444,
+          "p95_cycle_time": 60.133333333333326,
+          "delta_cost_per_task": -0.003164444444444442,
+          "delta_percent_cost_per_task": -0.08128781824409174,
+          "delta_p95_cycle_time": 10.600000000000001,
+          "delta_percent_p95_cycle_time": 0.21399730820995969
+        },
+        {
+          "value": 10,
+          "reused_baseline": false,
+          "runs": 3,
+          "aggregate": {
+            "runs": 3,
+            "feasible_runs": 3,
+            "cost_feasible_runs": 3,
+            "tasks_created": {
+              "count": 3,
+              "mean": 67.66666666666667,
+              "stdev": 3.2145502536643185,
+              "min": 64.0,
+              "max": 70.0
+            },
+            "tasks_completed": {
+              "count": 3,
+              "mean": 50.0,
+              "stdev": 0.0,
+              "min": 50.0,
+              "max": 50.0
+            },
+            "simulation_ticks": {
+              "count": 3,
+              "mean": 179.0,
+              "stdev": 9.539392014169456,
+              "min": 168.0,
+              "max": 185.0
+            },
+            "average_cycle_time": {
+              "count": 3,
+              "mean": 29.353333333333335,
+              "stdev": 2.684200687976464,
+              "min": 26.76,
+              "max": 32.12
+            },
+            "p95_cycle_time": {
+              "count": 3,
+              "mean": 56.04999999999999,
+              "stdev": 0.6082762530298201,
+              "min": 55.64999999999999,
+              "max": 56.749999999999986
+            },
+            "average_throughput": {
+              "count": 3,
+              "mean": 0.27987614944136685,
+              "stdev": 0.015383342106102427,
+              "min": 0.2702702702702703,
+              "max": 0.2976190476190476
+            },
+            "total_blocked_ticks": {
+              "count": 3,
+              "mean": 153.0,
+              "stdev": 12.767145334803704,
+              "min": 139.0,
+              "max": 164.0
+            },
+            "total_replans": {
+              "count": 3,
+              "mean": 35.333333333333336,
+              "stdev": 2.0816659994661326,
+              "min": 33.0,
+              "max": 37.0
+            },
+            "total_operating_cost": {
+              "count": 3,
+              "mean": 1.9093333333333333,
+              "stdev": 0.10175351481780738,
+              "min": 1.7920000000000003,
+              "max": 1.9733333333333334
+            },
+            "cost_per_task": {
+              "count": 3,
+              "mean": 0.03818666666666667,
+              "stdev": 0.00203507029635615,
+              "min": 0.035840000000000004,
+              "max": 0.03946666666666667
+            },
+            "sla_compliance_rate": {
+              "count": 3,
+              "mean": 1.0,
+              "stdev": 0.0,
+              "min": 1.0,
+              "max": 1.0
+            }
+          },
+          "cost_per_task": 0.03818666666666667,
+          "p95_cycle_time": 56.04999999999999,
+          "delta_cost_per_task": -0.0007422222222222136,
+          "delta_percent_cost_per_task": -0.019066103436465132,
+          "delta_p95_cycle_time": 6.516666666666666,
+          "delta_percent_p95_cycle_time": 0.1315612382234186
+        }
+      ]
+    }
+  ],
+  "tornado": {
+    "cost_per_task": [
+      {
+        "target": "cost_per_task",
+        "factor": "num_robots",
+        "value": 6,
+        "label": "num_robots=6",
+        "baseline": 0.03892888888888888,
+        "variant": 0.04355555555555555,
+        "delta": 0.004626666666666668,
+        "delta_percent": 0.1188491836967691,
+        "abs_delta": 0.004626666666666668
+      },
+      {
+        "target": "cost_per_task",
+        "factor": "num_robots",
+        "value": 8,
+        "label": "num_robots=8",
+        "baseline": 0.03892888888888888,
+        "variant": 0.03576444444444444,
+        "delta": -0.003164444444444442,
+        "delta_percent": -0.08128781824409174,
+        "abs_delta": 0.003164444444444442
+      },
+      {
+        "target": "cost_per_task",
+        "factor": "num_robots",
+        "value": 10,
+        "label": "num_robots=10",
+        "baseline": 0.03892888888888888,
+        "variant": 0.03818666666666667,
+        "delta": -0.0007422222222222136,
+        "delta_percent": -0.019066103436465132,
+        "abs_delta": 0.0007422222222222136
+      }
+    ],
+    "p95_cycle_time": [
+      {
+        "target": "p95_cycle_time",
+        "factor": "num_robots",
+        "value": 6,
+        "label": "num_robots=6",
+        "baseline": 49.533333333333324,
+        "variant": 101.16666666666667,
+        "delta": 51.63333333333335,
+        "delta_percent": 1.042395693135936,
+        "abs_delta": 51.63333333333335
+      },
+      {
+        "target": "p95_cycle_time",
+        "factor": "num_robots",
+        "value": 8,
+        "label": "num_robots=8",
+        "baseline": 49.533333333333324,
+        "variant": 60.133333333333326,
+        "delta": 10.600000000000001,
+        "delta_percent": 0.21399730820995969,
+        "abs_delta": 10.600000000000001
+      },
+      {
+        "target": "p95_cycle_time",
+        "factor": "num_robots",
+        "value": 10,
+        "label": "num_robots=10",
+        "baseline": 49.533333333333324,
+        "variant": 56.04999999999999,
+        "delta": 6.516666666666666,
+        "delta_percent": 0.1315612382234186,
+        "abs_delta": 6.516666666666666
+      }
+    ]
+  },
+  "errors": []
+}

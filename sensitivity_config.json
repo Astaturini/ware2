@@ -1,0 +1,21 @@
+{
+  "from_run_id": "20260903_065649_ef7246",
+  "reps": 3,
+  "base_seed": 42,
+  "cost_config": "cost_config.json",
+  "sla_target_ticks": 300,
+  "factors": [
+    {
+      "name": "num_robots",
+      "values": [6, 8, 10]
+    },
+    {
+      "name": "conflict_manager",
+      "values": ["local_yield", "zone_locks", "priority_reservation"]
+    },
+    {
+      "name": "charger_capacity",
+      "values": [2, 4, 6]
+    }
+  ]
+}
