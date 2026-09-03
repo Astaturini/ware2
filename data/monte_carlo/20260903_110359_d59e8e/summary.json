@@ -1,0 +1,90 @@
+{
+  "mc_id": "20260903_110359_d59e8e",
+  "generated_at": "2026-09-03T11:03:59",
+  "n_runs_requested": 5,
+  "successful_runs": 0,
+  "failed_runs": 5,
+  "seeds": [
+    478163327,
+    107420369,
+    1181241943,
+    1051802512,
+    958682846
+  ],
+  "effective_sla_target_ticks": 300,
+  "force_fast_mode": true,
+  "base_config": {
+    "seed": 4,
+    "num_robots": 12,
+    "stop_mode": "workload",
+    "target_tasks": 50,
+    "max_ticks": 3000,
+    "display_name": "benchmark",
+    "tick_interval": 0.3,
+    "fast_mode": true,
+    "blocked_replan_seconds": 0.7,
+    "replan_cooldown_ticks": 7,
+    "battery_capacity": 100.0,
+    "empty_move_energy": 0.35,
+    "loaded_move_energy": 0.5,
+    "critical_battery": 15.0,
+    "opportunistic_charge_threshold": 30.0,
+    "idle_ticks_before_opportunistic_charge": 10,
+    "battery_safety_margin": 5.0,
+    "empty_battery_recovery_ticks": 15,
+    "charger_capacity": 4,
+    "charge_duration_ticks": 10,
+    "failure_enabled": false,
+    "mtbf_ticks": 0.0,
+    "mttr_ticks": 25,
+    "relocate_to_maintenance": true,
+    "scheduler": "baseline",
+    "path_planner": "bfs",
+    "conflict_manager": "zone_locks",
+    "demand_mode": "legacy",
+    "demand_rate_per_tick": 0.0,
+    "demand_task_weights": {},
+    "demand_segments": [],
+    "demand_csv_path": null,
+    "demand_events": [],
+    "layout_preset": "default",
+    "layout_file": null
+  },
+  "aggregate": {
+    "successful_runs": 0,
+    "stop_reason_counts": {},
+    "kpis": {}
+  },
+  "errors": [
+    {
+      "mc_index": 0,
+      "seed": 478163327,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 1,
+      "seed": 107420369,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 2,
+      "seed": 1181241943,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 3,
+      "seed": 1051802512,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 4,
+      "seed": 958682846,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    }
+  ]
+}

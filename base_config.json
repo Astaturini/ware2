@@ -1,0 +1,12 @@
+{
+  "num_robots": 8,
+  "stop_mode": "fixed_ticks",
+  "max_ticks": 2000,
+  "seed": 1,
+  "fast_mode": true,
+  "scheduler": "baseline",
+  "path_planner": "bfs",
+  "conflict_manager": "local_yield",
+  "demand_mode": "legacy",
+  "layout_preset": "default"
+}

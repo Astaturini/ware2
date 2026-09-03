@@ -1,0 +1,185 @@
+{
+  "mc_id": "20260903_112854_581af9",
+  "generated_at": "2026-09-03T11:31:08",
+  "n_runs_requested": 10,
+  "successful_runs": 10,
+  "failed_runs": 0,
+  "seeds": [
+    478163327,
+    107420369,
+    1181241943,
+    1051802512,
+    958682846,
+    599310825,
+    440213415,
+    373399426,
+    1812140441,
+    136505587
+  ],
+  "effective_sla_target_ticks": 300,
+  "force_fast_mode": true,
+  "base_config": {
+    "num_robots": 8,
+    "stop_mode": "fixed_ticks",
+    "max_ticks": 2000,
+    "seed": 1,
+    "fast_mode": true,
+    "scheduler": "baseline",
+    "path_planner": "bfs",
+    "conflict_manager": "local_yield",
+    "demand_mode": "legacy",
+    "layout_preset": "default"
+  },
+  "aggregate": {
+    "successful_runs": 10,
+    "stop_reason_counts": {
+      "max_ticks_reached": 10
+    },
+    "kpis": {
+      "tasks_created": {
+        "count": 10,
+        "mean": 760.0,
+        "stdev": 0.0,
+        "min": 760.0,
+        "p05": 760.0,
+        "median": 760.0,
+        "p95": 760.0,
+        "max": 760.0,
+        "mean_ci95_low": 760.0,
+        "mean_ci95_high": 760.0
+      },
+      "tasks_completed": {
+        "count": 10,
+        "mean": 371.4,
+        "stdev": 79.77356844357799,
+        "min": 148.0,
+        "p05": 250.60000000000002,
+        "median": 397.5,
+        "p95": 414.59999999999997,
+        "max": 420.0,
+        "mean_ci95_low": 321.9567385694624,
+        "mean_ci95_high": 420.84326143053755
+      },
+      "tasks_failed": {
+        "count": 10,
+        "mean": 0.0,
+        "stdev": 0.0,
+        "min": 0.0,
+        "p05": 0.0,
+        "median": 0.0,
+        "p95": 0.0,
+        "max": 0.0,
+        "mean_ci95_low": 0.0,
+        "mean_ci95_high": 0.0
+      },
+      "simulation_ticks": {
+        "count": 10,
+        "mean": 2000.0,
+        "stdev": 0.0,
+        "min": 2000.0,
+        "p05": 2000.0,
+        "median": 2000.0,
+        "p95": 2000.0,
+        "max": 2000.0,
+        "mean_ci95_low": 2000.0,
+        "mean_ci95_high": 2000.0
+      },
+      "average_cycle_time": {
+        "count": 10,
+        "mean": 136.77990064229456,
+        "stdev": 24.481522692033028,
+        "min": 78.02027027027027,
+        "p05": 94.13722007722009,
+        "median": 144.00088228806703,
+        "p95": 157.7450254161268,
+        "max": 159.47341772151898,
+        "mean_ci95_low": 121.6063744945211,
+        "mean_ci95_high": 151.95342679006802
+      },
+      "average_wait_time": {
+        "count": 10,
+        "mean": 105.73797723797682,
+        "stdev": 19.740861467651854,
+        "min": 60.92045454545455,
+        "p05": 70.56869813278009,
+        "median": 111.63487447563087,
+        "p95": 125.08174469288699,
+        "max": 126.79043280182232,
+        "mean_ci95_low": 93.50268936691367,
+        "mean_ci95_high": 117.97326510903997
+      },
+      "average_throughput": {
+        "count": 10,
+        "mean": 0.1857,
+        "stdev": 0.039886784221789,
+        "min": 0.074,
+        "p05": 0.12530000000000002,
+        "median": 0.19875,
+        "p95": 0.20729999999999998,
+        "max": 0.21,
+        "mean_ci95_low": 0.16097836928473122,
+        "mean_ci95_high": 0.2104216307152688
+      },
+      "average_robot_utilization": {
+        "count": 10,
+        "mean": 0.92779375,
+        "stdev": 0.014144223951159536,
+        "min": 0.9200625,
+        "p05": 0.920709375,
+        "median": 0.922875,
+        "p95": 0.9494937499999999,
+        "max": 0.9674375,
+        "mean_ci95_low": 0.9190272302592681,
+        "mean_ci95_high": 0.9365602697407318
+      },
+      "total_blocked_ticks": {
+        "count": 10,
+        "mean": 1415.5,
+        "stdev": 1263.463779545034,
+        "min": 947.0,
+        "p05": 962.75,
+        "median": 1001.0,
+        "p95": 3264.249999999996,
+        "max": 5008.0,
+        "mean_ci95_low": 632.4114259412423,
+        "mean_ci95_high": 2198.588574058758
+      },
+      "total_replans": {
+        "count": 10,
+        "mean": 232.5,
+        "stdev": 18.12456896039186,
+        "min": 211.0,
+        "p05": 214.60000000000002,
+        "median": 227.0,
+        "p95": 263.15,
+        "max": 269.0,
+        "mean_ci95_low": 221.26648219568767,
+        "mean_ci95_high": 243.73351780431233
+      },
+      "total_operating_cost": null,
+      "cost_per_task": null,
+      "sla_compliance_rate": {
+        "count": 10,
+        "mean": 0.8280666173369864,
+        "stdev": 0.0657688338441965,
+        "min": 0.7620253164556963,
+        "p05": 0.7632315711094565,
+        "median": 0.8163986150667337,
+        "p95": 0.9347104247104245,
+        "max": 0.9864864864864865,
+        "mean_ci95_low": 0.7873034208398892,
+        "mean_ci95_high": 0.8688298138340835
+      }
+    },
+    "sla": {
+      "target_ticks": 300,
+      "evaluated_tasks": 3714,
+      "late_tasks": 678,
+      "task_late_probability": 0.1825525040387722,
+      "runs_evaluated": 10,
+      "runs_with_any_late": 10,
+      "run_any_violation_probability": 1.0
+    }
+  },
+  "errors": []
+}

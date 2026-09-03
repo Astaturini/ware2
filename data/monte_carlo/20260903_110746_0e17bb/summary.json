@@ -1,0 +1,100 @@
+{
+  "mc_id": "20260903_110746_0e17bb",
+  "generated_at": "2026-09-03T11:07:46",
+  "n_runs_requested": 10,
+  "successful_runs": 0,
+  "failed_runs": 10,
+  "seeds": [
+    478163327,
+    107420369,
+    1181241943,
+    1051802512,
+    958682846,
+    599310825,
+    440213415,
+    373399426,
+    1812140441,
+    136505587
+  ],
+  "effective_sla_target_ticks": 300,
+  "force_fast_mode": true,
+  "base_config": {
+    "num_robots": 8,
+    "stop_mode": "fixed_ticks",
+    "max_ticks": 2000,
+    "seed": 1,
+    "fast_mode": true,
+    "scheduler": "baseline",
+    "path_planner": "bfs",
+    "conflict_manager": "local_yield",
+    "demand_mode": "legacy",
+    "layout_preset": "default"
+  },
+  "aggregate": {
+    "successful_runs": 0,
+    "stop_reason_counts": {},
+    "kpis": {}
+  },
+  "errors": [
+    {
+      "mc_index": 0,
+      "seed": 478163327,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 1,
+      "seed": 107420369,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 2,
+      "seed": 1181241943,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 3,
+      "seed": 1051802512,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 4,
+      "seed": 958682846,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 5,
+      "seed": 599310825,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 6,
+      "seed": 440213415,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 7,
+      "seed": 373399426,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 8,
+      "seed": 1812140441,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    },
+    {
+      "mc_index": 9,
+      "seed": 136505587,
+      "stage": "run",
+      "error": "_execute_trial.<locals>.<lambda>() takes 0 positional arguments but 1 was given"
+    }
+  ]
+}

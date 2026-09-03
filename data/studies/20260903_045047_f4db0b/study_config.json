@@ -1,0 +1,31 @@
+{
+  "study_name": "fleet_sizing_and_scheduling",
+  "base_config": {
+    "seed": 42,
+    "stop_mode": "workload",
+    "target_tasks": 100,
+    "max_ticks": 5000,
+    "tick_interval": 0.3,
+    "conflict_manager": "local_yield",
+    "path_planner": "bfs"
+  },
+  "factors": {
+    "num_robots": [
+      4,
+      8,
+      12
+    ],
+    "scheduler": [
+      "baseline",
+      "priority",
+      "total_cost"
+    ]
+  },
+  "cost_config": {
+    "robot_opex_per_hour": 15.0,
+    "charger_infra_cost_per_hour": 2.0,
+    "sla_target_ticks": 250,
+    "sla_penalty_per_late_tick": 0.5,
+    "currency": "USD"
+  }
+}

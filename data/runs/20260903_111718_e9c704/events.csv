@@ -1,0 +1,1640 @@
+run_id,tick,event_type,robot_id,task_id,details
+20260903_111718_e9c704,3,task_created,,G00001,type=PUTAWAY pickup=BUFFER dropoff=C-08
+20260903_111718_e9c704,3,task_assigned,R1,G00001,
+20260903_111718_e9c704,5,task_created,,G00002,type=PICK pickup=G-06 dropoff=PICK-2
+20260903_111718_e9c704,5,task_assigned,R6,G00002,
+20260903_111718_e9c704,7,task_created,,G00003,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,7,task_assigned,R7,G00003,
+20260903_111718_e9c704,9,task_created,,G00004,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,9,task_assigned,R4,G00004,
+20260903_111718_e9c704,11,task_created,,G00005,type=PUTAWAY pickup=BUFFER dropoff=A-06
+20260903_111718_e9c704,11,task_assigned,R8,G00005,
+20260903_111718_e9c704,15,task_completed,R4,G00004,
+20260903_111718_e9c704,15,task_created,,G00006,type=PICK pickup=D-05 dropoff=PICK-2
+20260903_111718_e9c704,15,task_assigned,R3,G00006,
+20260903_111718_e9c704,18,task_completed,R7,G00003,
+20260903_111718_e9c704,19,task_created,,G00007,type=PUTAWAY pickup=RECV dropoff=C-05
+20260903_111718_e9c704,19,task_assigned,R5,G00007,
+20260903_111718_e9c704,19,task_created,,G00008,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,19,task_assigned,R7,G00008,
+20260903_111718_e9c704,20,task_completed,R6,G00002,
+20260903_111718_e9c704,23,task_created,,G00009,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,23,task_assigned,R4,G00009,
+20260903_111718_e9c704,25,task_created,,G00010,type=PICK pickup=C-08 dropoff=PICK-1
+20260903_111718_e9c704,25,task_assigned,R6,G00010,
+20260903_111718_e9c704,26,task_completed,R1,G00001,
+20260903_111718_e9c704,27,task_created,,G00011,type=PUTAWAY pickup=BUFFER dropoff=H-06
+20260903_111718_e9c704,27,task_assigned,R1,G00011,
+20260903_111718_e9c704,28,task_completed,R4,G00009,
+20260903_111718_e9c704,30,robot_blocked,R1,,"{""x"": 14, ""y"": 4}"
+20260903_111718_e9c704,30,robot_blocked,R6,,"{""x"": 13, ""y"": 4}"
+20260903_111718_e9c704,31,task_created,,G00012,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,31,task_assigned,R4,G00012,
+20260903_111718_e9c704,35,task_created,,G00013,type=PUTAWAY pickup=BUFFER dropoff=D-08
+20260903_111718_e9c704,35,task_assigned,R2,G00013,
+20260903_111718_e9c704,35,task_created,,G00014,type=PICK pickup=F-04 dropoff=PICK-1
+20260903_111718_e9c704,37,task_created,,G00015,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,41,task_completed,R7,G00008,
+20260903_111718_e9c704,42,task_assigned,R7,G00014,
+20260903_111718_e9c704,43,task_completed,R8,G00005,
+20260903_111718_e9c704,43,task_created,,G00016,type=PUTAWAY pickup=BUFFER dropoff=G-06
+20260903_111718_e9c704,43,task_created,,G00017,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,44,task_assigned,R8,G00016,
+20260903_111718_e9c704,45,task_completed,R4,G00012,
+20260903_111718_e9c704,45,task_created,,G00018,type=PICK pickup=C-06 dropoff=PICK-3
+20260903_111718_e9c704,46,task_assigned,R4,G00018,
+20260903_111718_e9c704,46,robot_blocked,R8,,"{""x"": 5, ""y"": 4}"
+20260903_111718_e9c704,47,robot_blocked,R2,,"{""x"": 11, ""y"": 13}"
+20260903_111718_e9c704,51,task_created,,G00019,type=PUTAWAY pickup=BUFFER dropoff=F-08
+20260903_111718_e9c704,51,task_created,,G00020,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,52,task_completed,R3,G00006,
+20260903_111718_e9c704,52,task_completed,R6,G00010,
+20260903_111718_e9c704,53,task_assigned,R6,G00017,
+20260903_111718_e9c704,53,task_assigned,R3,G00019,
+20260903_111718_e9c704,54,task_completed,R5,G00007,
+20260903_111718_e9c704,55,task_created,,G00021,type=PICK pickup=D-08 dropoff=PICK-2
+20260903_111718_e9c704,55,task_assigned,R5,G00021,
+20260903_111718_e9c704,55,task_created,,G00022,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,58,task_completed,R1,G00011,
+20260903_111718_e9c704,59,task_created,,G00023,type=PUTAWAY pickup=RECV dropoff=B-07
+20260903_111718_e9c704,59,task_assigned,R1,G00023,
+20260903_111718_e9c704,60,robot_blocked,R5,,"{""x"": 19, ""y"": 4}"
+20260903_111718_e9c704,63,task_completed,R7,G00014,
+20260903_111718_e9c704,63,robot_blocked,R4,,"{""x"": 13, ""y"": 6}"
+20260903_111718_e9c704,64,task_completed,R8,G00016,
+20260903_111718_e9c704,64,task_assigned,R7,G00022,
+20260903_111718_e9c704,65,task_created,,G00024,type=PICK pickup=C-06 dropoff=PICK-3
+20260903_111718_e9c704,65,task_assigned,R8,G00024,
+20260903_111718_e9c704,65,task_created,,G00025,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,67,task_created,,G00026,type=PUTAWAY pickup=RECV dropoff=E-06
+20260903_111718_e9c704,67,task_created,,G00027,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,72,task_completed,R4,G00018,
+20260903_111718_e9c704,73,task_completed,R3,G00019,
+20260903_111718_e9c704,73,task_completed,R8,G00024,
+20260903_111718_e9c704,73,task_assigned,R4,G00026,
+20260903_111718_e9c704,74,task_assigned,R8,G00015,
+20260903_111718_e9c704,74,task_assigned,R3,G00027,
+20260903_111718_e9c704,75,task_created,,G00028,type=PUTAWAY pickup=RECV dropoff=B-04
+20260903_111718_e9c704,75,task_created,,G00029,type=PICK pickup=F-03 dropoff=PICK-2
+20260903_111718_e9c704,75,robot_blocked,R7,,"{""x"": 15, ""y"": 8}"
+20260903_111718_e9c704,79,task_completed,R2,G00013,
+20260903_111718_e9c704,79,task_created,,G00030,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,79,task_created,,G00031,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,80,task_assigned,R2,G00028,
+20260903_111718_e9c704,81,task_completed,R6,G00017,
+20260903_111718_e9c704,81,robot_blocked,R3,,"{""x"": 13, ""y"": 9}"
+20260903_111718_e9c704,82,task_completed,R5,G00021,
+20260903_111718_e9c704,82,task_assigned,R6,G00029,
+20260903_111718_e9c704,83,task_created,,G00032,type=PUTAWAY pickup=BUFFER dropoff=D-03
+20260903_111718_e9c704,83,task_assigned,R5,G00032,
+20260903_111718_e9c704,85,task_created,,G00033,type=PICK pickup=F-07 dropoff=PICK-2
+20260903_111718_e9c704,87,task_completed,R3,G00027,
+20260903_111718_e9c704,88,task_assigned,R3,G00033,
+20260903_111718_e9c704,91,task_created,,G00034,type=PUTAWAY pickup=BUFFER dropoff=G-06
+20260903_111718_e9c704,91,task_created,,G00035,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,93,task_created,,G00036,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,94,task_completed,R8,G00015,
+20260903_111718_e9c704,95,task_assigned,R8,G00034,
+20260903_111718_e9c704,95,task_created,,G00037,type=PICK pickup=D-05 dropoff=PICK-3
+20260903_111718_e9c704,97,task_completed,R7,G00022,
+20260903_111718_e9c704,98,task_assigned,R7,G00037,
+20260903_111718_e9c704,99,task_created,,G00038,type=PUTAWAY pickup=RECV dropoff=H-05
+20260903_111718_e9c704,103,task_created,,G00039,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,105,task_created,,G00040,type=PICK pickup=F-01 dropoff=PICK-1
+20260903_111718_e9c704,106,task_completed,R5,G00032,
+20260903_111718_e9c704,106,task_completed,R3,G00033,
+20260903_111718_e9c704,107,task_assigned,R3,G00038,
+20260903_111718_e9c704,107,task_created,,G00041,type=PUTAWAY pickup=RECV dropoff=F-05
+20260903_111718_e9c704,107,task_assigned,R5,G00041,
+20260903_111718_e9c704,107,task_created,,G00042,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,110,task_completed,R6,G00029,
+20260903_111718_e9c704,111,task_assigned,R6,G00040,
+20260903_111718_e9c704,115,task_created,,G00043,type=PUTAWAY pickup=RECV dropoff=B-04
+20260903_111718_e9c704,115,task_created,,G00044,type=PICK pickup=B-03 dropoff=PICK-3
+20260903_111718_e9c704,115,task_created,,G00045,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,116,task_completed,R4,G00026,
+20260903_111718_e9c704,117,task_completed,R7,G00037,
+20260903_111718_e9c704,117,task_assigned,R4,G00043,
+20260903_111718_e9c704,118,task_completed,R8,G00034,
+20260903_111718_e9c704,118,task_assigned,R7,G00044,
+20260903_111718_e9c704,119,task_assigned,R8,G00030,
+20260903_111718_e9c704,120,task_completed,R2,G00028,
+20260903_111718_e9c704,121,task_assigned,R2,G00035,
+20260903_111718_e9c704,121,task_created,,G00046,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,122,task_completed,R1,G00023,
+20260903_111718_e9c704,123,task_created,,G00047,type=PUTAWAY pickup=BUFFER dropoff=F-02
+20260903_111718_e9c704,123,task_assigned,R1,G00047,
+20260903_111718_e9c704,125,task_created,,G00048,type=PICK pickup=E-01 dropoff=PICK-2
+20260903_111718_e9c704,127,task_created,,G00049,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,131,task_created,,G00050,type=PUTAWAY pickup=BUFFER dropoff=H-01
+20260903_111718_e9c704,135,task_created,,G00051,type=PICK pickup=G-02 dropoff=PICK-2
+20260903_111718_e9c704,135,task_created,,G00052,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,136,task_completed,R2,G00035,
+20260903_111718_e9c704,137,task_assigned,R2,G00050,
+20260903_111718_e9c704,139,task_created,,G00053,type=PUTAWAY pickup=BUFFER dropoff=G-05
+20260903_111718_e9c704,139,task_created,,G00054,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,142,task_completed,R8,G00030,
+20260903_111718_e9c704,143,task_completed,R4,G00043,
+20260903_111718_e9c704,143,task_assigned,R8,G00053,
+20260903_111718_e9c704,144,task_completed,R5,G00041,
+20260903_111718_e9c704,144,task_assigned,R4,G00048,
+20260903_111718_e9c704,145,task_assigned,R5,G00051,
+20260903_111718_e9c704,145,task_created,,G00055,type=PICK pickup=D-07 dropoff=PICK-3
+20260903_111718_e9c704,147,task_created,,G00056,type=PUTAWAY pickup=RECV dropoff=D-04
+20260903_111718_e9c704,149,task_completed,R3,G00038,
+20260903_111718_e9c704,149,task_created,,G00057,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,150,task_assigned,R3,G00056,
+20260903_111718_e9c704,151,task_created,,G00058,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,155,task_created,,G00059,type=PUTAWAY pickup=BUFFER dropoff=A-07
+20260903_111718_e9c704,155,task_created,,G00060,type=PICK pickup=A-06 dropoff=PICK-3
+20260903_111718_e9c704,157,task_completed,R1,G00047,
+20260903_111718_e9c704,158,task_assigned,R1,G00059,
+20260903_111718_e9c704,163,task_created,,G00061,type=PUTAWAY pickup=BUFFER dropoff=D-06
+20260903_111718_e9c704,163,task_created,,G00062,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,163,task_created,,G00063,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,165,task_created,,G00064,type=PICK pickup=F-02 dropoff=PICK-3
+20260903_111718_e9c704,166,task_completed,R7,G00044,
+20260903_111718_e9c704,167,task_completed,R6,G00040,
+20260903_111718_e9c704,167,task_assigned,R7,G00061,
+20260903_111718_e9c704,168,task_assigned,R6,G00055,
+20260903_111718_e9c704,171,task_created,,G00065,type=PUTAWAY pickup=BUFFER dropoff=F-03
+20260903_111718_e9c704,172,task_completed,R8,G00053,
+20260903_111718_e9c704,173,task_assigned,R8,G00065,
+20260903_111718_e9c704,175,task_created,,G00066,type=PICK pickup=E-03 dropoff=PICK-1
+20260903_111718_e9c704,175,task_created,,G00067,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,176,task_completed,R1,G00059,
+20260903_111718_e9c704,177,task_completed,R2,G00050,
+20260903_111718_e9c704,177,task_assigned,R1,G00060,
+20260903_111718_e9c704,177,task_created,,G00068,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,178,task_assigned,R2,G00064,
+20260903_111718_e9c704,179,task_created,,G00069,type=PUTAWAY pickup=BUFFER dropoff=A-01
+20260903_111718_e9c704,184,task_completed,R4,G00048,
+20260903_111718_e9c704,185,task_assigned,R4,G00069,
+20260903_111718_e9c704,185,task_created,,G00070,type=PICK pickup=H-07 dropoff=PICK-1
+20260903_111718_e9c704,187,task_created,,G00071,type=PUTAWAY pickup=RECV dropoff=G-05
+20260903_111718_e9c704,187,task_created,,G00072,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,190,task_completed,R8,G00065,
+20260903_111718_e9c704,191,task_assigned,R8,G00071,
+20260903_111718_e9c704,191,task_created,,G00073,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,195,task_created,,G00074,type=PUTAWAY pickup=RECV dropoff=G-03
+20260903_111718_e9c704,195,task_created,,G00075,type=PICK pickup=B-07 dropoff=PICK-3
+20260903_111718_e9c704,198,task_completed,R5,G00051,
+20260903_111718_e9c704,198,task_completed,R6,G00055,
+20260903_111718_e9c704,199,task_assigned,R6,G00066,
+20260903_111718_e9c704,199,task_assigned,R5,G00074,
+20260903_111718_e9c704,199,task_created,,G00076,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,200,task_completed,R1,G00060,
+20260903_111718_e9c704,201,task_assigned,R1,G00070,
+20260903_111718_e9c704,203,task_created,,G00077,type=PUTAWAY pickup=RECV dropoff=C-08
+20260903_111718_e9c704,205,task_created,,G00078,type=PICK pickup=G-07 dropoff=PICK-3
+20260903_111718_e9c704,205,task_created,,G00079,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,206,task_completed,R4,G00069,
+20260903_111718_e9c704,207,task_assigned,R4,G00077,
+20260903_111718_e9c704,211,task_created,,G00080,type=PUTAWAY pickup=BUFFER dropoff=F-03
+20260903_111718_e9c704,211,task_created,,G00081,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,215,task_created,,G00082,type=PICK pickup=E-03 dropoff=PICK-1
+20260903_111718_e9c704,216,task_completed,R2,G00064,
+20260903_111718_e9c704,216,task_interrupted,R1,G00070,
+20260903_111718_e9c704,217,task_assigned,R2,G00080,
+20260903_111718_e9c704,218,task_completed,R8,G00071,
+20260903_111718_e9c704,219,task_created,,G00083,type=PUTAWAY pickup=BUFFER dropoff=F-03
+20260903_111718_e9c704,219,task_assigned,R8,G00083,
+20260903_111718_e9c704,219,task_created,,G00084,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,220,task_completed,R3,G00056,
+20260903_111718_e9c704,221,task_assigned,R3,G00070,
+20260903_111718_e9c704,223,task_created,,G00085,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,224,task_interrupted,R8,G00083,
+20260903_111718_e9c704,225,task_created,,G00086,type=PICK pickup=D-01 dropoff=PICK-2
+20260903_111718_e9c704,226,task_completed,R6,G00066,
+20260903_111718_e9c704,227,task_assigned,R6,G00083,
+20260903_111718_e9c704,227,task_created,,G00087,type=PUTAWAY pickup=BUFFER dropoff=D-07
+20260903_111718_e9c704,229,task_interrupted,R3,G00070,
+20260903_111718_e9c704,229,task_completed,R4,G00077,
+20260903_111718_e9c704,230,task_interrupted,R7,G00061,
+20260903_111718_e9c704,230,task_assigned,R4,G00087,
+20260903_111718_e9c704,233,task_created,,G00088,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,234,task_interrupted,R6,G00083,
+20260903_111718_e9c704,235,task_created,,G00089,type=PUTAWAY pickup=RECV dropoff=G-04
+20260903_111718_e9c704,235,task_created,,G00090,type=PICK pickup=H-08 dropoff=PICK-2
+20260903_111718_e9c704,235,task_created,,G00091,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,240,task_interrupted,R4,G00087,
+20260903_111718_e9c704,243,task_created,,G00092,type=PUTAWAY pickup=RECV dropoff=D-02
+20260903_111718_e9c704,245,task_created,,G00093,type=PICK pickup=G-07 dropoff=PICK-2
+20260903_111718_e9c704,247,task_completed,R5,G00074,
+20260903_111718_e9c704,247,task_created,,G00094,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,247,task_created,,G00095,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,250,task_completed,R2,G00080,
+20260903_111718_e9c704,251,task_assigned,R2,G00061,
+20260903_111718_e9c704,251,task_created,,G00096,type=PUTAWAY pickup=RECV dropoff=D-04
+20260903_111718_e9c704,253,task_assigned,R1,G00070,
+20260903_111718_e9c704,255,task_created,,G00097,type=PICK pickup=E-08 dropoff=PICK-3
+20260903_111718_e9c704,259,task_created,,G00098,type=PUTAWAY pickup=BUFFER dropoff=G-04
+20260903_111718_e9c704,259,task_created,,G00099,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,261,task_created,,G00100,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,262,task_assigned,R8,G00083,
+20260903_111718_e9c704,265,task_created,,G00101,type=PICK pickup=F-06 dropoff=PICK-1
+20260903_111718_e9c704,267,task_interrupted,R2,G00061,
+20260903_111718_e9c704,267,task_created,,G00102,type=PUTAWAY pickup=BUFFER dropoff=G-07
+20260903_111718_e9c704,268,task_assigned,R3,G00061,
+20260903_111718_e9c704,271,task_assigned,R7,G00087,
+20260903_111718_e9c704,271,task_created,,G00103,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,275,task_created,,G00104,type=PUTAWAY pickup=RECV dropoff=C-06
+20260903_111718_e9c704,275,task_created,,G00105,type=PICK pickup=B-05 dropoff=PICK-1
+20260903_111718_e9c704,275,task_created,,G00106,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,283,task_created,,G00107,type=PUTAWAY pickup=BUFFER dropoff=A-05
+20260903_111718_e9c704,283,task_created,,G00108,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,285,task_created,,G00109,type=PICK pickup=D-07 dropoff=PICK-3
+20260903_111718_e9c704,289,task_created,,G00110,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,291,task_created,,G00111,type=PUTAWAY pickup=RECV dropoff=H-03
+20260903_111718_e9c704,292,task_assigned,R4,G00089,
+20260903_111718_e9c704,295,task_completed,R1,G00070,
+20260903_111718_e9c704,295,task_completed,R8,G00083,
+20260903_111718_e9c704,295,task_created,,G00112,type=PICK pickup=B-07 dropoff=PICK-3
+20260903_111718_e9c704,295,task_created,,G00113,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,296,task_assigned,R1,G00092,
+20260903_111718_e9c704,296,task_assigned,R8,G00096,
+20260903_111718_e9c704,298,task_assigned,R5,G00098,
+20260903_111718_e9c704,299,task_created,,G00114,type=PUTAWAY pickup=RECV dropoff=F-01
+20260903_111718_e9c704,300,task_completed,R3,G00061,
+20260903_111718_e9c704,301,task_assigned,R3,G00102,
+20260903_111718_e9c704,303,task_created,,G00115,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,304,task_assigned,R6,G00104,
+20260903_111718_e9c704,305,task_created,,G00116,type=PICK pickup=A-07 dropoff=PICK-3
+20260903_111718_e9c704,306,task_assigned,R2,G00107,
+20260903_111718_e9c704,307,task_created,,G00117,type=PUTAWAY pickup=RECV dropoff=C-08
+20260903_111718_e9c704,307,task_created,,G00118,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,315,task_created,,G00119,type=PUTAWAY pickup=RECV dropoff=A-08
+20260903_111718_e9c704,315,task_created,,G00120,type=PICK pickup=F-03 dropoff=PICK-2
+20260903_111718_e9c704,317,task_completed,R7,G00087,
+20260903_111718_e9c704,317,task_created,,G00121,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,318,task_assigned,R7,G00111,
+20260903_111718_e9c704,319,task_created,,G00122,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,321,task_completed,R3,G00102,
+20260903_111718_e9c704,322,task_assigned,R3,G00114,
+20260903_111718_e9c704,323,task_created,,G00123,type=PUTAWAY pickup=BUFFER dropoff=E-05
+20260903_111718_e9c704,325,task_created,,G00124,type=PICK pickup=C-08 dropoff=PICK-2
+20260903_111718_e9c704,331,task_completed,R1,G00092,
+20260903_111718_e9c704,331,task_completed,R8,G00096,
+20260903_111718_e9c704,331,task_created,,G00125,type=PUTAWAY pickup=BUFFER dropoff=B-08
+20260903_111718_e9c704,331,task_created,,G00126,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,331,task_created,,G00127,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,332,task_assigned,R1,G00117,
+20260903_111718_e9c704,332,task_assigned,R8,G00119,
+20260903_111718_e9c704,335,task_created,,G00128,type=PICK pickup=D-07 dropoff=PICK-1
+20260903_111718_e9c704,339,task_created,,G00129,type=PUTAWAY pickup=BUFFER dropoff=B-02
+20260903_111718_e9c704,341,task_completed,R5,G00098,
+20260903_111718_e9c704,342,task_assigned,R5,G00123,
+20260903_111718_e9c704,343,task_created,,G00130,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,345,task_created,,G00131,type=PICK pickup=D-06 dropoff=PICK-2
+20260903_111718_e9c704,345,task_created,,G00132,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,347,task_completed,R2,G00107,
+20260903_111718_e9c704,347,task_created,,G00133,type=PUTAWAY pickup=BUFFER dropoff=B-01
+20260903_111718_e9c704,348,task_completed,R3,G00114,
+20260903_111718_e9c704,348,task_assigned,R2,G00125,
+20260903_111718_e9c704,349,task_assigned,R3,G00129,
+20260903_111718_e9c704,351,task_completed,R4,G00089,
+20260903_111718_e9c704,352,task_completed,R6,G00104,
+20260903_111718_e9c704,352,task_assigned,R4,G00133,
+20260903_111718_e9c704,353,task_assigned,R6,G00075,
+20260903_111718_e9c704,355,task_created,,G00134,type=PUTAWAY pickup=BUFFER dropoff=C-06
+20260903_111718_e9c704,355,task_created,,G00135,type=PICK pickup=E-05 dropoff=PICK-1
+20260903_111718_e9c704,355,task_created,,G00136,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,359,task_created,,G00137,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,363,task_created,,G00138,type=PUTAWAY pickup=RECV dropoff=E-03
+20260903_111718_e9c704,365,task_completed,R3,G00129,
+20260903_111718_e9c704,365,task_created,,G00139,type=PICK pickup=B-02 dropoff=PICK-2
+20260903_111718_e9c704,366,task_assigned,R3,G00134,
+20260903_111718_e9c704,367,task_created,,G00140,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,370,task_completed,R7,G00111,
+20260903_111718_e9c704,370,task_completed,R5,G00123,
+20260903_111718_e9c704,371,task_assigned,R5,G00138,
+20260903_111718_e9c704,371,task_created,,G00141,type=PUTAWAY pickup=RECV dropoff=H-03
+20260903_111718_e9c704,371,task_assigned,R7,G00141,
+20260903_111718_e9c704,373,task_created,,G00142,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,375,task_created,,G00143,type=PICK pickup=D-05 dropoff=PICK-3
+20260903_111718_e9c704,376,task_completed,R1,G00117,
+20260903_111718_e9c704,377,task_assigned,R1,G00078,
+20260903_111718_e9c704,379,task_created,,G00144,type=PUTAWAY pickup=BUFFER dropoff=E-04
+20260903_111718_e9c704,379,task_created,,G00145,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,381,task_completed,R8,G00119,
+20260903_111718_e9c704,382,task_completed,R4,G00133,
+20260903_111718_e9c704,382,task_completed,R5,G00138,
+20260903_111718_e9c704,382,task_assigned,R8,G00144,
+20260903_111718_e9c704,383,task_assigned,R5,G00082,
+20260903_111718_e9c704,383,task_assigned,R4,G00086,
+20260903_111718_e9c704,385,task_created,,G00146,type=PICK pickup=F-03 dropoff=PICK-3
+20260903_111718_e9c704,386,task_completed,R6,G00075,
+20260903_111718_e9c704,386,task_completed,R3,G00134,
+20260903_111718_e9c704,387,task_assigned,R6,G00090,
+20260903_111718_e9c704,387,task_created,,G00147,type=PUTAWAY pickup=BUFFER dropoff=E-06
+20260903_111718_e9c704,387,task_assigned,R3,G00147,
+20260903_111718_e9c704,387,task_created,,G00148,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,391,task_created,,G00149,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,392,task_completed,R5,G00082,
+20260903_111718_e9c704,393,task_assigned,R5,G00093,
+20260903_111718_e9c704,395,task_created,,G00150,type=PUTAWAY pickup=BUFFER dropoff=G-01
+20260903_111718_e9c704,395,task_created,,G00151,type=PICK pickup=A-06 dropoff=PICK-1
+20260903_111718_e9c704,401,task_created,,G00152,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,403,task_completed,R8,G00144,
+20260903_111718_e9c704,403,task_created,,G00153,type=PUTAWAY pickup=RECV dropoff=H-04
+20260903_111718_e9c704,403,task_created,,G00154,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,404,task_assigned,R8,G00150,
+20260903_111718_e9c704,405,task_created,,G00155,type=PICK pickup=D-03 dropoff=PICK-2
+20260903_111718_e9c704,411,task_completed,R6,G00090,
+20260903_111718_e9c704,411,task_created,,G00156,type=PUTAWAY pickup=BUFFER dropoff=H-05
+20260903_111718_e9c704,412,task_assigned,R6,G00153,
+20260903_111718_e9c704,414,task_completed,R3,G00147,
+20260903_111718_e9c704,415,task_assigned,R3,G00156,
+20260903_111718_e9c704,415,task_created,,G00157,type=PICK pickup=A-03 dropoff=PICK-2
+20260903_111718_e9c704,415,task_created,,G00158,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,415,task_created,,G00159,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,419,task_created,,G00160,type=PUTAWAY pickup=RECV dropoff=A-07
+20260903_111718_e9c704,421,task_completed,R8,G00150,
+20260903_111718_e9c704,422,task_assigned,R8,G00160,
+20260903_111718_e9c704,424,task_completed,R2,G00125,
+20260903_111718_e9c704,425,task_assigned,R2,G00097,
+20260903_111718_e9c704,425,task_created,,G00161,type=PICK pickup=F-07 dropoff=PICK-2
+20260903_111718_e9c704,427,task_created,,G00162,type=PUTAWAY pickup=BUFFER dropoff=E-05
+20260903_111718_e9c704,427,task_created,,G00163,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,429,task_completed,R4,G00086,
+20260903_111718_e9c704,429,task_created,,G00164,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,430,task_completed,R5,G00093,
+20260903_111718_e9c704,430,task_completed,R7,G00141,
+20260903_111718_e9c704,430,task_assigned,R4,G00162,
+20260903_111718_e9c704,431,task_assigned,R5,G00101,
+20260903_111718_e9c704,431,task_assigned,R7,G00105,
+20260903_111718_e9c704,435,task_created,,G00165,type=PUTAWAY pickup=RECV dropoff=E-08
+20260903_111718_e9c704,435,task_created,,G00166,type=PICK pickup=D-05 dropoff=PICK-3
+20260903_111718_e9c704,439,task_completed,R3,G00156,
+20260903_111718_e9c704,439,task_created,,G00167,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,440,task_assigned,R3,G00165,
+20260903_111718_e9c704,441,task_completed,R1,G00078,
+20260903_111718_e9c704,442,task_assigned,R1,G00109,
+20260903_111718_e9c704,443,task_created,,G00168,type=PUTAWAY pickup=BUFFER dropoff=F-03
+20260903_111718_e9c704,443,task_created,,G00169,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,444,task_completed,R8,G00160,
+20260903_111718_e9c704,445,task_assigned,R8,G00168,
+20260903_111718_e9c704,445,task_created,,G00170,type=PICK pickup=D-07 dropoff=PICK-2
+20260903_111718_e9c704,449,task_completed,R5,G00101,
+20260903_111718_e9c704,450,task_assigned,R5,G00112,
+20260903_111718_e9c704,451,task_created,,G00171,type=PUTAWAY pickup=RECV dropoff=E-03
+20260903_111718_e9c704,451,task_created,,G00172,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,452,task_completed,R2,G00097,
+20260903_111718_e9c704,452,task_completed,R7,G00105,
+20260903_111718_e9c704,453,task_assigned,R2,G00116,
+20260903_111718_e9c704,453,task_assigned,R7,G00171,
+20260903_111718_e9c704,455,task_created,,G00173,type=PICK pickup=A-02 dropoff=PICK-2
+20260903_111718_e9c704,457,task_completed,R1,G00109,
+20260903_111718_e9c704,457,task_created,,G00174,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,458,task_assigned,R1,G00120,
+20260903_111718_e9c704,459,task_created,,G00175,type=PUTAWAY pickup=BUFFER dropoff=E-07
+20260903_111718_e9c704,460,task_completed,R6,G00153,
+20260903_111718_e9c704,461,task_assigned,R6,G00175,
+20260903_111718_e9c704,463,task_completed,R4,G00162,
+20260903_111718_e9c704,463,task_created,,G00176,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,464,task_assigned,R4,G00124,
+20260903_111718_e9c704,464,task_completed,R8,G00168,
+20260903_111718_e9c704,465,task_created,,G00177,type=PICK pickup=A-05 dropoff=PICK-3
+20260903_111718_e9c704,467,task_created,,G00178,type=PUTAWAY pickup=BUFFER dropoff=H-07
+20260903_111718_e9c704,467,task_assigned,R8,G00178,
+20260903_111718_e9c704,471,task_created,,G00179,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,473,task_completed,R7,G00171,
+20260903_111718_e9c704,475,task_completed,R3,G00165,
+20260903_111718_e9c704,475,task_created,,G00180,type=PUTAWAY pickup=RECV dropoff=A-07
+20260903_111718_e9c704,475,task_assigned,R7,G00180,
+20260903_111718_e9c704,475,task_created,,G00181,type=PICK pickup=F-02 dropoff=PICK-2
+20260903_111718_e9c704,475,task_created,,G00182,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,477,task_interrupted,R8,G00178,
+20260903_111718_e9c704,478,task_interrupted,R1,G00120,
+20260903_111718_e9c704,478,task_assigned,R3,G00178,
+20260903_111718_e9c704,483,task_completed,R5,G00112,
+20260903_111718_e9c704,483,task_created,,G00183,type=PUTAWAY pickup=BUFFER dropoff=F-05
+20260903_111718_e9c704,484,task_interrupted,R7,G00180,
+20260903_111718_e9c704,484,task_assigned,R5,G00183,
+20260903_111718_e9c704,485,task_created,,G00184,type=PICK pickup=C-08 dropoff=PICK-2
+20260903_111718_e9c704,485,task_created,,G00185,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,487,task_completed,R6,G00175,
+20260903_111718_e9c704,487,task_interrupted,R3,G00178,
+20260903_111718_e9c704,487,task_created,,G00186,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,488,task_assigned,R6,G00178,
+20260903_111718_e9c704,491,task_created,,G00187,type=PUTAWAY pickup=RECV dropoff=F-08
+20260903_111718_e9c704,493,task_completed,R4,G00124,
+20260903_111718_e9c704,495,task_assigned,R4,G00180,
+20260903_111718_e9c704,495,task_created,,G00188,type=PICK pickup=E-06 dropoff=PICK-3
+20260903_111718_e9c704,499,task_created,,G00189,type=PUTAWAY pickup=BUFFER dropoff=H-02
+20260903_111718_e9c704,499,task_created,,G00190,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,499,task_created,,G00191,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,504,task_interrupted,R4,G00180,
+20260903_111718_e9c704,505,task_completed,R2,G00116,
+20260903_111718_e9c704,505,task_created,,G00192,type=PICK pickup=C-07 dropoff=PICK-1
+20260903_111718_e9c704,506,task_assigned,R2,G00180,
+20260903_111718_e9c704,507,task_created,,G00193,type=PUTAWAY pickup=BUFFER dropoff=B-06
+20260903_111718_e9c704,509,task_assigned,R7,G00187,
+20260903_111718_e9c704,510,task_assigned,R1,G00120,
+20260903_111718_e9c704,510,task_completed,R5,G00183,
+20260903_111718_e9c704,511,task_assigned,R5,G00189,
+20260903_111718_e9c704,511,task_created,,G00194,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,513,task_created,,G00195,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,514,task_interrupted,R6,G00178,
+20260903_111718_e9c704,515,task_interrupted,R5,G00189,
+20260903_111718_e9c704,515,task_created,,G00196,type=PUTAWAY pickup=BUFFER dropoff=D-06
+20260903_111718_e9c704,515,task_created,,G00197,type=PICK pickup=A-04 dropoff=PICK-1
+20260903_111718_e9c704,519,task_assigned,R8,G00178,
+20260903_111718_e9c704,522,task_interrupted,R2,G00180,
+20260903_111718_e9c704,523,task_created,,G00198,type=PUTAWAY pickup=RECV dropoff=G-02
+20260903_111718_e9c704,523,task_created,,G00199,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,525,task_created,,G00200,type=PICK pickup=H-02 dropoff=PICK-2
+20260903_111718_e9c704,527,task_created,,G00201,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,531,task_completed,R1,G00120,
+20260903_111718_e9c704,531,task_assigned,R3,G00180,
+20260903_111718_e9c704,531,task_created,,G00202,type=PUTAWAY pickup=RECV dropoff=H-06
+20260903_111718_e9c704,532,task_assigned,R1,G00189,
+20260903_111718_e9c704,535,task_created,,G00203,type=PICK pickup=D-02 dropoff=PICK-2
+20260903_111718_e9c704,535,task_created,,G00204,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,537,task_assigned,R4,G00193,
+20260903_111718_e9c704,538,task_completed,R7,G00187,
+20260903_111718_e9c704,539,task_assigned,R7,G00196,
+20260903_111718_e9c704,539,task_created,,G00205,type=PUTAWAY pickup=RECV dropoff=G-03
+20260903_111718_e9c704,541,task_created,,G00206,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,545,task_created,,G00207,type=PICK pickup=B-04 dropoff=PICK-3
+20260903_111718_e9c704,547,task_created,,G00208,type=PUTAWAY pickup=RECV dropoff=D-01
+20260903_111718_e9c704,547,task_created,,G00209,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,552,task_assigned,R2,G00198,
+20260903_111718_e9c704,555,task_created,,G00210,type=PUTAWAY pickup=BUFFER dropoff=B-03
+20260903_111718_e9c704,555,task_created,,G00211,type=PICK pickup=E-05 dropoff=PICK-3
+20260903_111718_e9c704,555,task_created,,G00212,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,556,task_completed,R3,G00180,
+20260903_111718_e9c704,557,task_assigned,R3,G00202,
+20260903_111718_e9c704,557,task_assigned,R6,G00205,
+20260903_111718_e9c704,558,task_completed,R8,G00178,
+20260903_111718_e9c704,558,task_assigned,R5,G00208,
+20260903_111718_e9c704,559,task_assigned,R8,G00210,
+20260903_111718_e9c704,559,task_created,,G00213,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,563,task_created,,G00214,type=PUTAWAY pickup=BUFFER dropoff=E-07
+20260903_111718_e9c704,565,task_created,,G00215,type=PICK pickup=G-03 dropoff=PICK-3
+20260903_111718_e9c704,566,task_completed,R7,G00196,
+20260903_111718_e9c704,567,task_assigned,R7,G00214,
+20260903_111718_e9c704,568,task_completed,R1,G00189,
+20260903_111718_e9c704,569,task_assigned,R1,G00128,
+20260903_111718_e9c704,569,task_created,,G00216,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,571,task_created,,G00217,type=PUTAWAY pickup=BUFFER dropoff=G-01
+20260903_111718_e9c704,571,task_created,,G00218,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,575,task_created,,G00219,type=PICK pickup=D-06 dropoff=PICK-2
+20260903_111718_e9c704,579,task_created,,G00220,type=PUTAWAY pickup=RECV dropoff=B-04
+20260903_111718_e9c704,581,task_completed,R8,G00210,
+20260903_111718_e9c704,582,task_assigned,R8,G00217,
+20260903_111718_e9c704,583,task_created,,G00221,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,583,task_created,,G00222,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,585,task_created,,G00223,type=PICK pickup=D-02 dropoff=PICK-1
+20260903_111718_e9c704,586,task_completed,R4,G00193,
+20260903_111718_e9c704,587,task_completed,R3,G00202,
+20260903_111718_e9c704,587,task_assigned,R4,G00220,
+20260903_111718_e9c704,587,task_created,,G00224,type=PUTAWAY pickup=BUFFER dropoff=G-03
+20260903_111718_e9c704,588,task_assigned,R3,G00224,
+20260903_111718_e9c704,591,task_completed,R7,G00214,
+20260903_111718_e9c704,592,task_assigned,R7,G00131,
+20260903_111718_e9c704,595,task_completed,R1,G00128,
+20260903_111718_e9c704,595,task_created,,G00225,type=PUTAWAY pickup=RECV dropoff=D-08
+20260903_111718_e9c704,595,task_created,,G00226,type=PICK pickup=A-05 dropoff=PICK-2
+20260903_111718_e9c704,595,task_created,,G00227,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,596,task_assigned,R1,G00225,
+20260903_111718_e9c704,597,task_created,,G00228,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,602,task_completed,R8,G00217,
+20260903_111718_e9c704,603,task_created,,G00229,type=PUTAWAY pickup=RECV dropoff=A-04
+20260903_111718_e9c704,603,task_assigned,R8,G00229,
+20260903_111718_e9c704,605,task_created,,G00230,type=PICK pickup=A-02 dropoff=PICK-3
+20260903_111718_e9c704,607,task_created,,G00231,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,609,task_completed,R6,G00205,
+20260903_111718_e9c704,610,task_assigned,R6,G00135,
+20260903_111718_e9c704,611,task_created,,G00232,type=PUTAWAY pickup=BUFFER dropoff=F-02
+20260903_111718_e9c704,611,task_created,,G00233,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,615,task_created,,G00234,type=PICK pickup=F-01 dropoff=PICK-1
+20260903_111718_e9c704,616,task_completed,R2,G00198,
+20260903_111718_e9c704,617,task_assigned,R2,G00232,
+20260903_111718_e9c704,618,task_completed,R5,G00208,
+20260903_111718_e9c704,619,task_created,,G00235,type=PUTAWAY pickup=BUFFER dropoff=H-06
+20260903_111718_e9c704,619,task_assigned,R5,G00235,
+20260903_111718_e9c704,619,task_created,,G00236,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,621,task_completed,R3,G00224,
+20260903_111718_e9c704,622,task_assigned,R3,G00139,
+20260903_111718_e9c704,625,task_created,,G00237,type=PICK pickup=C-02 dropoff=PICK-3
+20260903_111718_e9c704,625,task_created,,G00238,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,627,task_completed,R8,G00229,
+20260903_111718_e9c704,627,task_created,,G00239,type=PUTAWAY pickup=BUFFER dropoff=B-05
+20260903_111718_e9c704,628,task_assigned,R8,G00239,
+20260903_111718_e9c704,631,task_completed,R4,G00220,
+20260903_111718_e9c704,631,task_created,,G00240,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,632,task_assigned,R4,G00143,
+20260903_111718_e9c704,632,task_completed,R1,G00225,
+20260903_111718_e9c704,633,task_assigned,R1,G00146,
+20260903_111718_e9c704,635,task_completed,R3,G00139,
+20260903_111718_e9c704,635,task_created,,G00241,type=PUTAWAY pickup=RECV dropoff=A-01
+20260903_111718_e9c704,635,task_created,,G00242,type=PICK pickup=A-02 dropoff=PICK-3
+20260903_111718_e9c704,636,task_completed,R7,G00131,
+20260903_111718_e9c704,636,task_completed,R2,G00232,
+20260903_111718_e9c704,636,task_assigned,R3,G00241,
+20260903_111718_e9c704,637,task_completed,R6,G00135,
+20260903_111718_e9c704,637,task_assigned,R2,G00151,
+20260903_111718_e9c704,637,task_assigned,R7,G00155,
+20260903_111718_e9c704,638,task_assigned,R6,G00157,
+20260903_111718_e9c704,639,task_created,,G00243,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,643,task_completed,R5,G00235,
+20260903_111718_e9c704,643,task_created,,G00244,type=PUTAWAY pickup=RECV dropoff=H-03
+20260903_111718_e9c704,643,task_created,,G00245,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,644,task_assigned,R5,G00244,
+20260903_111718_e9c704,645,task_created,,G00246,type=PICK pickup=G-08 dropoff=PICK-2
+20260903_111718_e9c704,646,task_completed,R8,G00239,
+20260903_111718_e9c704,647,task_assigned,R8,G00161,
+20260903_111718_e9c704,651,task_completed,R2,G00151,
+20260903_111718_e9c704,651,task_created,,G00247,type=PUTAWAY pickup=RECV dropoff=F-02
+20260903_111718_e9c704,652,task_assigned,R2,G00247,
+20260903_111718_e9c704,653,task_created,,G00248,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,655,task_created,,G00249,type=PICK pickup=C-04 dropoff=PICK-1
+20260903_111718_e9c704,655,task_created,,G00250,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,657,task_completed,R3,G00241,
+20260903_111718_e9c704,658,task_assigned,R3,G00166,
+20260903_111718_e9c704,659,task_created,,G00251,type=PUTAWAY pickup=RECV dropoff=A-06
+20260903_111718_e9c704,660,task_completed,R1,G00146,
+20260903_111718_e9c704,660,task_completed,R8,G00161,
+20260903_111718_e9c704,661,task_completed,R4,G00143,
+20260903_111718_e9c704,661,task_assigned,R1,G00170,
+20260903_111718_e9c704,661,task_assigned,R8,G00251,
+20260903_111718_e9c704,662,task_assigned,R4,G00173,
+20260903_111718_e9c704,665,task_completed,R6,G00157,
+20260903_111718_e9c704,665,task_created,,G00252,type=PICK pickup=B-01 dropoff=PICK-1
+20260903_111718_e9c704,666,task_assigned,R6,G00177,
+20260903_111718_e9c704,667,task_created,,G00253,type=PUTAWAY pickup=RECV dropoff=E-04
+20260903_111718_e9c704,667,task_created,,G00254,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,667,task_created,,G00255,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,672,task_completed,R7,G00155,
+20260903_111718_e9c704,673,task_assigned,R7,G00253,
+20260903_111718_e9c704,675,task_created,,G00256,type=PUTAWAY pickup=RECV dropoff=C-07
+20260903_111718_e9c704,675,task_created,,G00257,type=PICK pickup=B-06 dropoff=PICK-1
+20260903_111718_e9c704,678,task_completed,R2,G00247,
+20260903_111718_e9c704,679,task_assigned,R2,G00256,
+20260903_111718_e9c704,679,task_created,,G00258,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,681,task_created,,G00259,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,683,task_completed,R3,G00166,
+20260903_111718_e9c704,683,task_completed,R8,G00251,
+20260903_111718_e9c704,683,task_created,,G00260,type=PUTAWAY pickup=RECV dropoff=G-03
+20260903_111718_e9c704,684,task_completed,R1,G00170,
+20260903_111718_e9c704,684,task_assigned,R3,G00181,
+20260903_111718_e9c704,684,task_assigned,R8,G00260,
+20260903_111718_e9c704,685,task_assigned,R1,G00184,
+20260903_111718_e9c704,685,task_created,,G00261,type=PICK pickup=D-04 dropoff=PICK-1
+20260903_111718_e9c704,691,task_created,,G00262,type=PUTAWAY pickup=BUFFER dropoff=G-07
+20260903_111718_e9c704,691,task_created,,G00263,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,694,task_completed,R5,G00244,
+20260903_111718_e9c704,695,task_assigned,R5,G00262,
+20260903_111718_e9c704,695,task_created,,G00264,type=PICK pickup=E-01 dropoff=PICK-1
+20260903_111718_e9c704,695,task_created,,G00265,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,699,task_created,,G00266,type=PUTAWAY pickup=BUFFER dropoff=B-05
+20260903_111718_e9c704,700,task_completed,R7,G00253,
+20260903_111718_e9c704,701,task_assigned,R7,G00266,
+20260903_111718_e9c704,702,task_completed,R6,G00177,
+20260903_111718_e9c704,702,task_completed,R1,G00184,
+20260903_111718_e9c704,703,task_assigned,R6,G00192,
+20260903_111718_e9c704,703,task_created,,G00267,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,705,task_completed,R2,G00256,
+20260903_111718_e9c704,705,task_created,,G00268,type=PICK pickup=B-04 dropoff=PICK-3
+20260903_111718_e9c704,706,task_assigned,R2,G00197,
+20260903_111718_e9c704,707,task_created,,G00269,type=PUTAWAY pickup=BUFFER dropoff=D-02
+20260903_111718_e9c704,707,task_assigned,R1,G00269,
+20260903_111718_e9c704,709,task_created,,G00270,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,710,task_completed,R3,G00181,
+20260903_111718_e9c704,711,task_completed,R4,G00173,
+20260903_111718_e9c704,711,task_assigned,R3,G00188,
+20260903_111718_e9c704,712,task_assigned,R4,G00200,
+20260903_111718_e9c704,714,task_completed,R8,G00260,
+20260903_111718_e9c704,714,task_interrupted,R1,G00269,
+20260903_111718_e9c704,715,task_assigned,R8,G00269,
+20260903_111718_e9c704,715,task_created,,G00271,type=PUTAWAY pickup=BUFFER dropoff=B-08
+20260903_111718_e9c704,715,task_created,,G00272,type=PICK pickup=G-02 dropoff=PICK-2
+20260903_111718_e9c704,715,task_created,,G00273,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,717,task_interrupted,R7,G00266,
+20260903_111718_e9c704,722,task_completed,R5,G00262,
+20260903_111718_e9c704,723,task_assigned,R5,G00266,
+20260903_111718_e9c704,723,task_created,,G00274,type=PUTAWAY pickup=RECV dropoff=F-04
+20260903_111718_e9c704,723,task_created,,G00275,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,725,task_created,,G00276,type=PICK pickup=D-03 dropoff=PICK-2
+20260903_111718_e9c704,727,task_created,,G00277,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,731,task_created,,G00278,type=PUTAWAY pickup=RECV dropoff=B-06
+20260903_111718_e9c704,732,task_completed,R6,G00192,
+20260903_111718_e9c704,733,task_assigned,R6,G00271,
+20260903_111718_e9c704,735,task_created,,G00279,type=PICK pickup=C-01 dropoff=PICK-2
+20260903_111718_e9c704,737,task_completed,R4,G00200,
+20260903_111718_e9c704,737,task_created,,G00280,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,738,task_interrupted,R8,G00269,
+20260903_111718_e9c704,738,task_assigned,R4,G00274,
+20260903_111718_e9c704,739,task_created,,G00281,type=PUTAWAY pickup=BUFFER dropoff=C-05
+20260903_111718_e9c704,739,task_created,,G00282,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,741,task_completed,R2,G00197,
+20260903_111718_e9c704,742,task_assigned,R2,G00269,
+20260903_111718_e9c704,745,task_created,,G00283,type=PICK pickup=E-08 dropoff=PICK-2
+20260903_111718_e9c704,746,task_completed,R3,G00188,
+20260903_111718_e9c704,747,task_created,,G00284,type=PUTAWAY pickup=BUFFER dropoff=H-01
+20260903_111718_e9c704,749,task_assigned,R7,G00278,
+20260903_111718_e9c704,749,task_assigned,R3,G00281,
+20260903_111718_e9c704,751,task_assigned,R1,G00284,
+20260903_111718_e9c704,751,task_created,,G00285,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,751,task_created,,G00286,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,752,task_completed,R5,G00266,
+20260903_111718_e9c704,753,task_assigned,R5,G00203,
+20260903_111718_e9c704,755,task_created,,G00287,type=PUTAWAY pickup=BUFFER dropoff=E-04
+20260903_111718_e9c704,755,task_created,,G00288,type=PICK pickup=D-03 dropoff=PICK-3
+20260903_111718_e9c704,759,task_interrupted,R3,G00281,
+20260903_111718_e9c704,760,task_interrupted,R6,G00271,
+20260903_111718_e9c704,760,task_interrupted,R4,G00274,
+20260903_111718_e9c704,763,task_created,,G00289,type=PUTAWAY pickup=BUFFER dropoff=A-01
+20260903_111718_e9c704,763,task_created,,G00290,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,765,task_created,,G00291,type=PICK pickup=A-02 dropoff=PICK-1
+20260903_111718_e9c704,765,task_created,,G00292,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,771,task_created,,G00293,type=PUTAWAY pickup=RECV dropoff=A-05
+20260903_111718_e9c704,772,task_interrupted,R5,G00203,
+20260903_111718_e9c704,774,task_interrupted,R2,G00269,
+20260903_111718_e9c704,775,task_created,,G00294,type=PICK pickup=A-02 dropoff=PICK-1
+20260903_111718_e9c704,775,task_created,,G00295,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,777,task_completed,R7,G00278,
+20260903_111718_e9c704,778,task_assigned,R7,G00269,
+20260903_111718_e9c704,779,task_created,,G00296,type=PUTAWAY pickup=RECV dropoff=E-02
+20260903_111718_e9c704,779,task_created,,G00297,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,785,task_created,,G00298,type=PICK pickup=B-01 dropoff=PICK-1
+20260903_111718_e9c704,787,task_created,,G00299,type=PUTAWAY pickup=BUFFER dropoff=F-01
+20260903_111718_e9c704,787,task_created,,G00300,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,789,task_assigned,R8,G00271,
+20260903_111718_e9c704,790,task_completed,R1,G00284,
+20260903_111718_e9c704,791,task_assigned,R1,G00274,
+20260903_111718_e9c704,791,task_assigned,R3,G00281,
+20260903_111718_e9c704,793,task_created,,G00301,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,794,task_assigned,R6,G00287,
+20260903_111718_e9c704,795,task_assigned,R4,G00289,
+20260903_111718_e9c704,795,task_created,,G00302,type=PUTAWAY pickup=RECV dropoff=H-05
+20260903_111718_e9c704,795,task_created,,G00303,type=PICK pickup=H-04 dropoff=PICK-3
+20260903_111718_e9c704,799,task_created,,G00304,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,803,task_completed,R7,G00269,
+20260903_111718_e9c704,803,task_created,,G00305,type=PUTAWAY pickup=BUFFER dropoff=E-03
+20260903_111718_e9c704,804,task_assigned,R7,G00293,
+20260903_111718_e9c704,805,task_created,,G00306,type=PICK pickup=A-06 dropoff=PICK-2
+20260903_111718_e9c704,807,task_created,,G00307,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,811,task_completed,R8,G00271,
+20260903_111718_e9c704,811,task_created,,G00308,type=PUTAWAY pickup=RECV dropoff=D-08
+20260903_111718_e9c704,811,task_created,,G00309,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,812,task_assigned,R8,G00296,
+20260903_111718_e9c704,813,task_completed,R1,G00274,
+20260903_111718_e9c704,814,task_assigned,R1,G00299,
+20260903_111718_e9c704,815,task_created,,G00310,type=PICK pickup=A-04 dropoff=PICK-3
+20260903_111718_e9c704,819,task_created,,G00311,type=PUTAWAY pickup=RECV dropoff=H-02
+20260903_111718_e9c704,821,task_created,,G00312,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,823,task_created,,G00313,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,825,task_created,,G00314,type=PICK pickup=E-07 dropoff=PICK-2
+20260903_111718_e9c704,827,task_created,,G00315,type=PUTAWAY pickup=BUFFER dropoff=B-04
+20260903_111718_e9c704,828,task_assigned,R5,G00203,
+20260903_111718_e9c704,828,task_completed,R3,G00281,
+20260903_111718_e9c704,829,task_completed,R8,G00296,
+20260903_111718_e9c704,829,task_assigned,R3,G00302,
+20260903_111718_e9c704,830,task_assigned,R8,G00305,
+20260903_111718_e9c704,834,task_completed,R7,G00293,
+20260903_111718_e9c704,835,task_assigned,R7,G00308,
+20260903_111718_e9c704,835,task_created,,G00316,type=PUTAWAY pickup=BUFFER dropoff=A-07
+20260903_111718_e9c704,835,task_created,,G00317,type=PICK pickup=C-03 dropoff=PICK-2
+20260903_111718_e9c704,835,task_created,,G00318,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,835,task_created,,G00319,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,838,task_assigned,R2,G00311,
+20260903_111718_e9c704,839,task_completed,R1,G00299,
+20260903_111718_e9c704,840,task_completed,R6,G00287,
+20260903_111718_e9c704,840,task_assigned,R1,G00315,
+20260903_111718_e9c704,841,task_assigned,R6,G00316,
+20260903_111718_e9c704,843,task_created,,G00320,type=PUTAWAY pickup=BUFFER dropoff=H-05
+20260903_111718_e9c704,845,task_completed,R4,G00289,
+20260903_111718_e9c704,845,task_created,,G00321,type=PICK pickup=A-03 dropoff=PICK-1
+20260903_111718_e9c704,846,task_assigned,R4,G00320,
+20260903_111718_e9c704,847,task_created,,G00322,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,849,task_created,,G00323,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,851,task_created,,G00324,type=PUTAWAY pickup=RECV dropoff=B-01
+20260903_111718_e9c704,852,task_completed,R1,G00315,
+20260903_111718_e9c704,853,task_assigned,R1,G00324,
+20260903_111718_e9c704,855,task_created,,G00325,type=PICK pickup=D-04 dropoff=PICK-2
+20260903_111718_e9c704,859,task_created,,G00326,type=PUTAWAY pickup=BUFFER dropoff=H-03
+20260903_111718_e9c704,859,task_created,,G00327,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,863,task_completed,R5,G00203,
+20260903_111718_e9c704,863,task_created,,G00328,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,864,task_assigned,R5,G00326,
+20260903_111718_e9c704,865,task_created,,G00329,type=PICK pickup=C-03 dropoff=PICK-3
+20260903_111718_e9c704,867,task_created,,G00330,type=PUTAWAY pickup=RECV dropoff=D-07
+20260903_111718_e9c704,868,task_completed,R7,G00308,
+20260903_111718_e9c704,869,task_completed,R3,G00302,
+20260903_111718_e9c704,869,task_assigned,R7,G00330,
+20260903_111718_e9c704,870,task_assigned,R3,G00207,
+20260903_111718_e9c704,871,task_completed,R6,G00316,
+20260903_111718_e9c704,871,task_created,,G00331,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,872,task_assigned,R6,G00211,
+20260903_111718_e9c704,875,task_completed,R1,G00324,
+20260903_111718_e9c704,875,task_created,,G00332,type=PUTAWAY pickup=BUFFER dropoff=B-06
+20260903_111718_e9c704,875,task_created,,G00333,type=PICK pickup=E-02 dropoff=PICK-2
+20260903_111718_e9c704,876,task_completed,R8,G00305,
+20260903_111718_e9c704,876,task_assigned,R1,G00332,
+20260903_111718_e9c704,877,task_assigned,R8,G00215,
+20260903_111718_e9c704,877,task_created,,G00334,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,879,task_completed,R4,G00320,
+20260903_111718_e9c704,880,task_assigned,R4,G00219,
+20260903_111718_e9c704,883,task_created,,G00335,type=PUTAWAY pickup=BUFFER dropoff=G-05
+20260903_111718_e9c704,883,task_created,,G00336,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,885,task_created,,G00337,type=PICK pickup=D-02 dropoff=PICK-2
+20260903_111718_e9c704,886,task_completed,R5,G00326,
+20260903_111718_e9c704,887,task_assigned,R5,G00335,
+20260903_111718_e9c704,888,task_completed,R2,G00311,
+20260903_111718_e9c704,889,task_assigned,R2,G00223,
+20260903_111718_e9c704,891,task_created,,G00338,type=PUTAWAY pickup=RECV dropoff=B-02
+20260903_111718_e9c704,891,task_created,,G00339,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,895,task_created,,G00340,type=PICK pickup=H-03 dropoff=PICK-3
+20260903_111718_e9c704,895,task_created,,G00341,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,896,task_completed,R3,G00207,
+20260903_111718_e9c704,897,task_completed,R4,G00219,
+20260903_111718_e9c704,897,task_assigned,R3,G00338,
+20260903_111718_e9c704,898,task_assigned,R4,G00226,
+20260903_111718_e9c704,898,task_completed,R1,G00332,
+20260903_111718_e9c704,899,task_created,,G00342,type=PUTAWAY pickup=BUFFER dropoff=F-06
+20260903_111718_e9c704,899,task_assigned,R1,G00342,
+20260903_111718_e9c704,905,task_created,,G00343,type=PICK pickup=B-03 dropoff=PICK-2
+20260903_111718_e9c704,905,task_created,,G00344,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,907,task_completed,R6,G00211,
+20260903_111718_e9c704,907,task_created,,G00345,type=PUTAWAY pickup=BUFFER dropoff=F-03
+20260903_111718_e9c704,907,task_created,,G00346,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,908,task_assigned,R6,G00345,
+20260903_111718_e9c704,910,task_completed,R5,G00335,
+20260903_111718_e9c704,911,task_completed,R2,G00223,
+20260903_111718_e9c704,911,task_assigned,R5,G00230,
+20260903_111718_e9c704,912,task_assigned,R2,G00234,
+20260903_111718_e9c704,915,task_created,,G00347,type=PUTAWAY pickup=RECV dropoff=G-08
+20260903_111718_e9c704,915,task_created,,G00348,type=PICK pickup=E-05 dropoff=PICK-3
+20260903_111718_e9c704,919,task_created,,G00349,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,919,task_created,,G00350,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,920,task_completed,R8,G00215,
+20260903_111718_e9c704,921,task_assigned,R8,G00347,
+20260903_111718_e9c704,923,task_created,,G00351,type=PUTAWAY pickup=RECV dropoff=D-06
+20260903_111718_e9c704,924,task_completed,R7,G00330,
+20260903_111718_e9c704,925,task_assigned,R7,G00351,
+20260903_111718_e9c704,925,task_created,,G00352,type=PICK pickup=F-07 dropoff=PICK-2
+20260903_111718_e9c704,927,task_completed,R1,G00342,
+20260903_111718_e9c704,928,task_assigned,R1,G00237,
+20260903_111718_e9c704,929,task_completed,R2,G00234,
+20260903_111718_e9c704,929,task_completed,R6,G00345,
+20260903_111718_e9c704,930,task_assigned,R2,G00242,
+20260903_111718_e9c704,930,task_assigned,R6,G00246,
+20260903_111718_e9c704,931,task_completed,R4,G00226,
+20260903_111718_e9c704,931,task_created,,G00353,type=PUTAWAY pickup=RECV dropoff=H-02
+20260903_111718_e9c704,931,task_created,,G00354,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,932,task_assigned,R4,G00353,
+20260903_111718_e9c704,933,task_created,,G00355,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,935,task_created,,G00356,type=PICK pickup=G-02 dropoff=PICK-3
+20260903_111718_e9c704,939,task_completed,R3,G00338,
+20260903_111718_e9c704,939,task_created,,G00357,type=PUTAWAY pickup=BUFFER dropoff=D-03
+20260903_111718_e9c704,940,task_assigned,R3,G00357,
+20260903_111718_e9c704,943,task_created,,G00358,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,945,task_created,,G00359,type=PICK pickup=C-05 dropoff=PICK-2
+20260903_111718_e9c704,947,task_created,,G00360,type=PUTAWAY pickup=RECV dropoff=D-06
+20260903_111718_e9c704,947,task_created,,G00361,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,950,task_completed,R5,G00230,
+20260903_111718_e9c704,951,task_assigned,R5,G00360,
+20260903_111718_e9c704,955,task_created,,G00362,type=PUTAWAY pickup=BUFFER dropoff=C-06
+20260903_111718_e9c704,955,task_created,,G00363,type=PICK pickup=C-04 dropoff=PICK-1
+20260903_111718_e9c704,955,task_created,,G00364,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,957,task_completed,R6,G00246,
+20260903_111718_e9c704,958,task_assigned,R6,G00362,
+20260903_111718_e9c704,960,task_completed,R3,G00357,
+20260903_111718_e9c704,961,task_completed,R1,G00237,
+20260903_111718_e9c704,961,task_assigned,R3,G00249,
+20260903_111718_e9c704,961,task_created,,G00365,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,962,task_completed,R2,G00242,
+20260903_111718_e9c704,962,task_assigned,R1,G00252,
+20260903_111718_e9c704,963,task_created,,G00366,type=PUTAWAY pickup=RECV dropoff=C-02
+20260903_111718_e9c704,963,task_assigned,R2,G00366,
+20260903_111718_e9c704,965,task_created,,G00367,type=PICK pickup=C-01 dropoff=PICK-1
+20260903_111718_e9c704,966,task_completed,R8,G00347,
+20260903_111718_e9c704,967,task_assigned,R8,G00257,
+20260903_111718_e9c704,967,task_created,,G00368,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,970,task_interrupted,R7,G00351,
+20260903_111718_e9c704,971,task_created,,G00369,type=PUTAWAY pickup=BUFFER dropoff=D-04
+20260903_111718_e9c704,975,task_created,,G00370,type=PICK pickup=B-01 dropoff=PICK-3
+20260903_111718_e9c704,975,task_created,,G00371,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,976,task_completed,R6,G00362,
+20260903_111718_e9c704,977,task_interrupted,R1,G00252,
+20260903_111718_e9c704,977,task_assigned,R6,G00351,
+20260903_111718_e9c704,979,task_created,,G00372,type=PUTAWAY pickup=RECV dropoff=A-07
+20260903_111718_e9c704,979,task_created,,G00373,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,982,task_completed,R4,G00353,
+20260903_111718_e9c704,983,task_assigned,R4,G00369,
+20260903_111718_e9c704,985,task_created,,G00374,type=PICK pickup=C-01 dropoff=PICK-3
+20260903_111718_e9c704,987,task_created,,G00375,type=PUTAWAY pickup=BUFFER dropoff=B-08
+20260903_111718_e9c704,988,task_completed,R3,G00249,
+20260903_111718_e9c704,989,task_assigned,R3,G00372,
+20260903_111718_e9c704,989,task_created,,G00376,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,991,task_created,,G00377,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,995,task_completed,R8,G00257,
+20260903_111718_e9c704,995,task_created,,G00378,type=PUTAWAY pickup=BUFFER dropoff=G-04
+20260903_111718_e9c704,995,task_created,,G00379,type=PICK pickup=F-04 dropoff=PICK-1
+20260903_111718_e9c704,996,task_assigned,R8,G00375,
+20260903_111718_e9c704,998,task_completed,R6,G00351,
+20260903_111718_e9c704,999,task_assigned,R6,G00378,
+20260903_111718_e9c704,1003,task_created,,G00380,type=PUTAWAY pickup=RECV dropoff=H-01
+20260903_111718_e9c704,1003,task_created,,G00381,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1003,task_created,,G00382,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1005,task_created,,G00383,type=PICK pickup=H-01 dropoff=PICK-2
+20260903_111718_e9c704,1006,task_completed,R3,G00372,
+20260903_111718_e9c704,1009,task_assigned,R1,G00252,
+20260903_111718_e9c704,1009,task_interrupted,R4,G00369,
+20260903_111718_e9c704,1011,task_created,,G00384,type=PUTAWAY pickup=RECV dropoff=A-07
+20260903_111718_e9c704,1012,task_assigned,R7,G00369,
+20260903_111718_e9c704,1015,task_interrupted,R8,G00375,
+20260903_111718_e9c704,1015,task_created,,G00385,type=PICK pickup=D-03 dropoff=PICK-3
+20260903_111718_e9c704,1015,task_created,,G00386,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1017,task_interrupted,R6,G00378,
+20260903_111718_e9c704,1017,task_created,,G00387,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1019,task_created,,G00388,type=PUTAWAY pickup=BUFFER dropoff=G-08
+20260903_111718_e9c704,1022,task_completed,R2,G00366,
+20260903_111718_e9c704,1023,task_assigned,R2,G00375,
+20260903_111718_e9c704,1025,task_created,,G00389,type=PICK pickup=E-07 dropoff=PICK-3
+20260903_111718_e9c704,1026,task_completed,R2,G00375,
+20260903_111718_e9c704,1027,task_assigned,R2,G00378,
+20260903_111718_e9c704,1027,task_created,,G00390,type=PUTAWAY pickup=RECV dropoff=C-03
+20260903_111718_e9c704,1027,task_created,,G00391,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1028,task_completed,R5,G00360,
+20260903_111718_e9c704,1031,task_created,,G00392,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1035,task_created,,G00393,type=PUTAWAY pickup=RECV dropoff=E-08
+20260903_111718_e9c704,1035,task_created,,G00394,type=PICK pickup=C-04 dropoff=PICK-2
+20260903_111718_e9c704,1036,task_completed,R1,G00252,
+20260903_111718_e9c704,1036,task_assigned,R3,G00384,
+20260903_111718_e9c704,1037,task_assigned,R1,G00380,
+20260903_111718_e9c704,1037,task_assigned,R5,G00388,
+20260903_111718_e9c704,1039,task_created,,G00395,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1040,task_completed,R2,G00378,
+20260903_111718_e9c704,1043,task_created,,G00396,type=PUTAWAY pickup=RECV dropoff=H-08
+20260903_111718_e9c704,1045,task_created,,G00397,type=PICK pickup=D-02 dropoff=PICK-1
+20260903_111718_e9c704,1045,task_created,,G00398,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1048,task_assigned,R8,G00393,
+20260903_111718_e9c704,1049,task_completed,R7,G00369,
+20260903_111718_e9c704,1050,task_interrupted,R5,G00388,
+20260903_111718_e9c704,1050,task_assigned,R7,G00396,
+20260903_111718_e9c704,1051,task_created,,G00399,type=PUTAWAY pickup=RECV dropoff=H-03
+20260903_111718_e9c704,1051,task_created,,G00400,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1055,task_assigned,R6,G00388,
+20260903_111718_e9c704,1055,task_created,,G00401,type=PICK pickup=A-02 dropoff=PICK-2
+20260903_111718_e9c704,1059,task_created,,G00402,type=PUTAWAY pickup=RECV dropoff=B-02
+20260903_111718_e9c704,1059,task_created,,G00403,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1063,task_created,,G00404,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1064,task_assigned,R4,G00390,
+20260903_111718_e9c704,1065,task_completed,R3,G00384,
+20260903_111718_e9c704,1065,task_created,,G00405,type=PICK pickup=B-02 dropoff=PICK-1
+20260903_111718_e9c704,1066,task_assigned,R3,G00399,
+20260903_111718_e9c704,1067,task_created,,G00406,type=PUTAWAY pickup=BUFFER dropoff=D-06
+20260903_111718_e9c704,1072,task_completed,R1,G00380,
+20260903_111718_e9c704,1073,task_assigned,R1,G00402,
+20260903_111718_e9c704,1073,task_created,,G00407,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1075,task_created,,G00408,type=PUTAWAY pickup=BUFFER dropoff=G-02
+20260903_111718_e9c704,1075,task_created,,G00409,type=PICK pickup=C-07 dropoff=PICK-2
+20260903_111718_e9c704,1075,task_created,,G00410,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1076,task_completed,R8,G00393,
+20260903_111718_e9c704,1077,task_assigned,R8,G00406,
+20260903_111718_e9c704,1083,task_created,,G00411,type=PUTAWAY pickup=BUFFER dropoff=E-07
+20260903_111718_e9c704,1085,task_created,,G00412,type=PICK pickup=B-04 dropoff=PICK-2
+20260903_111718_e9c704,1087,task_assigned,R2,G00408,
+20260903_111718_e9c704,1087,task_created,,G00413,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1087,task_created,,G00414,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1091,task_created,,G00415,type=PUTAWAY pickup=BUFFER dropoff=E-02
+20260903_111718_e9c704,1092,task_completed,R6,G00388,
+20260903_111718_e9c704,1093,task_assigned,R6,G00411,
+20260903_111718_e9c704,1093,task_assigned,R5,G00415,
+20260903_111718_e9c704,1095,task_created,,G00416,type=PICK pickup=F-02 dropoff=PICK-2
+20260903_111718_e9c704,1099,task_completed,R3,G00399,
+20260903_111718_e9c704,1099,task_created,,G00417,type=PUTAWAY pickup=RECV dropoff=H-07
+20260903_111718_e9c704,1099,task_created,,G00418,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1100,task_assigned,R3,G00417,
+20260903_111718_e9c704,1101,task_created,,G00419,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1103,task_completed,R4,G00390,
+20260903_111718_e9c704,1103,task_completed,R7,G00396,
+20260903_111718_e9c704,1104,task_assigned,R7,G00261,
+20260903_111718_e9c704,1104,task_assigned,R4,G00264,
+20260903_111718_e9c704,1104,task_completed,R8,G00406,
+20260903_111718_e9c704,1105,task_assigned,R8,G00268,
+20260903_111718_e9c704,1105,task_created,,G00420,type=PICK pickup=G-06 dropoff=PICK-2
+20260903_111718_e9c704,1107,task_created,,G00421,type=PUTAWAY pickup=RECV dropoff=F-02
+20260903_111718_e9c704,1111,task_created,,G00422,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1114,task_completed,R6,G00411,
+20260903_111718_e9c704,1115,task_assigned,R6,G00421,
+20260903_111718_e9c704,1115,task_created,,G00423,type=PUTAWAY pickup=RECV dropoff=G-06
+20260903_111718_e9c704,1115,task_created,,G00424,type=PICK pickup=F-02 dropoff=PICK-2
+20260903_111718_e9c704,1115,task_created,,G00425,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1120,task_completed,R2,G00408,
+20260903_111718_e9c704,1121,task_assigned,R2,G00423,
+20260903_111718_e9c704,1123,task_created,,G00426,type=PUTAWAY pickup=BUFFER dropoff=C-01
+20260903_111718_e9c704,1123,task_created,,G00427,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1125,task_created,,G00428,type=PICK pickup=F-02 dropoff=PICK-1
+20260903_111718_e9c704,1128,task_completed,R4,G00264,
+20260903_111718_e9c704,1129,task_completed,R7,G00261,
+20260903_111718_e9c704,1129,task_assigned,R4,G00426,
+20260903_111718_e9c704,1129,task_created,,G00429,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1130,task_assigned,R7,G00272,
+20260903_111718_e9c704,1130,task_completed,R1,G00402,
+20260903_111718_e9c704,1131,task_completed,R6,G00421,
+20260903_111718_e9c704,1131,task_created,,G00430,type=PUTAWAY pickup=RECV dropoff=C-05
+20260903_111718_e9c704,1131,task_assigned,R1,G00430,
+20260903_111718_e9c704,1132,task_assigned,R6,G00276,
+20260903_111718_e9c704,1135,task_created,,G00431,type=PICK pickup=D-08 dropoff=PICK-3
+20260903_111718_e9c704,1135,task_created,,G00432,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1137,task_completed,R8,G00268,
+20260903_111718_e9c704,1138,task_assigned,R8,G00279,
+20260903_111718_e9c704,1139,task_created,,G00433,type=PUTAWAY pickup=RECV dropoff=H-08
+20260903_111718_e9c704,1143,task_created,,G00434,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1145,task_created,,G00435,type=PICK pickup=H-03 dropoff=PICK-2
+20260903_111718_e9c704,1147,task_created,,G00436,type=PUTAWAY pickup=RECV dropoff=C-01
+20260903_111718_e9c704,1147,task_created,,G00437,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1151,task_completed,R5,G00415,
+20260903_111718_e9c704,1152,task_assigned,R5,G00433,
+20260903_111718_e9c704,1153,task_completed,R7,G00272,
+20260903_111718_e9c704,1154,task_assigned,R7,G00436,
+20260903_111718_e9c704,1155,task_created,,G00438,type=PUTAWAY pickup=RECV dropoff=G-01
+20260903_111718_e9c704,1155,task_created,,G00439,type=PICK pickup=D-01 dropoff=PICK-3
+20260903_111718_e9c704,1157,task_created,,G00440,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1159,task_created,,G00441,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1163,task_created,,G00442,type=PUTAWAY pickup=BUFFER dropoff=G-02
+20260903_111718_e9c704,1165,task_created,,G00443,type=PICK pickup=G-04 dropoff=PICK-3
+20260903_111718_e9c704,1166,task_completed,R1,G00430,
+20260903_111718_e9c704,1167,task_assigned,R1,G00438,
+20260903_111718_e9c704,1168,task_completed,R8,G00279,
+20260903_111718_e9c704,1169,task_assigned,R8,G00442,
+20260903_111718_e9c704,1171,task_created,,G00444,type=PUTAWAY pickup=RECV dropoff=H-04
+20260903_111718_e9c704,1171,task_created,,G00445,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1171,task_created,,G00446,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1175,task_created,,G00447,type=PICK pickup=A-05 dropoff=PICK-2
+20260903_111718_e9c704,1177,task_completed,R2,G00423,
+20260903_111718_e9c704,1178,task_assigned,R2,G00444,
+20260903_111718_e9c704,1179,task_completed,R3,G00417,
+20260903_111718_e9c704,1179,task_created,,G00448,type=PUTAWAY pickup=RECV dropoff=D-03
+20260903_111718_e9c704,1180,task_completed,R6,G00276,
+20260903_111718_e9c704,1180,task_assigned,R3,G00448,
+20260903_111718_e9c704,1181,task_assigned,R6,G00283,
+20260903_111718_e9c704,1181,task_completed,R5,G00433,
+20260903_111718_e9c704,1182,task_assigned,R5,G00288,
+20260903_111718_e9c704,1183,task_created,,G00449,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1185,task_created,,G00450,type=PICK pickup=C-02 dropoff=PICK-1
+20260903_111718_e9c704,1185,task_created,,G00451,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1186,task_completed,R4,G00426,
+20260903_111718_e9c704,1187,task_created,,G00452,type=PUTAWAY pickup=RECV dropoff=D-01
+20260903_111718_e9c704,1187,task_assigned,R4,G00452,
+20260903_111718_e9c704,1189,task_completed,R7,G00436,
+20260903_111718_e9c704,1190,task_assigned,R7,G00291,
+20260903_111718_e9c704,1191,task_completed,R8,G00442,
+20260903_111718_e9c704,1192,task_completed,R5,G00288,
+20260903_111718_e9c704,1192,task_assigned,R8,G00294,
+20260903_111718_e9c704,1193,task_assigned,R5,G00298,
+20260903_111718_e9c704,1195,task_created,,G00453,type=PUTAWAY pickup=RECV dropoff=C-03
+20260903_111718_e9c704,1195,task_created,,G00454,type=PICK pickup=C-02 dropoff=PICK-2
+20260903_111718_e9c704,1195,task_created,,G00455,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1198,task_completed,R1,G00438,
+20260903_111718_e9c704,1199,task_assigned,R1,G00453,
+20260903_111718_e9c704,1199,task_created,,G00456,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1203,task_created,,G00457,type=PUTAWAY pickup=BUFFER dropoff=D-08
+20260903_111718_e9c704,1205,task_created,,G00458,type=PICK pickup=B-05 dropoff=PICK-1
+20260903_111718_e9c704,1207,task_completed,R6,G00283,
+20260903_111718_e9c704,1207,task_created,,G00459,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1208,task_assigned,R6,G00457,
+20260903_111718_e9c704,1211,task_created,,G00460,type=PUTAWAY pickup=RECV dropoff=H-06
+20260903_111718_e9c704,1213,task_created,,G00461,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1215,task_created,,G00462,type=PICK pickup=C-06 dropoff=PICK-2
+20260903_111718_e9c704,1216,task_completed,R5,G00298,
+20260903_111718_e9c704,1217,task_assigned,R5,G00460,
+20260903_111718_e9c704,1219,task_completed,R7,G00291,
+20260903_111718_e9c704,1219,task_completed,R2,G00444,
+20260903_111718_e9c704,1219,task_created,,G00463,type=PUTAWAY pickup=BUFFER dropoff=E-01
+20260903_111718_e9c704,1219,task_created,,G00464,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1220,task_assigned,R2,G00463,
+20260903_111718_e9c704,1221,task_interrupted,R1,G00453,
+20260903_111718_e9c704,1222,task_assigned,R7,G00453,
+20260903_111718_e9c704,1223,task_completed,R8,G00294,
+20260903_111718_e9c704,1224,task_assigned,R8,G00303,
+20260903_111718_e9c704,1225,task_created,,G00465,type=PICK pickup=F-04 dropoff=PICK-3
+20260903_111718_e9c704,1227,task_completed,R4,G00452,
+20260903_111718_e9c704,1227,task_created,,G00466,type=PUTAWAY pickup=RECV dropoff=F-05
+20260903_111718_e9c704,1227,task_created,,G00467,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1228,task_interrupted,R7,G00453,
+20260903_111718_e9c704,1228,task_assigned,R4,G00466,
+20260903_111718_e9c704,1231,task_created,,G00468,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1234,task_completed,R6,G00457,
+20260903_111718_e9c704,1235,task_assigned,R6,G00453,
+20260903_111718_e9c704,1235,task_created,,G00469,type=PUTAWAY pickup=RECV dropoff=B-04
+20260903_111718_e9c704,1235,task_created,,G00470,type=PICK pickup=B-05 dropoff=PICK-1
+20260903_111718_e9c704,1241,task_created,,G00471,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1243,task_created,,G00472,type=PUTAWAY pickup=RECV dropoff=C-05
+20260903_111718_e9c704,1243,task_created,,G00473,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1245,task_created,,G00474,type=PICK pickup=D-06 dropoff=PICK-1
+20260903_111718_e9c704,1250,task_completed,R2,G00463,
+20260903_111718_e9c704,1251,task_assigned,R2,G00469,
+20260903_111718_e9c704,1251,task_created,,G00475,type=PUTAWAY pickup=RECV dropoff=C-02
+20260903_111718_e9c704,1252,task_assigned,R1,G00472,
+20260903_111718_e9c704,1255,task_interrupted,R3,G00448,
+20260903_111718_e9c704,1255,task_created,,G00476,type=PICK pickup=A-03 dropoff=PICK-2
+20260903_111718_e9c704,1255,task_created,,G00477,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1255,task_created,,G00478,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1256,task_completed,R5,G00460,
+20260903_111718_e9c704,1257,task_completed,R8,G00303,
+20260903_111718_e9c704,1257,task_assigned,R5,G00448,
+20260903_111718_e9c704,1259,task_assigned,R7,G00475,
+20260903_111718_e9c704,1259,task_created,,G00479,type=PUTAWAY pickup=BUFFER dropoff=D-06
+20260903_111718_e9c704,1259,task_assigned,R8,G00479,
+20260903_111718_e9c704,1264,task_completed,R6,G00453,
+20260903_111718_e9c704,1265,task_assigned,R6,G00306,
+20260903_111718_e9c704,1265,task_created,,G00480,type=PICK pickup=A-08 dropoff=PICK-3
+20260903_111718_e9c704,1267,task_completed,R5,G00448,
+20260903_111718_e9c704,1267,task_completed,R4,G00466,
+20260903_111718_e9c704,1267,task_created,,G00481,type=PUTAWAY pickup=RECV dropoff=C-01
+20260903_111718_e9c704,1267,task_created,,G00482,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1268,task_assigned,R5,G00310,
+20260903_111718_e9c704,1268,task_assigned,R4,G00481,
+20260903_111718_e9c704,1269,task_completed,R2,G00469,
+20260903_111718_e9c704,1269,task_created,,G00483,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1270,task_assigned,R2,G00314,
+20260903_111718_e9c704,1272,task_interrupted,R8,G00479,
+20260903_111718_e9c704,1274,task_interrupted,R6,G00306,
+20260903_111718_e9c704,1275,task_created,,G00484,type=PUTAWAY pickup=BUFFER dropoff=G-07
+20260903_111718_e9c704,1275,task_created,,G00485,type=PICK pickup=E-03 dropoff=PICK-2
+20260903_111718_e9c704,1279,task_created,,G00486,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1283,task_created,,G00487,type=PUTAWAY pickup=BUFFER dropoff=A-02
+20260903_111718_e9c704,1283,task_created,,G00488,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1285,task_created,,G00489,type=PICK pickup=E-03 dropoff=PICK-1
+20260903_111718_e9c704,1291,task_created,,G00490,type=PUTAWAY pickup=RECV dropoff=B-05
+20260903_111718_e9c704,1291,task_created,,G00491,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1294,task_completed,R1,G00472,
+20260903_111718_e9c704,1294,task_interrupted,R4,G00481,
+20260903_111718_e9c704,1295,task_assigned,R1,G00479,
+20260903_111718_e9c704,1295,task_created,,G00492,type=PICK pickup=D-05 dropoff=PICK-1
+20260903_111718_e9c704,1297,task_interrupted,R2,G00314,
+20260903_111718_e9c704,1297,task_created,,G00493,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1299,task_created,,G00494,type=PUTAWAY pickup=RECV dropoff=B-07
+20260903_111718_e9c704,1302,task_assigned,R3,G00481,
+20260903_111718_e9c704,1303,task_created,,G00495,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1305,task_created,,G00496,type=PICK pickup=F-04 dropoff=PICK-3
+20260903_111718_e9c704,1307,task_interrupted,R5,G00310,
+20260903_111718_e9c704,1307,task_created,,G00497,type=PUTAWAY pickup=RECV dropoff=E-07
+20260903_111718_e9c704,1308,task_assigned,R6,G00306,
+20260903_111718_e9c704,1308,task_assigned,R8,G00484,
+20260903_111718_e9c704,1311,task_created,,G00498,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1315,task_created,,G00499,type=PUTAWAY pickup=BUFFER dropoff=G-05
+20260903_111718_e9c704,1315,task_created,,G00500,type=PICK pickup=A-02 dropoff=PICK-3
+20260903_111718_e9c704,1315,task_created,,G00501,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1317,task_completed,R7,G00475,
+20260903_111718_e9c704,1318,task_assigned,R7,G00487,
+20260903_111718_e9c704,1321,task_completed,R1,G00479,
+20260903_111718_e9c704,1322,task_assigned,R1,G00490,
+20260903_111718_e9c704,1323,task_created,,G00502,type=PUTAWAY pickup=RECV dropoff=G-08
+20260903_111718_e9c704,1325,task_assigned,R2,G00314,
+20260903_111718_e9c704,1325,task_created,,G00503,type=PICK pickup=H-01 dropoff=PICK-1
+20260903_111718_e9c704,1325,task_created,,G00504,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1326,task_completed,R3,G00481,
+20260903_111718_e9c704,1327,task_assigned,R3,G00494,
+20260903_111718_e9c704,1327,task_created,,G00505,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1331,task_created,,G00506,type=PUTAWAY pickup=RECV dropoff=F-01
+20260903_111718_e9c704,1333,task_assigned,R4,G00497,
+20260903_111718_e9c704,1335,task_created,,G00507,type=PICK pickup=H-07 dropoff=PICK-2
+20260903_111718_e9c704,1337,task_completed,R7,G00487,
+20260903_111718_e9c704,1338,task_assigned,R7,G00499,
+20260903_111718_e9c704,1339,task_assigned,R5,G00310,
+20260903_111718_e9c704,1339,task_created,,G00508,type=PUTAWAY pickup=BUFFER dropoff=G-02
+20260903_111718_e9c704,1339,task_created,,G00509,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1339,task_created,,G00510,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1344,task_completed,R8,G00484,
+20260903_111718_e9c704,1345,task_completed,R2,G00314,
+20260903_111718_e9c704,1345,task_assigned,R8,G00502,
+20260903_111718_e9c704,1345,task_created,,G00511,type=PICK pickup=E-08 dropoff=PICK-3
+20260903_111718_e9c704,1346,task_completed,R6,G00306,
+20260903_111718_e9c704,1346,task_assigned,R2,G00506,
+20260903_111718_e9c704,1347,task_assigned,R6,G00508,
+20260903_111718_e9c704,1347,task_created,,G00512,type=PUTAWAY pickup=BUFFER dropoff=G-06
+20260903_111718_e9c704,1351,task_created,,G00513,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1353,task_created,,G00514,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1355,task_created,,G00515,type=PUTAWAY pickup=RECV dropoff=A-04
+20260903_111718_e9c704,1355,task_created,,G00516,type=PICK pickup=E-04 dropoff=PICK-2
+20260903_111718_e9c704,1361,task_completed,R3,G00494,
+20260903_111718_e9c704,1362,task_assigned,R3,G00512,
+20260903_111718_e9c704,1363,task_completed,R7,G00499,
+20260903_111718_e9c704,1363,task_completed,R6,G00508,
+20260903_111718_e9c704,1363,task_created,,G00517,type=PUTAWAY pickup=BUFFER dropoff=E-07
+20260903_111718_e9c704,1363,task_created,,G00518,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1364,task_assigned,R7,G00515,
+20260903_111718_e9c704,1364,task_assigned,R6,G00517,
+20260903_111718_e9c704,1365,task_created,,G00519,type=PICK pickup=E-06 dropoff=PICK-2
+20260903_111718_e9c704,1367,task_created,,G00520,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1371,task_created,,G00521,type=PUTAWAY pickup=BUFFER dropoff=G-02
+20260903_111718_e9c704,1375,task_completed,R5,G00310,
+20260903_111718_e9c704,1375,task_created,,G00522,type=PICK pickup=C-01 dropoff=PICK-2
+20260903_111718_e9c704,1375,task_created,,G00523,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1376,task_assigned,R5,G00521,
+20260903_111718_e9c704,1377,task_completed,R1,G00490,
+20260903_111718_e9c704,1378,task_assigned,R1,G00317,
+20260903_111718_e9c704,1378,task_completed,R2,G00506,
+20260903_111718_e9c704,1379,task_created,,G00524,type=PUTAWAY pickup=BUFFER dropoff=C-08
+20260903_111718_e9c704,1379,task_assigned,R2,G00524,
+20260903_111718_e9c704,1381,task_created,,G00525,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1384,task_completed,R3,G00512,
+20260903_111718_e9c704,1385,task_assigned,R3,G00321,
+20260903_111718_e9c704,1385,task_created,,G00526,type=PICK pickup=A-08 dropoff=PICK-1
+20260903_111718_e9c704,1387,task_created,,G00527,type=PUTAWAY pickup=BUFFER dropoff=C-03
+20260903_111718_e9c704,1387,task_created,,G00528,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1391,task_completed,R4,G00497,
+20260903_111718_e9c704,1392,task_assigned,R4,G00527,
+20260903_111718_e9c704,1395,task_created,,G00529,type=PUTAWAY pickup=RECV dropoff=D-07
+20260903_111718_e9c704,1395,task_created,,G00530,type=PICK pickup=A-04 dropoff=PICK-2
+20260903_111718_e9c704,1395,task_created,,G00531,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1396,task_completed,R6,G00517,
+20260903_111718_e9c704,1397,task_assigned,R6,G00529,
+20260903_111718_e9c704,1399,task_completed,R1,G00317,
+20260903_111718_e9c704,1399,task_created,,G00532,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1400,task_assigned,R1,G00325,
+20260903_111718_e9c704,1402,task_completed,R5,G00521,
+20260903_111718_e9c704,1403,task_completed,R2,G00524,
+20260903_111718_e9c704,1403,task_created,,G00533,type=PUTAWAY pickup=BUFFER dropoff=A-04
+20260903_111718_e9c704,1403,task_assigned,R5,G00533,
+20260903_111718_e9c704,1404,task_assigned,R2,G00329,
+20260903_111718_e9c704,1404,task_completed,R8,G00502,
+20260903_111718_e9c704,1404,task_completed,R7,G00515,
+20260903_111718_e9c704,1405,task_assigned,R7,G00333,
+20260903_111718_e9c704,1405,task_assigned,R8,G00337,
+20260903_111718_e9c704,1405,task_created,,G00534,type=PICK pickup=B-03 dropoff=PICK-3
+20260903_111718_e9c704,1409,task_created,,G00535,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1411,task_created,,G00536,type=PUTAWAY pickup=RECV dropoff=A-03
+20260903_111718_e9c704,1411,task_created,,G00537,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1412,task_completed,R4,G00527,
+20260903_111718_e9c704,1413,task_assigned,R4,G00536,
+20260903_111718_e9c704,1415,task_completed,R3,G00321,
+20260903_111718_e9c704,1415,task_created,,G00538,type=PICK pickup=D-06 dropoff=PICK-3
+20260903_111718_e9c704,1416,task_assigned,R3,G00340,
+20260903_111718_e9c704,1419,task_created,,G00539,type=PUTAWAY pickup=BUFFER dropoff=A-01
+20260903_111718_e9c704,1422,task_completed,R5,G00533,
+20260903_111718_e9c704,1423,task_assigned,R5,G00539,
+20260903_111718_e9c704,1423,task_created,,G00540,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1423,task_created,,G00541,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1424,task_completed,R7,G00333,
+20260903_111718_e9c704,1425,task_assigned,R7,G00343,
+20260903_111718_e9c704,1425,task_created,,G00542,type=PICK pickup=C-04 dropoff=PICK-3
+20260903_111718_e9c704,1426,task_completed,R6,G00529,
+20260903_111718_e9c704,1427,task_completed,R2,G00329,
+20260903_111718_e9c704,1427,task_completed,R8,G00337,
+20260903_111718_e9c704,1427,task_created,,G00543,type=PUTAWAY pickup=BUFFER dropoff=A-06
+20260903_111718_e9c704,1427,task_assigned,R6,G00543,
+20260903_111718_e9c704,1428,task_assigned,R8,G00348,
+20260903_111718_e9c704,1428,task_assigned,R2,G00352,
+20260903_111718_e9c704,1435,task_created,,G00544,type=PUTAWAY pickup=RECV dropoff=F-03
+20260903_111718_e9c704,1435,task_created,,G00545,type=PICK pickup=H-02 dropoff=PICK-3
+20260903_111718_e9c704,1435,task_created,,G00546,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1436,task_completed,R7,G00343,
+20260903_111718_e9c704,1437,task_completed,R4,G00536,
+20260903_111718_e9c704,1437,task_assigned,R7,G00544,
+20260903_111718_e9c704,1437,task_created,,G00547,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1438,task_assigned,R4,G00356,
+20260903_111718_e9c704,1443,task_created,,G00548,type=PUTAWAY pickup=BUFFER dropoff=E-05
+20260903_111718_e9c704,1445,task_created,,G00549,type=PICK pickup=E-05 dropoff=PICK-1
+20260903_111718_e9c704,1446,task_completed,R1,G00325,
+20260903_111718_e9c704,1447,task_completed,R3,G00340,
+20260903_111718_e9c704,1447,task_assigned,R1,G00548,
+20260903_111718_e9c704,1447,task_created,,G00550,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1448,task_assigned,R3,G00359,
+20260903_111718_e9c704,1449,task_completed,R2,G00352,
+20260903_111718_e9c704,1450,task_assigned,R2,G00363,
+20260903_111718_e9c704,1451,task_created,,G00551,type=PUTAWAY pickup=RECV dropoff=B-06
+20260903_111718_e9c704,1451,task_created,,G00552,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1455,task_created,,G00553,type=PICK pickup=H-06 dropoff=PICK-1
+20260903_111718_e9c704,1459,task_completed,R6,G00543,
+20260903_111718_e9c704,1459,task_created,,G00554,type=PUTAWAY pickup=BUFFER dropoff=A-08
+20260903_111718_e9c704,1459,task_created,,G00555,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1460,task_completed,R5,G00539,
+20260903_111718_e9c704,1460,task_assigned,R6,G00551,
+20260903_111718_e9c704,1461,task_assigned,R5,G00554,
+20260903_111718_e9c704,1465,task_created,,G00556,type=PICK pickup=D-06 dropoff=PICK-3
+20260903_111718_e9c704,1465,task_created,,G00557,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1467,task_created,,G00558,type=PUTAWAY pickup=RECV dropoff=D-05
+20260903_111718_e9c704,1470,task_completed,R7,G00544,
+20260903_111718_e9c704,1471,task_created,,G00559,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1472,task_completed,R1,G00548,
+20260903_111718_e9c704,1473,task_completed,R4,G00356,
+20260903_111718_e9c704,1473,task_assigned,R7,G00367,
+20260903_111718_e9c704,1474,task_assigned,R4,G00370,
+20260903_111718_e9c704,1475,task_created,,G00560,type=PUTAWAY pickup=BUFFER dropoff=F-02
+20260903_111718_e9c704,1475,task_created,,G00561,type=PICK pickup=D-04 dropoff=PICK-1
+20260903_111718_e9c704,1476,task_completed,R8,G00348,
+20260903_111718_e9c704,1477,task_completed,R3,G00359,
+20260903_111718_e9c704,1477,task_assigned,R8,G00560,
+20260903_111718_e9c704,1478,task_assigned,R3,G00374,
+20260903_111718_e9c704,1479,task_created,,G00562,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1483,task_completed,R2,G00363,
+20260903_111718_e9c704,1483,task_interrupted,R7,G00367,
+20260903_111718_e9c704,1483,task_created,,G00563,type=PUTAWAY pickup=RECV dropoff=F-04
+20260903_111718_e9c704,1483,task_created,,G00564,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1484,task_assigned,R2,G00558,
+20260903_111718_e9c704,1485,task_completed,R6,G00551,
+20260903_111718_e9c704,1485,task_created,,G00565,type=PICK pickup=E-06 dropoff=PICK-2
+20260903_111718_e9c704,1486,task_assigned,R6,G00563,
+20260903_111718_e9c704,1489,task_completed,R5,G00554,
+20260903_111718_e9c704,1490,task_assigned,R5,G00367,
+20260903_111718_e9c704,1491,task_created,,G00566,type=PUTAWAY pickup=RECV dropoff=D-06
+20260903_111718_e9c704,1493,task_completed,R3,G00374,
+20260903_111718_e9c704,1493,task_created,,G00567,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1494,task_assigned,R3,G00566,
+20260903_111718_e9c704,1495,task_created,,G00568,type=PICK pickup=B-03 dropoff=PICK-3
+20260903_111718_e9c704,1495,task_created,,G00569,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1499,task_completed,R8,G00560,
+20260903_111718_e9c704,1499,task_created,,G00570,type=PUTAWAY pickup=BUFFER dropoff=H-01
+20260903_111718_e9c704,1500,task_assigned,R8,G00570,
+20260903_111718_e9c704,1505,task_created,,G00571,type=PICK pickup=C-06 dropoff=PICK-2
+20260903_111718_e9c704,1507,task_completed,R4,G00370,
+20260903_111718_e9c704,1507,task_created,,G00572,type=PUTAWAY pickup=BUFFER dropoff=H-01
+20260903_111718_e9c704,1507,task_assigned,R1,G00572,
+20260903_111718_e9c704,1507,task_created,,G00573,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1507,task_created,,G00574,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1508,task_assigned,R4,G00379,
+20260903_111718_e9c704,1512,task_completed,R6,G00563,
+20260903_111718_e9c704,1513,task_assigned,R6,G00383,
+20260903_111718_e9c704,1515,task_created,,G00575,type=PUTAWAY pickup=RECV dropoff=D-05
+20260903_111718_e9c704,1515,task_created,,G00576,type=PICK pickup=C-06 dropoff=PICK-1
+20260903_111718_e9c704,1518,task_completed,R8,G00570,
+20260903_111718_e9c704,1519,task_created,,G00577,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1520,task_interrupted,R6,G00383,
+20260903_111718_e9c704,1521,task_created,,G00578,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1523,task_created,,G00579,type=PUTAWAY pickup=RECV dropoff=C-02
+20260903_111718_e9c704,1525,task_created,,G00580,type=PICK pickup=C-06 dropoff=PICK-1
+20260903_111718_e9c704,1527,task_assigned,R7,G00575,
+20260903_111718_e9c704,1529,task_completed,R2,G00558,
+20260903_111718_e9c704,1530,task_completed,R5,G00367,
+20260903_111718_e9c704,1530,task_interrupted,R3,G00566,
+20260903_111718_e9c704,1530,task_assigned,R2,G00579,
+20260903_111718_e9c704,1531,task_assigned,R5,G00566,
+20260903_111718_e9c704,1531,task_created,,G00581,type=PUTAWAY pickup=BUFFER dropoff=G-06
+20260903_111718_e9c704,1531,task_created,,G00582,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1535,task_created,,G00583,type=PICK pickup=E-03 dropoff=PICK-1
+20260903_111718_e9c704,1535,task_created,,G00584,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1539,task_created,,G00585,type=PUTAWAY pickup=BUFFER dropoff=G-03
+20260903_111718_e9c704,1543,task_completed,R4,G00379,
+20260903_111718_e9c704,1543,task_created,,G00586,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1544,task_assigned,R4,G00581,
+20260903_111718_e9c704,1545,task_created,,G00587,type=PICK pickup=E-03 dropoff=PICK-3
+20260903_111718_e9c704,1547,task_completed,R1,G00572,
+20260903_111718_e9c704,1547,task_interrupted,R4,G00581,
+20260903_111718_e9c704,1547,task_created,,G00588,type=PUTAWAY pickup=BUFFER dropoff=E-06
+20260903_111718_e9c704,1548,task_assigned,R1,G00581,
+20260903_111718_e9c704,1549,task_created,,G00589,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1553,task_assigned,R6,G00383,
+20260903_111718_e9c704,1554,task_interrupted,R2,G00579,
+20260903_111718_e9c704,1555,task_created,,G00590,type=PUTAWAY pickup=RECV dropoff=D-07
+20260903_111718_e9c704,1555,task_created,,G00591,type=PICK pickup=A-02 dropoff=PICK-2
+20260903_111718_e9c704,1555,task_created,,G00592,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1556,task_interrupted,R5,G00566,
+20260903_111718_e9c704,1563,task_created,,G00593,type=PUTAWAY pickup=BUFFER dropoff=G-02
+20260903_111718_e9c704,1563,task_created,,G00594,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1565,task_created,,G00595,type=PICK pickup=H-01 dropoff=PICK-2
+20260903_111718_e9c704,1566,task_completed,R1,G00581,
+20260903_111718_e9c704,1567,task_assigned,R1,G00566,
+20260903_111718_e9c704,1567,task_created,,G00596,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1569,task_assigned,R3,G00579,
+20260903_111718_e9c704,1571,task_created,,G00597,type=PUTAWAY pickup=RECV dropoff=D-06
+20260903_111718_e9c704,1574,task_assigned,R4,G00585,
+20260903_111718_e9c704,1575,task_created,,G00598,type=PICK pickup=F-04 dropoff=PICK-1
+20260903_111718_e9c704,1576,task_assigned,R8,G00588,
+20260903_111718_e9c704,1577,task_completed,R7,G00575,
+20260903_111718_e9c704,1577,task_created,,G00599,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1578,task_assigned,R7,G00590,
+20260903_111718_e9c704,1579,task_created,,G00600,type=PUTAWAY pickup=RECV dropoff=C-01
+20260903_111718_e9c704,1579,task_created,,G00601,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1585,task_completed,R1,G00566,
+20260903_111718_e9c704,1585,task_created,,G00602,type=PICK pickup=B-01 dropoff=PICK-3
+20260903_111718_e9c704,1586,task_assigned,R1,G00593,
+20260903_111718_e9c704,1587,task_assigned,R2,G00597,
+20260903_111718_e9c704,1587,task_created,,G00603,type=PUTAWAY pickup=RECV dropoff=C-02
+20260903_111718_e9c704,1591,task_created,,G00604,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1591,task_created,,G00605,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1595,task_created,,G00606,type=PUTAWAY pickup=BUFFER dropoff=H-08
+20260903_111718_e9c704,1595,task_created,,G00607,type=PICK pickup=D-01 dropoff=PICK-1
+20260903_111718_e9c704,1597,task_completed,R6,G00383,
+20260903_111718_e9c704,1598,task_assigned,R6,G00600,
+20260903_111718_e9c704,1603,task_created,,G00608,type=PUTAWAY pickup=BUFFER dropoff=E-07
+20260903_111718_e9c704,1603,task_created,,G00609,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1605,task_created,,G00610,type=PICK pickup=E-04 dropoff=PICK-2
+20260903_111718_e9c704,1605,task_created,,G00611,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1611,task_completed,R1,G00593,
+20260903_111718_e9c704,1611,task_created,,G00612,type=PUTAWAY pickup=RECV dropoff=C-03
+20260903_111718_e9c704,1612,task_completed,R3,G00579,
+20260903_111718_e9c704,1612,task_assigned,R1,G00603,
+20260903_111718_e9c704,1613,task_assigned,R3,G00606,
+20260903_111718_e9c704,1615,task_created,,G00613,type=PICK pickup=D-05 dropoff=PICK-1
+20260903_111718_e9c704,1615,task_created,,G00614,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1619,task_created,,G00615,type=PUTAWAY pickup=RECV dropoff=C-02
+20260903_111718_e9c704,1619,task_created,,G00616,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1620,task_assigned,R5,G00608,
+20260903_111718_e9c704,1621,task_completed,R8,G00588,
+20260903_111718_e9c704,1622,task_assigned,R8,G00612,
+20260903_111718_e9c704,1625,task_created,,G00617,type=PICK pickup=B-07 dropoff=PICK-3
+20260903_111718_e9c704,1627,task_created,,G00618,type=PUTAWAY pickup=RECV dropoff=C-02
+20260903_111718_e9c704,1627,task_created,,G00619,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1629,task_completed,R2,G00597,
+20260903_111718_e9c704,1630,task_completed,R4,G00585,
+20260903_111718_e9c704,1630,task_assigned,R2,G00615,
+20260903_111718_e9c704,1631,task_completed,R7,G00590,
+20260903_111718_e9c704,1631,task_assigned,R4,G00618,
+20260903_111718_e9c704,1632,task_assigned,R7,G00385,
+20260903_111718_e9c704,1633,task_created,,G00620,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1635,task_completed,R6,G00600,
+20260903_111718_e9c704,1635,task_created,,G00621,type=PUTAWAY pickup=BUFFER dropoff=C-05
+20260903_111718_e9c704,1635,task_created,,G00622,type=PICK pickup=D-01 dropoff=PICK-1
+20260903_111718_e9c704,1636,task_assigned,R6,G00621,
+20260903_111718_e9c704,1639,task_created,,G00623,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1642,task_completed,R7,G00385,
+20260903_111718_e9c704,1643,task_created,,G00624,type=PUTAWAY pickup=BUFFER dropoff=D-08
+20260903_111718_e9c704,1643,task_assigned,R7,G00624,
+20260903_111718_e9c704,1644,task_completed,R8,G00612,
+20260903_111718_e9c704,1645,task_assigned,R8,G00389,
+20260903_111718_e9c704,1645,task_created,,G00625,type=PICK pickup=E-06 dropoff=PICK-2
+20260903_111718_e9c704,1647,task_created,,G00626,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1648,task_completed,R3,G00606,
+20260903_111718_e9c704,1649,task_assigned,R3,G00394,
+20260903_111718_e9c704,1649,task_completed,R6,G00621,
+20260903_111718_e9c704,1650,task_assigned,R6,G00397,
+20260903_111718_e9c704,1651,task_created,,G00627,type=PUTAWAY pickup=BUFFER dropoff=H-01
+20260903_111718_e9c704,1651,task_created,,G00628,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1655,task_created,,G00629,type=PICK pickup=G-01 dropoff=PICK-2
+20260903_111718_e9c704,1659,task_created,,G00630,type=PUTAWAY pickup=RECV dropoff=B-05
+20260903_111718_e9c704,1661,task_created,,G00631,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1663,task_created,,G00632,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1665,task_created,,G00633,type=PICK pickup=C-04 dropoff=PICK-3
+20260903_111718_e9c704,1666,task_completed,R5,G00608,
+20260903_111718_e9c704,1667,task_assigned,R5,G00627,
+20260903_111718_e9c704,1667,task_created,,G00634,type=PUTAWAY pickup=BUFFER dropoff=B-07
+20260903_111718_e9c704,1668,task_completed,R3,G00394,
+20260903_111718_e9c704,1669,task_assigned,R3,G00630,
+20260903_111718_e9c704,1675,task_created,,G00635,type=PUTAWAY pickup=BUFFER dropoff=A-04
+20260903_111718_e9c704,1675,task_created,,G00636,type=PICK pickup=D-08 dropoff=PICK-3
+20260903_111718_e9c704,1675,task_created,,G00637,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1675,task_created,,G00638,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1679,task_completed,R7,G00624,
+20260903_111718_e9c704,1680,task_assigned,R7,G00634,
+20260903_111718_e9c704,1683,task_created,,G00639,type=PUTAWAY pickup=BUFFER dropoff=H-01
+20260903_111718_e9c704,1685,task_created,,G00640,type=PICK pickup=G-07 dropoff=PICK-1
+20260903_111718_e9c704,1687,task_completed,R2,G00615,
+20260903_111718_e9c704,1687,task_created,,G00641,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1688,task_assigned,R2,G00635,
+20260903_111718_e9c704,1689,task_created,,G00642,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1690,task_completed,R5,G00627,
+20260903_111718_e9c704,1691,task_assigned,R5,G00639,
+20260903_111718_e9c704,1691,task_created,,G00643,type=PUTAWAY pickup=BUFFER dropoff=D-06
+20260903_111718_e9c704,1695,task_created,,G00644,type=PICK pickup=A-05 dropoff=PICK-3
+20260903_111718_e9c704,1699,task_completed,R8,G00389,
+20260903_111718_e9c704,1699,task_created,,G00645,type=PUTAWAY pickup=BUFFER dropoff=C-06
+20260903_111718_e9c704,1699,task_created,,G00646,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1700,task_assigned,R8,G00643,
+20260903_111718_e9c704,1701,task_completed,R1,G00603,
+20260903_111718_e9c704,1702,task_completed,R7,G00634,
+20260903_111718_e9c704,1702,task_assigned,R1,G00645,
+20260903_111718_e9c704,1703,task_assigned,R7,G00401,
+20260903_111718_e9c704,1703,task_created,,G00647,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1705,task_completed,R6,G00397,
+20260903_111718_e9c704,1705,task_created,,G00648,type=PICK pickup=D-06 dropoff=PICK-3
+20260903_111718_e9c704,1706,task_assigned,R6,G00405,
+20260903_111718_e9c704,1707,task_created,,G00649,type=PUTAWAY pickup=RECV dropoff=C-02
+20260903_111718_e9c704,1711,task_created,,G00650,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1715,task_created,,G00651,type=PUTAWAY pickup=RECV dropoff=E-02
+20260903_111718_e9c704,1715,task_created,,G00652,type=PICK pickup=C-05 dropoff=PICK-1
+20260903_111718_e9c704,1716,task_completed,R4,G00618,
+20260903_111718_e9c704,1717,task_assigned,R4,G00649,
+20260903_111718_e9c704,1717,task_created,,G00653,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1718,task_completed,R1,G00645,
+20260903_111718_e9c704,1719,task_assigned,R1,G00651,
+20260903_111718_e9c704,1723,task_created,,G00654,type=PUTAWAY pickup=BUFFER dropoff=H-01
+20260903_111718_e9c704,1723,task_created,,G00655,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1725,task_completed,R2,G00635,
+20260903_111718_e9c704,1725,task_created,,G00656,type=PICK pickup=E-04 dropoff=PICK-2
+20260903_111718_e9c704,1726,task_assigned,R2,G00654,
+20260903_111718_e9c704,1730,task_completed,R8,G00643,
+20260903_111718_e9c704,1731,task_created,,G00657,type=PUTAWAY pickup=BUFFER dropoff=A-03
+20260903_111718_e9c704,1731,task_assigned,R8,G00657,
+20260903_111718_e9c704,1731,task_created,,G00658,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1732,task_interrupted,R1,G00651,
+20260903_111718_e9c704,1735,task_created,,G00659,type=PICK pickup=A-02 dropoff=PICK-2
+20260903_111718_e9c704,1735,task_created,,G00660,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1736,task_completed,R5,G00639,
+20260903_111718_e9c704,1737,task_completed,R7,G00401,
+20260903_111718_e9c704,1737,task_assigned,R5,G00651,
+20260903_111718_e9c704,1738,task_assigned,R7,G00409,
+20260903_111718_e9c704,1739,task_completed,R3,G00630,
+20260903_111718_e9c704,1739,task_created,,G00661,type=PUTAWAY pickup=BUFFER dropoff=A-03
+20260903_111718_e9c704,1740,task_assigned,R3,G00661,
+20260903_111718_e9c704,1745,task_created,,G00662,type=PICK pickup=H-03 dropoff=PICK-3
+20260903_111718_e9c704,1745,task_created,,G00663,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1747,task_created,,G00664,type=PUTAWAY pickup=BUFFER dropoff=B-06
+20260903_111718_e9c704,1747,task_created,,G00665,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1748,task_interrupted,R7,G00409,
+20260903_111718_e9c704,1755,task_completed,R6,G00405,
+20260903_111718_e9c704,1755,task_created,,G00666,type=PUTAWAY pickup=RECV dropoff=D-06
+20260903_111718_e9c704,1755,task_created,,G00667,type=PICK pickup=D-05 dropoff=PICK-1
+20260903_111718_e9c704,1756,task_completed,R2,G00654,
+20260903_111718_e9c704,1756,task_assigned,R6,G00664,
+20260903_111718_e9c704,1757,task_assigned,R2,G00409,
+20260903_111718_e9c704,1757,task_assigned,R1,G00666,
+20260903_111718_e9c704,1759,task_completed,R8,G00657,
+20260903_111718_e9c704,1759,task_created,,G00668,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1759,task_created,,G00669,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1760,task_assigned,R8,G00412,
+20260903_111718_e9c704,1763,task_created,,G00670,type=PUTAWAY pickup=BUFFER dropoff=C-06
+20260903_111718_e9c704,1765,task_completed,R3,G00661,
+20260903_111718_e9c704,1765,task_created,,G00671,type=PICK pickup=H-06 dropoff=PICK-2
+20260903_111718_e9c704,1766,task_assigned,R3,G00670,
+20260903_111718_e9c704,1770,task_completed,R5,G00651,
+20260903_111718_e9c704,1771,task_created,,G00672,type=PUTAWAY pickup=RECV dropoff=B-07
+20260903_111718_e9c704,1771,task_assigned,R5,G00672,
+20260903_111718_e9c704,1771,task_created,,G00673,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1773,task_created,,G00674,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1775,task_created,,G00675,type=PICK pickup=F-01 dropoff=PICK-2
+20260903_111718_e9c704,1777,task_completed,R2,G00409,
+20260903_111718_e9c704,1778,task_assigned,R2,G00416,
+20260903_111718_e9c704,1779,task_created,,G00676,type=PUTAWAY pickup=BUFFER dropoff=B-04
+20260903_111718_e9c704,1780,task_completed,R8,G00412,
+20260903_111718_e9c704,1781,task_completed,R4,G00649,
+20260903_111718_e9c704,1781,task_assigned,R8,G00676,
+20260903_111718_e9c704,1782,task_assigned,R4,G00420,
+20260903_111718_e9c704,1783,task_assigned,R7,G00424,
+20260903_111718_e9c704,1783,task_created,,G00677,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1785,task_created,,G00678,type=PICK pickup=H-01 dropoff=PICK-3
+20260903_111718_e9c704,1787,task_created,,G00679,type=PUTAWAY pickup=BUFFER dropoff=E-01
+20260903_111718_e9c704,1787,task_created,,G00680,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1789,task_interrupted,R3,G00670,
+20260903_111718_e9c704,1790,task_completed,R5,G00672,
+20260903_111718_e9c704,1791,task_assigned,R5,G00670,
+20260903_111718_e9c704,1792,task_completed,R2,G00416,
+20260903_111718_e9c704,1793,task_assigned,R2,G00679,
+20260903_111718_e9c704,1795,task_created,,G00681,type=PUTAWAY pickup=BUFFER dropoff=F-03
+20260903_111718_e9c704,1795,task_created,,G00682,type=PICK pickup=C-04 dropoff=PICK-2
+20260903_111718_e9c704,1795,task_created,,G00683,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1796,task_completed,R8,G00676,
+20260903_111718_e9c704,1797,task_assigned,R8,G00681,
+20260903_111718_e9c704,1799,task_interrupted,R6,G00664,
+20260903_111718_e9c704,1800,task_interrupted,R8,G00681,
+20260903_111718_e9c704,1801,task_created,,G00684,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1803,task_created,,G00685,type=PUTAWAY pickup=RECV dropoff=A-08
+20260903_111718_e9c704,1805,task_interrupted,R2,G00679,
+20260903_111718_e9c704,1805,task_created,,G00686,type=PICK pickup=C-02 dropoff=PICK-1
+20260903_111718_e9c704,1807,task_created,,G00687,type=PACK pickup=PICK-2 dropoff=PACK-1
+20260903_111718_e9c704,1808,task_completed,R1,G00666,
+20260903_111718_e9c704,1809,task_assigned,R1,G00664,
+20260903_111718_e9c704,1811,task_created,,G00688,type=PUTAWAY pickup=RECV dropoff=A-08
+20260903_111718_e9c704,1814,task_interrupted,R4,G00420,
+20260903_111718_e9c704,1814,task_completed,R7,G00424,
+20260903_111718_e9c704,1815,task_assigned,R7,G00679,
+20260903_111718_e9c704,1815,task_created,,G00689,type=PICK pickup=A-08 dropoff=PICK-2
+20260903_111718_e9c704,1815,task_created,,G00690,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1819,task_created,,G00691,type=PUTAWAY pickup=BUFFER dropoff=A-01
+20260903_111718_e9c704,1819,task_created,,G00692,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1823,task_completed,R5,G00670,
+20260903_111718_e9c704,1824,task_assigned,R5,G00681,
+20260903_111718_e9c704,1824,task_assigned,R3,G00685,
+20260903_111718_e9c704,1825,task_created,,G00693,type=PICK pickup=B-07 dropoff=PICK-2
+20260903_111718_e9c704,1827,task_created,,G00694,type=PUTAWAY pickup=BUFFER dropoff=E-03
+20260903_111718_e9c704,1829,task_created,,G00695,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1831,task_created,,G00696,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1835,task_created,,G00697,type=PUTAWAY pickup=BUFFER dropoff=H-07
+20260903_111718_e9c704,1835,task_created,,G00698,type=PICK pickup=C-05 dropoff=PICK-2
+20260903_111718_e9c704,1836,task_completed,R7,G00679,
+20260903_111718_e9c704,1837,task_assigned,R7,G00688,
+20260903_111718_e9c704,1837,task_assigned,R8,G00691,
+20260903_111718_e9c704,1839,task_assigned,R6,G00694,
+20260903_111718_e9c704,1839,task_assigned,R2,G00697,
+20260903_111718_e9c704,1840,task_completed,R5,G00681,
+20260903_111718_e9c704,1841,task_assigned,R5,G00420,
+20260903_111718_e9c704,1843,task_created,,G00699,type=PUTAWAY pickup=BUFFER dropoff=E-01
+20260903_111718_e9c704,1843,task_created,,G00700,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1843,task_created,,G00701,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1845,task_created,,G00702,type=PICK pickup=E-01 dropoff=PICK-3
+20260903_111718_e9c704,1849,task_completed,R7,G00688,
+20260903_111718_e9c704,1850,task_assigned,R7,G00699,
+20260903_111718_e9c704,1851,task_created,,G00703,type=PUTAWAY pickup=BUFFER dropoff=C-08
+20260903_111718_e9c704,1853,task_assigned,R4,G00703,
+20260903_111718_e9c704,1855,task_completed,R5,G00420,
+20260903_111718_e9c704,1855,task_completed,R3,G00685,
+20260903_111718_e9c704,1855,task_created,,G00704,type=PICK pickup=F-07 dropoff=PICK-3
+20260903_111718_e9c704,1855,task_created,,G00705,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1856,task_assigned,R3,G00428,
+20260903_111718_e9c704,1857,task_created,,G00706,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1859,task_created,,G00707,type=PUTAWAY pickup=BUFFER dropoff=G-03
+20260903_111718_e9c704,1865,task_created,,G00708,type=PICK pickup=B-05 dropoff=PICK-2
+20260903_111718_e9c704,1867,task_created,,G00709,type=PUTAWAY pickup=RECV dropoff=A-02
+20260903_111718_e9c704,1867,task_created,,G00710,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1868,task_completed,R3,G00428,
+20260903_111718_e9c704,1869,task_assigned,R3,G00707,
+20260903_111718_e9c704,1871,task_created,,G00711,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1875,task_created,,G00712,type=PUTAWAY pickup=BUFFER dropoff=B-01
+20260903_111718_e9c704,1875,task_created,,G00713,type=PICK pickup=F-05 dropoff=PICK-2
+20260903_111718_e9c704,1879,task_created,,G00714,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260903_111718_e9c704,1883,task_completed,R1,G00664,
+20260903_111718_e9c704,1883,task_created,,G00715,type=PUTAWAY pickup=RECV dropoff=D-08
+20260903_111718_e9c704,1884,task_completed,R8,G00691,
+20260903_111718_e9c704,1884,task_assigned,R1,G00709,
+20260903_111718_e9c704,1884,task_assigned,R5,G00712,
+20260903_111718_e9c704,1885,task_assigned,R8,G00715,
+20260903_111718_e9c704,1885,task_created,,G00716,type=PICK pickup=B-04 dropoff=PICK-1
+20260903_111718_e9c704,1885,task_created,,G00717,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1891,task_completed,R4,G00703,
+20260903_111718_e9c704,1891,task_created,,G00718,type=PUTAWAY pickup=RECV dropoff=B-07
+20260903_111718_e9c704,1891,task_created,,G00719,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1892,task_assigned,R4,G00718,
+20260903_111718_e9c704,1895,task_created,,G00720,type=PICK pickup=B-04 dropoff=PICK-2
+20260903_111718_e9c704,1896,task_completed,R3,G00707,
+20260903_111718_e9c704,1897,task_assigned,R3,G00431,
+20260903_111718_e9c704,1899,task_created,,G00721,type=PUTAWAY pickup=RECV dropoff=G-02
+20260903_111718_e9c704,1899,task_created,,G00722,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1901,task_completed,R1,G00709,
+20260903_111718_e9c704,1902,task_assigned,R1,G00721,
+20260903_111718_e9c704,1903,task_created,,G00723,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1905,task_completed,R7,G00699,
+20260903_111718_e9c704,1905,task_created,,G00724,type=PICK pickup=E-06 dropoff=PICK-1
+20260903_111718_e9c704,1906,task_assigned,R7,G00435,
+20260903_111718_e9c704,1907,task_created,,G00725,type=PUTAWAY pickup=RECV dropoff=E-02
+20260903_111718_e9c704,1912,task_completed,R3,G00431,
+20260903_111718_e9c704,1913,task_completed,R2,G00697,
+20260903_111718_e9c704,1913,task_assigned,R3,G00725,
+20260903_111718_e9c704,1913,task_created,,G00726,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1914,task_assigned,R2,G00439,
+20260903_111718_e9c704,1914,task_completed,R6,G00694,
+20260903_111718_e9c704,1915,task_created,,G00727,type=PUTAWAY pickup=BUFFER dropoff=A-01
+20260903_111718_e9c704,1915,task_assigned,R6,G00727,
+20260903_111718_e9c704,1915,task_created,,G00728,type=PICK pickup=E-01 dropoff=PICK-3
+20260903_111718_e9c704,1915,task_created,,G00729,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1919,task_completed,R5,G00712,
+20260903_111718_e9c704,1920,task_assigned,R5,G00443,
+20260903_111718_e9c704,1923,task_completed,R2,G00439,
+20260903_111718_e9c704,1923,task_created,,G00730,type=PUTAWAY pickup=RECV dropoff=A-04
+20260903_111718_e9c704,1924,task_assigned,R2,G00730,
+20260903_111718_e9c704,1925,task_created,,G00731,type=PICK pickup=G-03 dropoff=PICK-1
+20260903_111718_e9c704,1926,task_completed,R4,G00718,
+20260903_111718_e9c704,1927,task_assigned,R4,G00447,
+20260903_111718_e9c704,1927,task_created,,G00732,type=PACK pickup=PICK-2 dropoff=PACK-2
+20260903_111718_e9c704,1927,task_created,,G00733,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1931,task_completed,R8,G00715,
+20260903_111718_e9c704,1931,task_created,,G00734,type=PUTAWAY pickup=BUFFER dropoff=G-03
+20260903_111718_e9c704,1932,task_assigned,R8,G00734,
+20260903_111718_e9c704,1935,task_completed,R5,G00443,
+20260903_111718_e9c704,1935,task_created,,G00735,type=PICK pickup=F-03 dropoff=PICK-1
+20260903_111718_e9c704,1936,task_assigned,R5,G00450,
+20260903_111718_e9c704,1939,task_created,,G00736,type=PUTAWAY pickup=RECV dropoff=E-04
+20260903_111718_e9c704,1939,task_created,,G00737,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1941,task_created,,G00738,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1945,task_completed,R3,G00725,
+20260903_111718_e9c704,1945,task_created,,G00739,type=PICK pickup=H-05 dropoff=PICK-2
+20260903_111718_e9c704,1946,task_assigned,R3,G00736,
+20260903_111718_e9c704,1947,task_created,,G00740,type=PUTAWAY pickup=BUFFER dropoff=C-01
+20260903_111718_e9c704,1948,task_completed,R4,G00447,
+20260903_111718_e9c704,1949,task_assigned,R4,G00740,
+20260903_111718_e9c704,1950,task_completed,R7,G00435,
+20260903_111718_e9c704,1950,task_completed,R1,G00721,
+20260903_111718_e9c704,1950,task_completed,R6,G00727,
+20260903_111718_e9c704,1951,task_assigned,R1,G00454,
+20260903_111718_e9c704,1951,task_assigned,R6,G00458,
+20260903_111718_e9c704,1951,task_assigned,R7,G00462,
+20260903_111718_e9c704,1951,task_created,,G00741,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1955,task_created,,G00742,type=PUTAWAY pickup=BUFFER dropoff=C-05
+20260903_111718_e9c704,1955,task_created,,G00743,type=PICK pickup=F-05 dropoff=PICK-2
+20260903_111718_e9c704,1955,task_created,,G00744,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1960,task_completed,R8,G00734,
+20260903_111718_e9c704,1961,task_completed,R2,G00730,
+20260903_111718_e9c704,1961,task_assigned,R8,G00742,
+20260903_111718_e9c704,1962,task_assigned,R2,G00465,
+20260903_111718_e9c704,1962,task_completed,R3,G00736,
+20260903_111718_e9c704,1963,task_completed,R1,G00454,
+20260903_111718_e9c704,1963,task_created,,G00745,type=PUTAWAY pickup=RECV dropoff=E-08
+20260903_111718_e9c704,1963,task_assigned,R3,G00745,
+20260903_111718_e9c704,1963,task_created,,G00746,type=PACK pickup=PICK-1 dropoff=PACK-2
+20260903_111718_e9c704,1964,task_completed,R6,G00458,
+20260903_111718_e9c704,1964,task_assigned,R1,G00470,
+20260903_111718_e9c704,1965,task_assigned,R6,G00474,
+20260903_111718_e9c704,1965,task_created,,G00747,type=PICK pickup=D-06 dropoff=PICK-2
+20260903_111718_e9c704,1966,task_completed,R5,G00450,
+20260903_111718_e9c704,1967,task_assigned,R5,G00476,
+20260903_111718_e9c704,1969,task_created,,G00748,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1971,task_created,,G00749,type=PUTAWAY pickup=BUFFER dropoff=C-08
+20260903_111718_e9c704,1974,task_completed,R4,G00740,
+20260903_111718_e9c704,1975,task_assigned,R4,G00749,
+20260903_111718_e9c704,1975,task_created,,G00750,type=PICK pickup=A-06 dropoff=PICK-3
+20260903_111718_e9c704,1975,task_created,,G00751,type=PACK pickup=PICK-3 dropoff=PACK-2
+20260903_111718_e9c704,1979,task_completed,R1,G00470,
+20260903_111718_e9c704,1979,task_created,,G00752,type=PUTAWAY pickup=BUFFER dropoff=D-08
+20260903_111718_e9c704,1983,task_created,,G00753,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260903_111718_e9c704,1984,task_completed,R3,G00745,
+20260903_111718_e9c704,1985,task_assigned,R3,G00752,
+20260903_111718_e9c704,1985,task_created,,G00754,type=PICK pickup=G-08 dropoff=PICK-2
+20260903_111718_e9c704,1986,task_completed,R5,G00476,
+20260903_111718_e9c704,1987,task_completed,R7,G00462,
+20260903_111718_e9c704,1987,task_assigned,R5,G00480,
+20260903_111718_e9c704,1987,task_created,,G00755,type=PUTAWAY pickup=RECV dropoff=G-06
+20260903_111718_e9c704,1987,task_assigned,R1,G00755,
+20260903_111718_e9c704,1987,task_created,,G00756,type=PACK pickup=PICK-3 dropoff=PACK-1
+20260903_111718_e9c704,1988,task_assigned,R7,G00485,
+20260903_111718_e9c704,1991,task_completed,R4,G00749,
+20260903_111718_e9c704,1992,task_assigned,R4,G00489,
+20260903_111718_e9c704,1992,task_interrupted,R1,G00755,
+20260903_111718_e9c704,1995,task_created,,G00757,type=PUTAWAY pickup=RECV dropoff=H-08
+20260903_111718_e9c704,1995,task_created,,G00758,type=PICK pickup=B-05 dropoff=PICK-1
+20260903_111718_e9c704,1997,task_created,,G00759,type=SHIP pickup=STAGING dropoff=DOCK-2
+20260903_111718_e9c704,1999,task_created,,G00760,type=PACK pickup=PICK-2 dropoff=PACK-1

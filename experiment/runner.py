@@ -197,6 +197,8 @@ class ExperimentRunner:
                     "id": robot.id,
                     "status": getattr(robot.status, "value", str(robot.status)),
                     "mode": getattr(robot.mode, "value", str(robot.mode)),
+                    "x": robot.x,
+                    "y": robot.y,
                     "blocked_ticks": robot.blocked_ticks,
                     "replanning": robot.replanning,
                     "battery": float(getattr(robot, "battery", 0.0)),

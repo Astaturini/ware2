@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import os
 from typing import Any
+import json
 
 
 class MetricsRecorder:
@@ -124,7 +125,7 @@ class MetricsRecorder:
         batteries: list[float] = []
 
         for robot in robots:
-            mode = robot["mode"]
+            mode = str(robot["mode"])
             blocked_ticks = int(robot.get("blocked_ticks", 0))
             battery = float(robot.get("battery", 0.0))
             batteries.append(battery)
@@ -291,44 +292,45 @@ class MetricsRecorder:
                 }
                 continue
 
-            previous_mode = previous.get("mode")
+            previous_mode = str(previous.get("mode", ""))
             previous_blocked = int(previous.get("blocked_ticks", 0))
             previous_replanning = bool(previous.get("replanning", False))
 
             if previous_blocked == 0 and blocked_ticks > 0:
-                self._write_event(tick, "robot_blocked", robot_id, None, None)
+                details = json.dumps({"x": int(robot["x"]), "y": int(robot["y"])})
+                self._write_event(tick, "robot_blocked", robot_id, None, details)
 
-            if (
-                previous_blocked > 0
-                and blocked_ticks == 0
-                and mode not in {"Failed", "Repairing", "Charging", "Waiting for charger"}
-            ):
-                self._write_event(tick, "robot_unblocked", robot_id, None, None)
+                if (
+                    previous_blocked > 0
+                    and blocked_ticks == 0
+                    and mode not in {"Failed", "Repairing", "Charging", "Waiting for charger"}
+                ):
+                    self._write_event(tick, "robot_unblocked", robot_id, None, None)
 
-            if not previous_replanning and replanning:
-                self._write_event(tick, "robot_replanned", robot_id, None, None)
+                if not previous_replanning and replanning:
+                    self._write_event(tick, "robot_replanned", robot_id, None, None)
 
-            if previous_mode != mode:
-                if mode == "Charging":
-                    self._write_event(tick, "robot_started_charging", robot_id, None, None)
+                if previous_mode != mode:
+                    if mode == "Charging":
+                        self._write_event(tick, "robot_started_charging", robot_id, None, None)
 
-                if previous_mode == "Charging" and mode != "Charging":
-                    self._write_event(tick, "robot_finished_charging", robot_id, None, None)
+                    if previous_mode == "Charging" and mode != "Charging":
+                        self._write_event(tick, "robot_finished_charging", robot_id, None, None)
 
-                if mode in {"Failed", "Repairing"} and previous_mode not in {"Failed", "Repairing"}:
-                    self._write_event(tick, "robot_faulted", robot_id, None, None)
+                    if mode in {"Failed", "Repairing"} and previous_mode not in {"Failed", "Repairing"}:
+                        self._write_event(tick, "robot_faulted", robot_id, None, None)
 
-                if previous_mode in {"Failed", "Repairing"} and mode not in {"Failed", "Repairing"}:
-                    self._write_event(tick, "robot_recovered", robot_id, None, None)
+                    if previous_mode in {"Failed", "Repairing"} and mode not in {"Failed", "Repairing"}:
+                        self._write_event(tick, "robot_recovered", robot_id, None, None)
 
-                if mode == "Waiting for charger" and previous_mode != "Waiting for charger":
-                    self._write_event(tick, "robot_waiting_for_charger", robot_id, None, None)
+                    if mode == "Waiting for charger" and previous_mode != "Waiting for charger":
+                        self._write_event(tick, "robot_waiting_for_charger", robot_id, None, None)
 
-            self._prev_robots[robot_id] = {
-                "mode": mode,
-                "blocked_ticks": blocked_ticks,
-                "replanning": replanning,
-            }
+                self._prev_robots[robot_id] = {
+                    "mode": mode,
+                    "blocked_ticks": blocked_ticks,
+                    "replanning": replanning,
+                }
 
         for robot_id in list(self._prev_robots.keys()):
             if robot_id not in current_robot_ids:

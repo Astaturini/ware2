@@ -1,0 +1,8 @@
+{
+  "robot_opex_per_hour": 12.0,
+  "charger_infra_cost_per_hour": 2.0,
+  "downtime_cost_per_hour": 20.0,
+  "sla_target_ticks": 300,
+  "sla_penalty_per_late_tick": 0.05,
+  "currency": "USD"
+}

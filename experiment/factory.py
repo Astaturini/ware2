@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import random
 
+from decision.demand import DemandConfig, DemandMode, DemandTaskGenerator
+from decision.layout import create_warehouse_for_experiment
 from simulation.config import BatteryConfig, ChargingConfig, FailureConfig
 from simulation.conflict import (
     ConflictManager,
@@ -27,7 +29,6 @@ from simulation.scheduler import (
 from simulation.simulation import Simulation
 from simulation.task_generator import TaskGenerator
 from simulation.warehouse import Warehouse
-from simulation.warehouse_layout import build_warehouse
 
 from .config import ExperimentConfig
 
@@ -49,10 +50,13 @@ ROBOT_COLORS: list[str] = [
 def create_path_planner_from_name(name: str) -> PathPlanner:
     if name == "bfs":
         return BFSPathPlanner()
+
     if name == "astar":
         return AStarPathPlanner(weight=1.0)
+
     if name == "weighted_astar":
         return AStarPathPlanner(weight=1.2)
+
     raise ValueError(
         f"Unknown path planner: {name!r}. "
         "Expected one of: bfs, astar, weighted_astar."
@@ -70,14 +74,19 @@ def create_scheduler_from_name(
 ) -> Scheduler:
     if name == "baseline":
         return CostBasedScheduler(path_planner=path_planner)
+
     if name == "priority":
         return PriorityScheduler(path_planner=path_planner)
+
     if name == "fifo":
         return FIFOScheduler(path_planner=path_planner)
+
     if name == "total_cost":
         return TotalCostScheduler(path_planner=path_planner)
+
     if name == "auction":
         return AuctionScheduler(path_planner=path_planner)
+
     raise ValueError(
         f"Unknown scheduler: {name!r}. "
         "Expected one of: baseline, priority, fifo, total_cost, auction."
@@ -89,6 +98,7 @@ def create_scheduler(
     path_planner: PathPlanner,
 ) -> Scheduler:
     name = getattr(config, "scheduler", "baseline")
+
     if name == "total_cost":
         return TotalCostScheduler(
             path_planner=path_planner,
@@ -97,6 +107,7 @@ def create_scheduler(
             safety_margin=config.battery_safety_margin,
             critical_battery=config.critical_battery,
         )
+
     return create_scheduler_from_name(name, path_planner)
 
 
@@ -106,10 +117,13 @@ def create_conflict_manager_from_name(
 ) -> ConflictManager:
     if name == "local_yield":
         return LocalYieldConflictManager(sim)
+
     if name == "zone_locks":
         return ZoneLockConflictManager(sim)
+
     if name == "priority_reservation":
         return PrioritizedReservationConflictManager(sim)
+
     raise ValueError(
         f"Unknown conflict manager: {name!r}. "
         "Expected one of: local_yield, zone_locks, priority_reservation."
@@ -174,8 +188,43 @@ def create_experiment_robots(
     return robots
 
 
+def create_task_generator(
+    config: ExperimentConfig,
+    warehouse: Warehouse,
+) -> TaskGenerator:
+    """
+    Create the v0.6 legacy TaskGenerator or a demand-aware generator.
+
+    demand_mode="legacy" preserves v0.6 behavior exactly.
+    """
+
+    demand_payload = {
+        "mode": config.demand_mode,
+        "rate_per_tick": config.demand_rate_per_tick,
+        "task_weights": config.demand_task_weights,
+        "segments": config.demand_segments,
+        "csv_path": config.demand_csv_path,
+        "events": config.demand_events,
+    }
+
+    demand_config = DemandConfig.from_dict(demand_payload)
+
+    if demand_config.mode == DemandMode.LEGACY:
+        return TaskGenerator(warehouse, seed=config.seed)
+
+    return DemandTaskGenerator(
+        warehouse=warehouse,
+        demand_config=demand_config,
+        seed=config.seed,
+    )
+
+
 def create_simulation_from_config(config: ExperimentConfig) -> Simulation:
-    warehouse = build_warehouse()
+    warehouse = create_warehouse_for_experiment(
+        layout_preset=config.layout_preset,
+        layout_file=config.layout_file,
+    )
+
     robots = create_experiment_robots(
         config.num_robots,
         warehouse,
@@ -208,6 +257,7 @@ def create_simulation_from_config(config: ExperimentConfig) -> Simulation:
 
     path_planner = create_path_planner(config)
     scheduler = create_scheduler(config, path_planner)
+    task_generator = create_task_generator(config, warehouse)
 
     sim = Simulation(
         warehouse=warehouse,
@@ -215,7 +265,7 @@ def create_simulation_from_config(config: ExperimentConfig) -> Simulation:
         tasks=[],
         tick_interval=config.tick_interval,
         scheduler=scheduler,
-        task_generator=TaskGenerator(warehouse, seed=config.seed),
+        task_generator=task_generator,
         metrics=Metrics(),
         blocked_replan_seconds=config.blocked_replan_seconds,
         replan_cooldown_ticks=config.replan_cooldown_ticks,
