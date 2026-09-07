@@ -1,0 +1,25 @@
+<section id="view-compare" class="view" hidden>
+    <h2>Compare Runs</h2>
+
+    <div class="toolbar">
+        <div id="compare-run-select" class="multi-select"></div>
+
+        <select id="compare-metric-select">
+            <option value="throughput_rolling_100">Throughput (Smoothed)</option>
+            <option value="tasks_completed_total">Cumulative Completed</option>
+            <option value="tasks_outstanding">Outstanding Tasks</option>
+            <option value="robots_blocked">Blocked Robots</option>
+            <option value="robots_charging">Charging Robots</option>
+            <option value="average_battery">Average Battery</option>
+        </select>
+
+        <select id="compare-chart-type">
+            <option value="line">Line Chart</option>
+            <option value="bar">Bar Chart (Final Values)</option>
+        </select>
+
+        <button id="compare-generate-btn">Compare</button>
+    </div>
+
+    <div id="compare-chart" class="chart-container"></div>
+</section>

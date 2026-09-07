@@ -1,0 +1,95 @@
+/* =========================================================
+Warehouse map: tiles, robots, legend
+========================================================= */
+
+#warehouse {
+    position: relative; border: 2px solid var(--border); margin: 12px 0;
+    background: #0d0f16; border-radius: 4px; box-shadow: 0 4px 12px var(--shadow-lg); overflow: hidden;
+}
+
+.tile { position: absolute; border: none; }
+.tile.empty { background: #1e2530; }
+.tile.aisle { background: #1e2530; }
+.tile.main_aisle { background: #171c25; }
+.tile.intersection { background: #222838; }
+.tile.shelf { background: #4a5568; }
+.tile.packing { background: #744210; }
+.tile.receiving { background: #2c5282; }
+.tile.shipping { background: #276749; }
+.tile.charging { background: #975a16; }
+.tile.buffer { background: #9c4221; }
+.tile.pick_station { background: #285e61; }
+.tile.consolidation { background: #702459; }
+.tile.staging { background: #44337a; }
+.tile.maintenance { background: #742a2a; }
+
+.tile.task-pickup-active { box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.9), 0 0 14px 4px rgba(245, 158, 11, 0.5); z-index: 3; }
+.tile.task-dropoff-active { box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.9), 0 0 14px 4px rgba(16, 185, 129, 0.5); z-index: 3; }
+.tile.task-pickup-faint { box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4), 0 0 8px 2px rgba(245, 158, 11, 0.2); z-index: 2; }
+.tile.task-dropoff-faint { box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4), 0 0 8px 2px rgba(16, 185, 129, 0.2); z-index: 2; }
+
+.rack-label {
+    position: absolute; transform: translate(-50%, -50%); font-size: 11px; font-weight: 600;
+    color: var(--text-secondary); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8); pointer-events: none; z-index: 5;
+}
+
+.marker {
+    position: absolute; transform: translate(-50%, -50%); font-size: 10px; font-weight: 700;
+    color: var(--text-primary); background: rgba(0, 0, 0, 0.55); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 4px; pointer-events: none; z-index: 6;
+}
+
+/* Robots */
+.robot {
+    position: absolute; width: 24px; height: 24px; border-radius: 4px;
+    border: 2px solid rgba(255, 255, 255, 0.7); transition: left 0.2s, top 0.2s;
+    z-index: 10; box-shadow: 0 2px 4px var(--shadow);
+}
+
+.robot.idle { opacity: 0.85; border-color: rgba(255, 255, 255, 0.35); box-shadow: 0 1px 2px var(--shadow); }
+.robot.has-task { box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.5), 0 2px 4px var(--shadow); }
+.robot.task-putaway { box-shadow: 0 0 14px 3px rgba(239, 68, 68, 0.7), 0 2px 4px var(--shadow); }
+.robot.task-pick { box-shadow: 0 0 14px 3px rgba(245, 158, 11, 0.7), 0 2px 4px var(--shadow); }
+.robot.task-pack { box-shadow: 0 0 14px 3px rgba(16, 185, 129, 0.7), 0 2px 4px var(--shadow); }
+.robot.task-ship { box-shadow: 0 0 14px 3px rgba(59, 130, 246, 0.7), 0 2px 4px var(--shadow); }
+.robot.to-charger { border-color: rgba(251, 191, 36, 0.6); }
+.robot.waiting-for-charger { border-color: rgba(251, 191, 36, 0.4); box-shadow: 0 0 8px 1px rgba(251, 191, 36, 0.35); }
+.robot.charging { border-color: #fbbf24; box-shadow: 0 0 14px 3px rgba(251, 191, 36, 0.7), 0 2px 4px var(--shadow); }
+.robot.low-battery { animation: pulse 1s infinite; box-shadow: 0 0 16px 4px rgba(239, 68, 68, 0.8); }
+.robot.failed { opacity: 0.4; border-color: #ef4444; box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.5); }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* Legend */
+.legend-container {
+    display: flex; flex-direction: column; gap: 12px; margin-top: 16px; padding: 12px;
+    background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 2px 4px var(--shadow);
+}
+
+.legend-section-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 4px; }
+.legend-grid { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-primary); }
+
+.swatch { width: 16px; height: 16px; border-radius: 3px; border: 1px solid rgba(255, 255, 255, 0.1); flex: 0 0 auto; }
+
+.swatch.robot-idle { background: #888; border-color: rgba(255, 255, 255, 0.35); }
+.swatch.robot-task { background: #888; box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.5); }
+.swatch.robot-putaway { background: #888; box-shadow: 0 0 6px 2px rgba(239, 68, 68, 0.7); }
+.swatch.robot-pick { background: #888; box-shadow: 0 0 6px 2px rgba(245, 158, 11, 0.7); }
+.swatch.robot-pack { background: #888; box-shadow: 0 0 6px 2px rgba(16, 185, 129, 0.7); }
+.swatch.robot-ship { background: #888; box-shadow: 0 0 6px 2px rgba(59, 130, 246, 0.7); }
+.swatch.robot-charging { background: #888; border-color: #fbbf24; box-shadow: 0 0 6px 2px rgba(251, 191, 36, 0.7); }
+.swatch.robot-failed { background: #888; border-color: #ef4444; opacity: 0.4; }
+
+.swatch.tile-shelf { background: #4a5568; }
+.swatch.tile-aisle { background: #1e2530; }
+.swatch.tile-main-aisle { background: #171c25; }
+.swatch.tile-receiving { background: #2c5282; }
+.swatch.tile-shipping { background: #276749; }
+.swatch.tile-packing { background: #744210; }
+.swatch.tile-pick { background: #285e61; }
+.swatch.tile-buffer { background: #9c4221; }
+.swatch.tile-consolidation { background: #702459; }
+.swatch.tile-staging { background: #44337a; }
+.swatch.tile-charging { background: #975a16; }
+.swatch.tile-maintenance { background: #742a2a; }

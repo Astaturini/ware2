@@ -14,6 +14,8 @@ from analysis.web import (
     get_run_summary,
     list_runs_payload,
 )
+from decision.jobs import DecisionJobManager, create_decision_jobs_blueprint
+from decision.web import create_decision_blueprint
 from experiment.config import ExperimentConfig
 from experiment.factory import create_simulation_from_config
 from experiment.runner import ExperimentRunner
@@ -24,13 +26,22 @@ def create_app(
     start_simulation: bool = False,
 ) -> Flask:
     base_dir = Path(base_data_dir)
+    data_dir = base_dir.parent
 
-    default_simulation = create_simulation_from_config(ExperimentConfig.default())
+    default_simulation = create_simulation_from_config(
+        ExperimentConfig.default()
+    )
 
     holder = {
         "simulation": default_simulation,
         "runner": None,
     }
+
+    decision_job_manager = DecisionJobManager(
+        data_dir=data_dir,
+        runs_dir=base_dir,
+        max_workers=1,
+    )
 
     app = Flask(__name__)
 
@@ -44,6 +55,7 @@ def create_app(
         payload = simulation.get_state()
 
         runner = holder.get("runner")
+
         if runner is None:
             payload["experiment"] = {
                 "active": False,
@@ -72,10 +84,13 @@ def create_app(
     @app.post("/api/reset")
     def reset():
         runner = holder.get("runner")
+
         if runner is not None:
             runner.stop("reset_by_user")
 
-        holder["simulation"] = create_simulation_from_config(ExperimentConfig.default())
+        holder["simulation"] = create_simulation_from_config(
+            ExperimentConfig.default()
+        )
         holder["runner"] = None
 
         return jsonify({"paused": holder["simulation"].is_paused})
@@ -87,6 +102,7 @@ def create_app(
     @app.post("/api/experiment/start")
     def experiment_start():
         existing = holder.get("runner")
+
         if existing is not None and existing.is_active:
             return jsonify({"error": "An experiment is already running."}), 409
 
@@ -112,6 +128,7 @@ def create_app(
     @app.get("/api/experiment/state")
     def experiment_state():
         runner = holder.get("runner")
+
         if runner is None:
             return jsonify(
                 {
@@ -122,24 +139,31 @@ def create_app(
                     "fastMode": False,
                 }
             )
+
         return jsonify(runner.get_state())
 
     @app.post("/api/experiment/stop")
     def experiment_stop():
         runner = holder.get("runner")
+
         if runner is None:
             return jsonify({"error": "No experiment has been started."}), 404
+
         runner.stop("stopped_by_user")
         return jsonify(runner.get_state())
 
     @app.get("/api/experiment/summary")
     def experiment_summary():
         runner = holder.get("runner")
+
         if runner is None:
             return jsonify({"error": "No experiment has been started."}), 404
+
         summary = runner.get_summary()
+
         if summary is None:
             return jsonify({"error": "Experiment has not finished yet."}), 409
+
         return jsonify(summary)
 
     # --------------------------------------------------------------
@@ -156,6 +180,7 @@ def create_app(
             return jsonify({"error": "Invalid run id."}), 400
 
         run_dir = base_dir / run_id
+
         if not run_dir.exists():
             return jsonify({"error": "Run not found."}), 404
 
@@ -171,12 +196,19 @@ def create_app(
         column = request.args.get("column", "throughput_rolling_100")
         max_points = request.args.get("max_points", 2000)
 
-        run_ids = [part.strip() for part in runs_param.split(",") if part.strip()]
+        run_ids = [
+            part.strip()
+            for part in runs_param.split(",")
+            if part.strip()
+        ]
+
         if not run_ids:
             return jsonify({"error": "No run ids provided."}), 400
 
         try:
-            return jsonify(get_compare_series(run_ids, column, str(base_dir), max_points))
+            return jsonify(
+                get_compare_series(run_ids, column, str(base_dir), max_points)
+            )
         except AnalysisApiError as exc:
             return jsonify({"error": str(exc)}), 404
 
@@ -191,22 +223,46 @@ def create_app(
     def api_run_series(run_id: str):
         columns = request.args.get("columns", "")
         max_points = request.args.get("max_points", 2000)
+
         try:
-            return jsonify(get_run_series(run_id, columns, str(base_dir), max_points))
+            return jsonify(
+                get_run_series(run_id, columns, str(base_dir), max_points)
+            )
         except AnalysisApiError as exc:
             return jsonify({"error": str(exc)}), 404
 
     @app.get("/api/runs/<run_id>/distributions")
     def api_run_distributions(run_id: str):
         bins = request.args.get("bins", 50)
+
         try:
             bins = max(10, min(100, int(bins)))
         except Exception:
             bins = 50
+
         try:
             return jsonify(get_run_distributions(run_id, str(base_dir), bins))
         except AnalysisApiError as exc:
             return jsonify({"error": str(exc)}), 404
+
+    # --------------------------------------------------------------
+    # Decision API (Read-only artifacts)
+    # --------------------------------------------------------------
+
+    app.register_blueprint(
+        create_decision_blueprint(
+            data_dir=data_dir,
+            runs_dir=base_dir,
+        )
+    )
+
+    # --------------------------------------------------------------
+    # Decision Jobs API (Asynchronous execution)
+    # --------------------------------------------------------------
+
+    app.register_blueprint(
+        create_decision_jobs_blueprint(decision_job_manager)
+    )
 
     if start_simulation:
         default_simulation.start()

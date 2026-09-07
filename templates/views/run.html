@@ -1,0 +1,55 @@
+<section id="view-run" class="view" hidden>
+    <h2>Live Run</h2>
+
+    <div class="run-layout">
+        <div class="run-main">
+            <div id="warehouse"></div>
+
+            <div class="legend-container">
+                <div>
+                    <div class="legend-section-title">Robots</div>
+                    <div class="legend-grid">
+                        <div class="legend-item"><span class="swatch robot-idle"></span> Idle</div>
+                        <div class="legend-item"><span class="swatch robot-task"></span> Active Task</div>
+                        <div class="legend-item"><span class="swatch robot-putaway"></span> Putaway</div>
+                        <div class="legend-item"><span class="swatch robot-pick"></span> Pick</div>
+                        <div class="legend-item"><span class="swatch robot-pack"></span> Pack</div>
+                        <div class="legend-item"><span class="swatch robot-ship"></span> Ship</div>
+                        <div class="legend-item"><span class="swatch robot-charging"></span> Charging</div>
+                        <div class="legend-item"><span class="swatch robot-failed"></span> Failed</div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="legend-section-title">Zones</div>
+                    <div class="legend-grid">
+                        <div class="legend-item"><span class="swatch tile-shelf"></span> Rack</div>
+                        <div class="legend-item"><span class="swatch tile-aisle"></span> Aisle</div>
+                        <div class="legend-item"><span class="swatch tile-main-aisle"></span> Main</div>
+                        <div class="legend-item"><span class="swatch tile-receiving"></span> Recv</div>
+                        <div class="legend-item"><span class="swatch tile-shipping"></span> Ship</div>
+                        <div class="legend-item"><span class="swatch tile-packing"></span> Pack</div>
+                        <div class="legend-item"><span class="swatch tile-pick"></span> Pick</div>
+                        <div class="legend-item"><span class="swatch tile-buffer"></span> Buffer</div>
+                        <div class="legend-item"><span class="swatch tile-consolidation"></span> Consol</div>
+                        <div class="legend-item"><span class="swatch tile-staging"></span> Stage</div>
+                        <div class="legend-item"><span class="swatch tile-charging"></span> Charge</div>
+                        <div class="legend-item"><span class="swatch tile-maintenance"></span> Maint</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="run-sidebar">
+            <div class="run-controls">
+                <button id="pause-btn">Pause</button>
+                <button id="resume-btn">Resume</button>
+                <button id="reset-btn">Reset</button>
+            </div>
+
+            <div id="simulation-state"></div>
+            <div id="dashboard-grid"></div>
+            <div id="task-list"></div>
+        </div>
+    </div>
+</section>

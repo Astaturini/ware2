@@ -1,0 +1,26 @@
+<section id="view-visualization" class="view" hidden>
+    <h2>Visualization</h2>
+
+    <div class="toolbar">
+        <select id="visualization-run-select"></select>
+
+        <select id="visualization-metric-select">
+            <option value="throughput_rolling_100">Throughput (Smoothed)</option>
+            <option value="throughput">Throughput (Raw)</option>
+            <option value="tasks_completed_total">Cumulative Completed</option>
+            <option value="tasks_pending">Pending Tasks</option>
+            <option value="tasks_outstanding">Outstanding Tasks</option>
+            <option value="robot_states_stacked">Robot States (Stacked Area)</option>
+            <option value="robots_blocked">Blocked Robots</option>
+            <option value="robots_charging">Charging Robots</option>
+            <option value="battery_overlay">Battery (Avg/Min/Max Overlay)</option>
+            <option value="average_battery">Average Battery</option>
+            <option value="replans_this_tick">Replans per Tick</option>
+            <option value="blocked_ticks_this_tick">Blocked Ticks per Tick</option>
+        </select>
+
+        <button id="visualization-generate-btn">Generate</button>
+    </div>
+
+    <div id="visualization-chart" class="chart-container"></div>
+</section>

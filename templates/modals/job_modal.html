@@ -1,0 +1,34 @@
+<div id="decision-job-modal" class="modal" hidden>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Launch Decision Job</h3>
+            <button id="decision-job-close-btn" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <label>
+                Module
+                <select id="decision-job-module">
+                    <option value="monte_carlo">Monte Carlo</option>
+                    <option value="sensitivity">Sensitivity</option>
+                    <option value="optimizer">Optimizer</option>
+                    <option value="multiobjective">Multi-Objective</option>
+                    <option value="robustness">Robustness</option>
+                    <option value="study">Study</option>
+                    <option value="report">Report</option>
+                    <option value="spatial">Spatial</option>
+                </select>
+            </label>
+
+            <label>
+                Config JSON
+                <textarea id="decision-job-config-editor" rows="15" spellcheck="false"></textarea>
+            </label>
+
+            <div id="decision-job-error" class="decision-status error" hidden></div>
+        </div>
+        <div class="modal-footer">
+            <button id="decision-job-template-btn">Load Template</button>
+            <button id="decision-job-submit-btn">Submit Job</button>
+        </div>
+    </div>
+</div>

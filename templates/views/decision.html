@@ -1,0 +1,77 @@
+<section id="view-decision" class="view" hidden>
+    <h2>Decision Center</h2>
+
+    <div class="decision-subnav">
+        <button id="decision-open-overview-btn">Overview</button>
+        <button id="decision-open-studies-btn">Studies</button>
+        <button id="decision-open-reports-btn">Reports</button>
+        <button id="decision-open-spatial-btn">Spatial</button>
+        <button id="decision-open-cost-btn">Cost KPIs</button>
+        <button id="decision-open-monte-carlo-btn">Monte Carlo</button>
+        <button id="decision-open-sensitivity-btn">Sensitivity</button>
+        <button id="decision-open-optimization-btn">Optimization</button>
+        <button id="decision-open-multiobjective-btn">Multi-Objective</button>
+        <button id="decision-open-robustness-btn">Robustness</button>
+        <button id="decision-open-jobs-btn">Jobs</button>
+        <button id="decision-refresh-btn">Refresh</button>
+    </div>
+
+    <div id="decision-overview" class="decision-subview" hidden></div>
+    <div id="decision-studies" class="decision-subview" hidden></div>
+    <div id="decision-reports" class="decision-subview" hidden></div>
+
+    <div id="decision-spatial" class="decision-subview" hidden>
+        <div class="decision-toolbar">
+            <label>
+                Run
+                <select id="spatial-run-select"></select>
+            </label>
+            <label>
+                Top N
+                <input id="spatial-top" type="number" value="20" min="1" max="100">
+            </label>
+            <label>
+                Sort by
+                <select id="spatial-by">
+                    <option value="blocked_ticks">blocked_ticks</option>
+                    <option value="blocked_events">blocked_events</option>
+                </select>
+            </label>
+            <button id="spatial-generate-btn">Generate Spatial Analysis</button>
+        </div>
+        <div id="spatial-detail"></div>
+    </div>
+
+    <div id="decision-cost" class="decision-subview" hidden>
+        <div class="decision-toolbar">
+            <label>
+                Run
+                <select id="cost-run-select"></select>
+            </label>
+            <button id="cost-generate-btn">Generate Cost KPIs</button>
+        </div>
+
+        <label class="full-width-label">
+            Cost Config JSON
+            <textarea id="cost-config-editor" rows="10" spellcheck="false">
+{
+  "robot_opex_per_hour": 12.5,
+  "charger_infra_cost_per_hour": 2.0,
+  "downtime_cost_per_hour": 30.0,
+  "sla_target_ticks": 300,
+  "sla_penalty_per_late_tick": 0.5,
+  "currency": "USD"
+}
+            </textarea>
+        </label>
+
+        <div id="cost-detail"></div>
+    </div>
+
+    <div id="decision-monte-carlo" class="decision-subview" hidden></div>
+    <div id="decision-sensitivity" class="decision-subview" hidden></div>
+    <div id="decision-optimization" class="decision-subview" hidden></div>
+    <div id="decision-multiobjective" class="decision-subview" hidden></div>
+    <div id="decision-robustness" class="decision-subview" hidden></div>
+    <div id="decision-jobs" class="decision-subview" hidden></div>
+</section>
