@@ -1,12 +1,48 @@
-<section id="view-results" class="view" hidden>
-    <h2>Experiment Complete</h2>
+<section id="view-results" class="view">
+  <h2>Experiment Complete</h2>
 
-    <div id="result-summary"></div>
+  <div class="toolbar">
+    <button id="run-again-btn">Run Again</button>
+    <button id="view-experiments-btn">Saved Experiments</button>
+    <button id="view-visualization-btn">Visualization</button>
+    <button id="view-analysis-btn">Analysis</button>
+  </div>
 
-    <div class="toolbar">
-        <button id="run-again-btn">Run Again</button>
-        <button id="view-experiments-btn">Saved Experiments</button>
-        <button id="view-visualization-btn">Visualization</button>
-        <button id="view-analysis-btn">Analysis</button>
+  <section id="results-decision-actions-card" class="card" hidden>
+    <h3>Decision Actions</h3>
+
+    <div class="decision-toolbar">
+      <button type="button" data-run-action="cost">View Cost KPIs</button>
+
+      <button type="button" data-run-action="spatial">
+        View Spatial Bottlenecks
+      </button>
+
+      <button type="button" data-run-action="report">Generate Report</button>
+
+      <button type="button" data-run-action="monte_carlo">
+        Start Monte Carlo
+      </button>
+
+      <button type="button" data-run-action="sensitivity">
+        Start Sensitivity
+      </button>
+
+      <button type="button" data-run-action="optimizer">
+        Use as Optimizer Baseline
+      </button>
+
+      <button type="button" data-run-action="multiobjective">
+        Use as Multi-Objective Baseline
+      </button>
     </div>
+
+    <p class="decision-status warning">
+      Cost KPIs require a valid cost config. If the cost editor is prefilled
+      automatically, the rates are placeholder examples and must be reviewed
+      before using the result for a decision.
+    </p>
+  </section>
+
+  <div id="result-summary"></div>
 </section>
