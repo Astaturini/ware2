@@ -1,142 +1,265 @@
 <section id="view-setup" class="view">
-    <h2>Experiment</h2>
+  <h2>Experiment</h2>
 
-    <div class="setup-grid">
-        <div class="card">
-            <h3>Experiment</h3>
-            <div class="form-grid">
-                <label>
-                    Display Name
-                    <input id="cfg-display-name" type="text" placeholder="Optional run label">
-                </label>
-                <label>
-                    Seed
-                    <input id="cfg-seed" type="number" value="42">
-                </label>
-                <label>
-                    Robots
-                    <input id="cfg-num-robots" type="number" value="6" min="1">
-                </label>
-                <label>
-                    Stop mode
-                    <select id="cfg-stop-mode">
-                        <option value="workload">Target tasks (Complete workload)</option>
-                        <option value="fixed_ticks">Fixed ticks</option>
-                    </select>
-                </label>
-                <label id="target-tasks-field">
-                    Target tasks
-                    <input id="cfg-target-tasks" type="number" value="100" min="1">
-                </label>
-                <label>
-                    Max ticks
-                    <input id="cfg-max-ticks" type="number" value="100000" min="1">
-                </label>
-                <label>
-                    Tick interval (s)
-                    <input id="cfg-tick-interval" type="number" value="0.3" step="0.05" min="0.01">
-                </label>
-                <label>
-                    Blocked replan (s)
-                    <input id="cfg-blocked-replan-seconds" type="number" value="0.7" step="0.1" min="0">
-                </label>
-                <label>
-                    Replan cooldown
-                    <input id="cfg-replan-cooldown-ticks" type="number" value="7" min="0">
-                </label>
-                <label class="checkbox-label">
-                    <input id="cfg-fast-mode" type="checkbox">
-                    Fast headless run
-                </label>
-            </div>
-        </div>
+  <div class="setup-grid">
 
-        <div class="card">
-            <h3>Algorithms</h3>
-            <div class="form-grid">
-                <label>
-                    Path Planner
-                    <select id="cfg-path-planner">
-                        <option value="bfs">BFS (baseline)</option>
-                        <option value="astar">A*</option>
-                        <option value="weighted_astar">Weighted A*</option>
-                    </select>
-                </label>
-                <label>
-                    Scheduler
-                    <select id="cfg-scheduler">
-                        <option value="baseline">Cost-Based (baseline)</option>
-                        <option value="priority">Priority</option>
-                        <option value="fifo">FIFO</option>
-                        <option value="total_cost">Total Cost</option>
-                        <option value="auction">Auction</option>
-                    </select>
-                </label>
-                <label>
-                    Conflict Manager
-                    <select id="cfg-conflict-manager">
-                        <option value="local_yield">Local Yield (baseline)</option>
-                        <option value="zone_locks">Zone Locks</option>
-                        <option value="priority_reservation">Priority Reservation</option>
-                    </select>
-                </label>
-            </div>
-        </div>
+    <div class="card">
+      <h3>Experiment</h3>
 
-        <div class="card">
-            <h3>Battery & Charging</h3>
-            <div class="form-grid">
-                <label>
-                    Capacity
-                    <input id="cfg-battery-capacity" type="number" value="100" min="1">
-                </label>
-                <label>
-                    Empty energy
-                    <input id="cfg-empty-move-energy" type="number" value="0.35" step="0.01">
-                </label>
-                <label>
-                    Loaded energy
-                    <input id="cfg-loaded-move-energy" type="number" value="0.5" step="0.01">
-                </label>
-                <label>
-                    Critical
-                    <input id="cfg-critical-battery" type="number" value="15" min="0">
-                </label>
-                <label>
-                    Opportunistic
-                    <input id="cfg-opportunistic-charge-threshold" type="number" value="30" min="0">
-                </label>
-                <label>
-                    Chargers
-                    <input id="cfg-charger-capacity" type="number" value="4" min="0">
-                </label>
-                <label>
-                    Charge ticks
-                    <input id="cfg-charge-duration-ticks" type="number" value="10" min="1">
-                </label>
-            </div>
-        </div>
+      <label class="field">
+        Display Name
+        <input id="cfg-display-name" type="text" placeholder="Optional experiment name">
+      </label>
 
-        <div class="card">
-            <h3>Failures</h3>
-            <div class="form-grid">
-                <label class="checkbox-label">
-                    <input id="cfg-failure-enabled" type="checkbox">
-                    Enable failures
-                </label>
-                <label>
-                    MTBF ticks
-                    <input id="cfg-mtbf-ticks" type="number" value="0" min="0">
-                </label>
-                <label>
-                    MTTR ticks
-                    <input id="cfg-mttr-ticks" type="number" value="25" min="0">
-                </label>
-            </div>
-        </div>
+      <label class="field">
+        Seed
+        <input id="cfg-seed" type="number" value="42" step="1">
+      </label>
 
-        <div class="card full-width">
-            <button id="start-experiment-btn">Start Experiment</button>
-        </div>
+      <label class="field">
+        Robots
+        <input id="cfg-num-robots" type="number" value="6" min="1" step="1">
+      </label>
+
+      <label class="field">
+        Stop mode
+        <select id="cfg-stop-mode">
+          <option value="workload" selected>Target tasks (Complete workload)</option>
+          <option value="fixed_ticks">Fixed ticks</option>
+        </select>
+      </label>
+
+      <label class="field" id="target-tasks-field" style="display:block;">
+        Target tasks
+        <input id="cfg-target-tasks" type="number" value="100" min="1" step="1">
+      </label>
+
+      <label class="field">
+        Max ticks
+        <input id="cfg-max-ticks" type="number" value="100000" min="1" step="1">
+      </label>
+
+      <label class="field">
+        Tick interval (s)
+        <input id="cfg-tick-interval" type="number" value="0.3" step="0.05" min="0.01">
+      </label>
+
+      <label class="field">
+        Blocked replan (s)
+        <input id="cfg-blocked-replan-seconds" type="number" value="0.7" step="0.05" min="0">
+      </label>
+
+      <label class="field">
+        Replan cooldown
+        <input id="cfg-replan-cooldown-ticks" type="number" value="7" min="0" step="1">
+      </label>
+
+      <label class="field">
+        Fast headless run
+        <input id="cfg-fast-mode" type="checkbox">
+      </label>
     </div>
+
+    <div class="card">
+      <h3>Algorithms</h3>
+
+      <label class="field">
+        Path Planner
+        <select id="cfg-path-planner">
+          <option value="bfs" selected>BFS (baseline)</option>
+          <option value="astar">A*</option>
+          <option value="weighted_astar">Weighted A*</option>
+        </select>
+      </label>
+
+      <label class="field">
+        Scheduler
+        <select id="cfg-scheduler">
+          <option value="baseline" selected>Cost-Based (baseline)</option>
+          <option value="priority">Priority</option>
+          <option value="fifo">FIFO</option>
+          <option value="total_cost">Total Cost</option>
+          <option value="auction">Auction</option>
+        </select>
+      </label>
+
+      <label class="field">
+        Conflict Manager
+        <select id="cfg-conflict-manager">
+          <option value="local_yield" selected>Local Yield (baseline)</option>
+          <option value="zone_locks">Zone Locks</option>
+          <option value="priority_reservation">Priority Reservation</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="card">
+      <h3>Demand</h3>
+
+      <label class="field">
+        Demand mode
+        <select id="cfg-demand-mode">
+          <option value="legacy" selected>Legacy</option>
+          <option value="uniform">Uniform</option>
+          <option value="rate_schedule">Rate schedule</option>
+          <option value="csv_orders">CSV orders</option>
+        </select>
+      </label>
+
+      <div id="demand-uniform-fields" style="display:none;">
+        <label class="field">
+          Demand rate per tick
+          <input id="cfg-demand-rate-per-tick" type="number" value="0" min="0" step="0.001">
+        </label>
+
+        <label class="field">
+          Task weights JSON
+          <textarea
+            id="cfg-demand-task-weights"
+            rows="5"
+            placeholder='{"PUTAWAY": 1, "PICK": 1, "PACK": 1, "SHIP": 1}'
+          ></textarea>
+        </label>
+      </div>
+
+      <div id="demand-rate-schedule-fields" style="display:none;">
+        <label class="field">
+          Demand segments JSON
+          <textarea
+            id="cfg-demand-segments"
+            rows="7"
+            placeholder='[
+  {
+    "start_tick": 0,
+    "end_tick": 1000,
+    "rate": 0.2
+  }
+]'
+          ></textarea>
+        </label>
+      </div>
+
+      <div id="demand-csv-fields" style="display:none;">
+        <label class="field">
+          Demand CSV path
+          <input
+            id="cfg-demand-csv-file"
+            type="text"
+            placeholder="data/demand/orders.csv"
+          >
+        </label>
+
+        <label class="field">
+          Optional demand events JSON
+          <textarea
+            id="cfg-demand-events"
+            rows="7"
+            placeholder='[
+  {
+    "tick": 10,
+    "task_type": "PICK",
+    "pickup": "A-01",
+    "dropoff": "PICK-1"
+  }
+]'
+          ></textarea>
+        </label>
+
+        <p class="decision-status warning">
+          CSV demand file upload and managed file selection are not implemented yet.
+          Use a relative trusted path only for local development.
+        </p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Layout</h3>
+
+      <label class="field">
+        Layout preset
+        <select id="cfg-layout-preset">
+          <option value="default" selected>Default</option>
+          <option value="high_density">High density</option>
+          <option value="one_way_aisles">One-way aisles</option>
+        </select>
+      </label>
+
+      <label class="field">
+        Layout file, optional
+        <input
+          id="cfg-layout-file"
+          type="text"
+          placeholder="data/layouts/custom.json"
+        >
+      </label>
+
+      <p class="decision-status warning">
+        Layout file upload and managed file selection are not implemented yet.
+        Use a preset for normal runs. Use a relative trusted layout file path only for local development.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Battery &amp; Charging</h3>
+
+      <label class="field">
+        Capacity
+        <input id="cfg-battery-capacity" type="number" value="100" min="1" step="1">
+      </label>
+
+      <label class="field">
+        Empty energy
+        <input id="cfg-empty-move-energy" type="number" value="0.35" min="0" step="0.01">
+      </label>
+
+      <label class="field">
+        Loaded energy
+        <input id="cfg-loaded-move-energy" type="number" value="0.5" min="0" step="0.01">
+      </label>
+
+      <label class="field">
+        Critical
+        <input id="cfg-critical-battery" type="number" value="15" min="0" step="0.5">
+      </label>
+
+      <label class="field">
+        Opportunistic
+        <input id="cfg-opportunistic-charge-threshold" type="number" value="30" min="0" step="0.5">
+      </label>
+
+      <label class="field">
+        Chargers
+        <input id="cfg-charger-capacity" type="number" value="4" min="0" step="1">
+      </label>
+
+      <label class="field">
+        Charge ticks
+        <input id="cfg-charge-duration-ticks" type="number" value="10" min="0" step="1">
+      </label>
+    </div>
+
+    <div class="card">
+      <h3>Failures</h3>
+
+      <label class="field">
+        Enable failures
+        <input id="cfg-failure-enabled" type="checkbox">
+      </label>
+
+      <label class="field">
+        MTBF ticks
+        <input id="cfg-mtbf-ticks" type="number" value="0" min="0" step="1">
+      </label>
+
+      <label class="field">
+        MTTR ticks
+        <input id="cfg-mttr-ticks" type="number" value="25" min="0" step="1">
+      </label>
+    </div>
+
+  </div>
+
+  <div class="toolbar">
+    <button id="start-experiment-btn">Start Experiment</button>
+  </div>
 </section>

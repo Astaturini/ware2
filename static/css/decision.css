@@ -89,3 +89,49 @@ Decision Center: subnav, tables, cards, badges, modal
     padding: 16px 20px; border-top: 1px solid var(--border);
     display: flex; justify-content: flex-end; gap: 12px;
 }
+
+.decision-guided-form {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.decision-guided-form .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.decision-guided-form textarea {
+  width: 100%;
+  min-height: 90px;
+  font-family: monospace;
+}
+
+.decision-guided-form input[type="number"],
+.decision-guided-form input[type="text"],
+.decision-guided-form select {
+  width: 100%;
+}
+
+.decision-guided-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.decision-guided-subsection {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.decision-guided-subsection h4 {
+  margin: 0 0 8px 0;
+}
+
+.decision-guided-warning {
+  font-size: 12px;
+  color: var(--warning, #f59e0b);
+}

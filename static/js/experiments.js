@@ -2,20 +2,271 @@
 // Experiment lifecycle, experiments list, visualization, analysis, compare
 // =====================================================================
 
+// =====================================================================
+// Setup JSON helpers
+// =====================================================================
+
+function parseSetupJson(id, fallback) {
+  const el = document.getElementById(id);
+  if (!el) return fallback;
+
+  const raw = el.value.trim();
+  if (!raw) return fallback;
+
+  try {
+    return JSON.parse(raw);
+  } catch (error) {
+    throw new Error(`${id} contains invalid JSON.`);
+  }
+}
+
+function parseSetupJsonObject(id, fallback = {}) {
+  const value = parseSetupJson(id, fallback);
+
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${id} must be a JSON object.`);
+  }
+
+  return value;
+}
+
+function parseSetupJsonArray(id, fallback = []) {
+  const value = parseSetupJson(id, fallback);
+
+  if (!Array.isArray(value)) {
+    throw new Error(`${id} must be a JSON array.`);
+  }
+
+  return value;
+}
+
+function validateNonNegativeNumberObject(obj, label) {
+  const cleaned = {};
+
+  Object.entries(obj || {}).forEach(([key, value]) => {
+    const num = Number(value);
+
+    if (!Number.isFinite(num) || num < 0) {
+      throw new Error(`${label}.${key} must be a finite number >= 0.`);
+    }
+
+    cleaned[key] = num;
+  });
+
+  return cleaned;
+}
+
+function validateRelativeTrustedPath(path, label) {
+  if (!path) return path;
+
+  const cleaned = String(path).trim();
+
+  if (!cleaned) {
+    return "";
+  }
+
+  if (cleaned.includes("..")) {
+    throw new Error(`${label} must not contain path traversal.`);
+  }
+
+  if (cleaned.startsWith("/") || /^[A-Za-z]:/i.test(cleaned)) {
+    throw new Error(`${label} must be a relative trusted path.`);
+  }
+
+  return cleaned;
+}
+
+function validateDemandSegments(segments) {
+  if (!Array.isArray(segments)) {
+    throw new Error("demand_segments must be a JSON array.");
+  }
+
+  segments.forEach((segment, index) => {
+    if (
+      segment === null ||
+      typeof segment !== "object" ||
+      Array.isArray(segment)
+    ) {
+      throw new Error(`demand_segments[${index}] must be a JSON object.`);
+    }
+
+    const startTick = Number(segment.start_tick);
+    const endTick = Number(segment.end_tick);
+    const rate = Number(segment.rate);
+
+    if (!Number.isFinite(startTick) || startTick < 0) {
+      throw new Error(`demand_segments[${index}].start_tick must be a finite number >= 0.`);
+    }
+
+    if (!Number.isFinite(endTick) || endTick <= startTick) {
+      throw new Error(`demand_segments[${index}].end_tick must be greater than start_tick.`);
+    }
+
+    if (!Number.isFinite(rate) || rate < 0) {
+      throw new Error(`demand_segments[${index}].rate must be a finite number >= 0.`);
+    }
+
+    segment.start_tick = startTick;
+    segment.end_tick = endTick;
+    segment.rate = rate;
+  });
+
+  return segments;
+}
+
+function validateDemandEvents(events) {
+  if (!Array.isArray(events)) {
+    throw new Error("demand_events must be a JSON array.");
+  }
+
+  events.forEach((event, index) => {
+    if (
+      event === null ||
+      typeof event !== "object" ||
+      Array.isArray(event)
+    ) {
+      throw new Error(`demand_events[${index}] must be a JSON object.`);
+    }
+
+    if (event.tick != null) {
+      const tick = Number(event.tick);
+
+      if (!Number.isFinite(tick) || tick < 0) {
+        throw new Error(`demand_events[${index}].tick must be a finite number >= 0.`);
+      }
+
+      event.tick = tick;
+    }
+  });
+
+  return events;
+}
+
+// =====================================================================
+// Experiment config reader
+// =====================================================================
+
 function readExperimentConfig() {
   const stopMode = safeString(formValue("cfg-stop-mode")) || "workload";
+
+  const demandMode = safeString(formValue("cfg-demand-mode")) || "legacy";
+  const layoutPreset = safeString(formValue("cfg-layout-preset")) || "default";
+
+  const demandModes = [
+    "legacy",
+    "uniform",
+    "rate_schedule",
+    "csv_orders"
+  ];
+
+  const layoutPresets = [
+    "default",
+    "high_density",
+    "one_way_aisles"
+  ];
+
+  if (!demandModes.includes(demandMode)) {
+    throw new Error("Unsupported demand_mode.");
+  }
+
+  if (!layoutPresets.includes(layoutPreset)) {
+    throw new Error("Unsupported layout_preset.");
+  }
+
+  const numRobots = formNumber("cfg-num-robots", 6);
+  const maxTicks = formNumber("cfg-max-ticks", 100000);
+  const tickInterval = formNumber("cfg-tick-interval", 0.3);
+
+  if (!Number.isFinite(numRobots) || numRobots < 1) {
+    throw new Error("num_robots must be >= 1.");
+  }
+
+  if (!Number.isFinite(maxTicks) || maxTicks < 1) {
+    throw new Error("max_ticks must be >= 1.");
+  }
+
+  if (!Number.isFinite(tickInterval) || tickInterval <= 0) {
+    throw new Error("tick_interval must be > 0.");
+  }
+
+  const wantsTargetTasks =
+    stopMode === "workload" || stopMode === "target_tasks";
+
+  const targetTasks = wantsTargetTasks
+    ? formNumberOrNull("cfg-target-tasks")
+    : null;
+
+  if (wantsTargetTasks && (!Number.isFinite(targetTasks) || targetTasks < 1)) {
+    throw new Error("target_tasks must be >= 1 for workload stopping.");
+  }
+
+  const failureEnabled = formBool("cfg-failure-enabled");
+  const mtbfTicks = formNumber("cfg-mtbf-ticks", 0);
+  const mttrTicks = formNumber("cfg-mttr-ticks", 25);
+
+  if (failureEnabled && (!Number.isFinite(mtbfTicks) || mtbfTicks <= 0)) {
+    throw new Error("mtbf_ticks must be > 0 when failures are enabled.");
+  }
+
+  let demandRatePerTick = 0.0;
+  let demandTaskWeights = {};
+  let demandSegments = [];
+  let demandCsvPath = null;
+  let demandEvents = [];
+
+  if (demandMode === "uniform") {
+    demandRatePerTick = formNumber("cfg-demand-rate-per-tick", 0);
+
+    if (!Number.isFinite(demandRatePerTick) || demandRatePerTick < 0) {
+      throw new Error("demand_rate_per_tick must be >= 0.");
+    }
+
+    demandTaskWeights = validateNonNegativeNumberObject(
+      parseSetupJsonObject("cfg-demand-task-weights", {}),
+      "demand_task_weights"
+    );
+  }
+
+  if (demandMode === "rate_schedule") {
+    demandSegments = validateDemandSegments(
+      parseSetupJsonArray("cfg-demand-segments", [])
+    );
+
+    if (demandSegments.length === 0) {
+      throw new Error("rate_schedule requires at least one demand segment.");
+    }
+  }
+
+  if (demandMode === "csv_orders") {
+    demandCsvPath = validateRelativeTrustedPath(
+      safeString(formValue("cfg-demand-csv-file")),
+      "demand_csv_path"
+    );
+
+    if (!demandCsvPath) {
+      throw new Error(
+        "csv_orders requires demand_csv_path. Managed file selection/upload is not implemented yet."
+      );
+    }
+
+    demandEvents = validateDemandEvents(
+      parseSetupJsonArray("cfg-demand-events", [])
+    );
+  }
+
+  const layoutFile = validateRelativeTrustedPath(
+    safeString(formValue("cfg-layout-file")) || null,
+    "layout_file"
+  );
 
   return {
     display_name: safeString(formValue("cfg-display-name")),
     seed: formNumber("cfg-seed", 42),
-    num_robots: formNumber("cfg-num-robots", 6),
+    num_robots: numRobots,
     stop_mode: stopMode,
-    target_tasks:
-      stopMode === "workload" || stopMode === "target_tasks"
-        ? formNumberOrNull("cfg-target-tasks")
-        : null,
-    max_ticks: formNumber("cfg-max-ticks", 100000),
-    tick_interval: formNumber("cfg-tick-interval", 0.3),
+    target_tasks: targetTasks,
+    max_ticks: maxTicks,
+    tick_interval: tickInterval,
     fast_mode: formBool("cfg-fast-mode"),
     blocked_replan_seconds: formNumber("cfg-blocked-replan-seconds", 0.7),
     replan_cooldown_ticks: formNumber("cfg-replan-cooldown-ticks", 7),
@@ -29,11 +280,24 @@ function readExperimentConfig() {
     opportunistic_charge_threshold: formNumber("cfg-opportunistic-charge-threshold", 30),
     charger_capacity: formNumber("cfg-charger-capacity", 4),
     charge_duration_ticks: formNumber("cfg-charge-duration-ticks", 10),
-    failure_enabled: formBool("cfg-failure-enabled"),
-    mtbf_ticks: formNumber("cfg-mtbf-ticks", 0),
-    mttr_ticks: formNumber("cfg-mttr-ticks", 25)
+    failure_enabled: failureEnabled,
+    mtbf_ticks: mtbfTicks,
+    mttr_ticks: mttrTicks,
+
+    demand_mode: demandMode,
+    demand_rate_per_tick: demandRatePerTick,
+    demand_task_weights: demandTaskWeights,
+    demand_segments: demandSegments,
+    demand_csv_path: demandCsvPath,
+    demand_events: demandEvents,
+    layout_preset: layoutPreset,
+    layout_file: layoutFile
   };
 }
+
+// =====================================================================
+// Experiment lifecycle
+// =====================================================================
 
 async function startExperiment() {
   try {

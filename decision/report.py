@@ -254,7 +254,11 @@ def generate_report(study_dir: str | Path) -> Path:
 
     return report_path
 
-def generate_run_report(run_id: str, base_dir: str | None = None) -> Path:
+def generate_run_report(
+    run_id: str,
+    base_dir: str | None = None,
+    output_dir: str | Path | None = None,
+) -> Path:
     """Generate a Markdown engineering report for a single saved run.
 
     Reports are written to data/reports/, never inside data/runs/ —
@@ -348,7 +352,14 @@ def generate_run_report(run_id: str, base_dir: str | None = None) -> Path:
             "problems._"
         )
 
-    reports_dir = Path("data/reports")
+    if output_dir is None:
+        reports_dir = (
+            Path(base_dir).parent / "reports"
+            if base_dir is not None
+            else Path("data/reports")
+        )
+    else:
+        reports_dir = Path(output_dir)
     reports_dir.mkdir(parents=True, exist_ok=True)
     report_path = reports_dir / f"{run_id}_report.md"
     with open(report_path, "w", encoding="utf-8") as f:

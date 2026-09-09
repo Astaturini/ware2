@@ -143,23 +143,36 @@ def _reports_summary(data_dir: Path) -> dict[str, Any]:
     }
 
     root = data_dir / "reports"
-    if not root.exists():
-        return empty
-
     files = [
         path
         for path in root.glob("*.md")
         if _is_safe_id(path.stem)
-    ]
+    ] if root.exists() else []
+
+    studies_root = data_dir / "studies"
+    study_reports = [
+        path / "report.md"
+        for path in studies_root.iterdir()
+        if path.is_dir()
+        and _is_safe_id(path.name)
+        and (path / "report.md").is_file()
+    ] if studies_root.exists() else []
+    files.extend(study_reports)
 
     if not files:
         return empty
 
     latest = max(files, key=lambda path: path.stat().st_mtime)
 
+    latest_id = (
+        f"study_report_{latest.parent.name}"
+        if latest.name == "report.md" and latest.parent.parent == studies_root
+        else latest.stem
+    )
+
     return {
         "count": len(files),
-        "latest_id": latest.stem,
+        "latest_id": latest_id,
         "latest_generated_at": _mtime_iso(latest),
     }
 
@@ -416,6 +429,13 @@ def create_decision_blueprint(
         if not _is_safe_id(report_id):
             return None
 
+        if report_id.startswith("study_report_"):
+            study_id = report_id.removeprefix("study_report_")
+            if not _is_safe_id(study_id):
+                return None
+            path = data_dir / "studies" / study_id / "report.md"
+            return path if path.is_file() else None
+
         path = data_dir / "reports" / f"{report_id}.md"
         return path if path.is_file() else None
 
@@ -542,6 +562,26 @@ def create_decision_blueprint(
                     }
                 )
 
+        studies_root = data_dir / "studies"
+        if studies_root.exists():
+            for study_dir in studies_root.iterdir():
+                report_path = study_dir / "report.md"
+                if (
+                    study_dir.is_dir()
+                    and _is_safe_id(study_dir.name)
+                    and report_path.is_file()
+                ):
+                    reports.append(
+                        {
+                            "report_id": f"study_report_{study_dir.name}",
+                            "generated_at": _mtime_iso(report_path),
+                            "source_type": "study",
+                            "source_id": study_dir.name,
+                        }
+                    )
+
+        reports.sort(key=lambda report: report["generated_at"], reverse=True)
+
         return jsonify({"reports": _sanitize(reports)})
 
     @bp.get("/api/decision/reports/<report_id>")
@@ -556,11 +596,16 @@ def create_decision_blueprint(
         except Exception:
             markdown = ""
 
+        is_study_report = report_id.startswith("study_report_")
         payload = {
             "report_id": report_id,
             "generated_at": _mtime_iso(path),
-            "source_type": "run",
-            "source_id": report_id.removesuffix("_report"),
+            "source_type": "study" if is_study_report else "run",
+            "source_id": (
+                report_id.removeprefix("study_report_")
+                if is_study_report
+                else report_id.removesuffix("_report")
+            ),
             "markdown": markdown,
         }
 

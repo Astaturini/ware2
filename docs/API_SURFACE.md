@@ -10,13 +10,14 @@ If code and documentation disagree, the code is the source of truth, but this fi
 
 Project Name: `warehouse_simulator`
 
-Current Version: `v0.8.2`
+Current Version: `v0.8.3`
 
-Previous Documented Version: `v0.8.1`
+Previous Documented Version: `v0.8.2`
 
 Version Meaning:
 
 ```text
+v0.8.3 = v0.8.2 backend + Phase 3 run-linked actions + Setup v0.7.1 demand/layout fields + Phase 4 guided decision forms
 v0.8.2 = v0.8.1 backend + Decision Frontend / Decision Web API / Decision Job API / UI refactor
 ```
 
@@ -94,6 +95,66 @@ No decision math moved into the frontend.
 
 ---
 
+## Document Update Note for v0.8.3
+
+This revision preserves the v0.8.2 backend surface.
+
+The following old materials remain valid and must not be treated as removed:
+
+```text
+simulation core
+battery / charging / failure behavior
+traffic / conflict resolution behavior
+experiment lifecycle
+run storage format
+analysis API
+decision CLI
+decision backend modules
+Monte Carlo, sensitivity, optimizer, multi-objective, robustness schemas
+benchmark behavior
+Decision Web API
+Decision Job API
+Decision Center read-only artifact browsers
+job launcher and job polling
+```
+
+What changed in v0.8.3:
+
+```text
+Implemented Phase 3 run-linked actions.
+Implemented Setup support for v0.7.1 demand fields.
+Implemented Setup support for v0.7.1 layout fields.
+Implemented Phase 4 guided decision job forms.
+Added static/js/decision_forms.js.
+Updated the decision job modal to support guided mode and advanced JSON mode.
+Updated static/js/app.js to bind guided modal controls, run-linked action delegation, and Setup demand/layout conditional visibility.
+Updated static/js/experiments.js to read v0.7.1 demand/layout fields and render run-linked action buttons.
+Updated Results and Experiments views with run-linked decision actions.
+Guided forms now exist for:
+monte_carlo
+sensitivity
+report
+spatial
+optimizer
+multiobjective
+robustness
+study
+```
+
+No simulation core changes.
+
+No `ExperimentConfig` schema changes.
+
+No decision math moved into the frontend.
+
+No backend Flask route changes.
+
+No decision backend module changes.
+
+No stored run artifact format changes.
+
+---
+
 ## Where The Project Is Now
 
 v0.8.2 is a Decision Frontend and Job API layer built on top of the unchanged v0.8.1 Optimization and Robustness layer, the unchanged v0.8.0 Uncertainty and Risk Analysis layer, the unchanged v0.7.x Decision and Realistic Scenario layers, the unchanged v0.6.0 algorithm plugin layer, the unchanged v0.5.0 experimentation/recording/storage/analysis infrastructure, and the unchanged v0.4.0 battery/charging/failure simulation core.
@@ -149,6 +210,56 @@ templates/index.html became a Jinja shell with view partials
 static/style.css was split into static/css/*.css
 static/simulation.js was split into static/js/*.js
 ```
+
+v0.8.3 adds:
+
+Frontend Decision Workflow Completion:
+
+Setup support for v0.7.1 demand fields:
+
+```text
+demand_mode
+demand_rate_per_tick
+demand_task_weights
+demand_segments
+demand_csv_path
+demand_events
+```
+
+Setup support for v0.7.1 layout fields:
+
+```text
+layout_preset
+layout_file
+```
+
+Run-linked actions from Results and Experiments:
+
+```text
+View cost KPIs from a run
+View spatial bottlenecks from a run
+Generate report from a run
+Start Monte Carlo from a run
+Start sensitivity from a run
+Use run as optimizer baseline
+Use run as multi-objective baseline
+```
+
+Guided decision job forms:
+
+```text
+Guided mode by default for supported modules
+Advanced JSON editor preserved
+Inline validation
+Cost config template editors
+Common constraint editors
+Search-space builder for optimizer and multi-objective
+Objective builder for multi-objective
+Robustness candidate source selection
+Study factor builder
+```
+
+The v0.8.3 frontend completes the non-CLI decision job launching workflow that was introduced in v0.8.2.
 
 v0.8.1 adds:
 
@@ -334,6 +445,264 @@ v0.7.x and v0.8.x decision modules may execute new experiments through `Experime
 Derived decision artifacts are stored in their own directories under `data/`.
 
 v0.8.2 decision jobs may execute backend decision modules that internally create new runs, but they must not hijack the live experiment runner.
+
+---
+
+## Breaking Changes / Changes From v0.8.2 (v0.8.3)
+
+### Frontend Layer
+
+Added:
+
+```text
+static/js/decision_forms.js
+```
+
+Purpose:
+
+```text
+Guided decision job forms.
+Guided/advanced modal behavior.
+Inline job config validation.
+Client-side config builders for decision jobs.
+```
+
+Important guided modules:
+
+```text
+monte_carlo
+sensitivity
+report
+spatial
+optimizer
+multiobjective
+robustness
+study
+```
+
+Updated:
+
+```text
+static/js/app.js
+```
+
+Added bindings for:
+
+```text
+decision-job-use-guided
+decision-job-toggle-json
+guided module change behavior
+run-linked action delegation using `[data-run-action]`
+Setup demand/layout conditional visibility
+```
+
+Updated:
+
+```text
+static/js/experiments.js
+```
+
+Added Setup v0.7.1 field reading:
+
+```text
+demand_mode
+demand_rate_per_tick
+demand_task_weights
+demand_segments
+demand_csv_path
+demand_events
+layout_preset
+layout_file
+```
+
+Added Phase 3 support:
+
+```text
+Results decision action visibility
+Experiments row decision actions
+run-linked action buttons using data-run-action and data-run-id
+```
+
+Updated:
+
+```text
+static/js/decision.js
+```
+
+Added Phase 3 run-linked helpers:
+
+```text
+DEFAULT_EXAMPLE_COST_CONFIG
+ensureRunSelectValue
+uniqueSortedInts
+buildSensitivityFactorValues
+buildRunLinkedSearchSpace
+buildRunLinkedConfig
+fetchRunSummarySafe
+showRunActionError
+prepareDecisionRunSelect
+goToCostKpisForRun
+goToSpatialForRun
+openRunLinkedJobModal
+handleRunLinkedAction
+```
+
+Updated templates:
+
+```text
+templates/views/setup.html
+templates/views/results.html
+templates/views/experiments.html
+templates/modals/job_modal.html
+```
+
+### Setup Changes
+
+Setup now exposes v0.7.1 demand fields.
+
+Recommended DOM IDs:
+
+```text
+cfg-demand-mode
+cfg-demand-rate-per-tick
+cfg-demand-task-weights
+cfg-demand-segments
+cfg-demand-csv-file
+cfg-demand-events
+cfg-layout-preset
+cfg-layout-file
+```
+
+Conditional containers:
+
+```text
+demand-uniform-fields
+demand-rate-schedule-fields
+demand-csv-fields
+```
+
+`readExperimentConfig()` now includes these fields using backend snake_case keys.
+
+Demand mode behavior:
+
+```text
+legacy:
+no additional demand fields
+
+uniform:
+demand_rate_per_tick
+demand_task_weights
+
+rate_schedule:
+demand_segments
+
+csv_orders:
+demand_csv_path
+demand_events
+```
+
+Layout behavior:
+
+```text
+layout_preset is exposed.
+layout_file is exposed as an optional local trusted relative path input.
+```
+
+Important file policy:
+
+```text
+Demand CSV and layout file inputs are currently local trusted relative-path inputs.
+They are acceptable for local single-user development.
+For hosted deployments, they must be replaced by admin-managed dropdowns or validated uploads.
+```
+
+### Decision Job Modal Changes
+
+The decision job modal now supports guided mode.
+
+New modal IDs:
+
+```text
+decision-job-use-guided
+decision-job-guided
+decision-job-json-wrapper
+decision-job-toggle-json
+decision-job-guided-error
+```
+
+Guided behavior:
+
+```text
+When guided mode is enabled, the modal renders a module-specific guided form.
+When guided mode is disabled, the modal uses the raw JSON editor.
+When a Phase 3 run-linked action supplies a prefilled config object, the modal opens in advanced JSON mode.
+Guided forms do not attempt to reverse-parse arbitrary Phase 3 JSON back into guided controls.
+```
+
+### Run-Linked Action Changes
+
+Results now contains a decision action card:
+
+```text
+results-decision-actions-card
+```
+
+Run-linked actions use:
+
+```text
+data-run-action
+data-run-id
+```
+
+Supported `data-run-action` values:
+
+```text
+cost
+spatial
+report
+monte_carlo
+sensitivity
+optimizer
+multiobjective
+```
+
+Behavior:
+
+```text
+cost:
+opens Decision -> Cost KPIs and selects the run
+
+spatial:
+opens Decision -> Spatial and selects the run
+
+report:
+opens job modal with report config
+
+monte_carlo:
+opens job modal with Monte Carlo config prefilled from run
+
+sensitivity:
+opens job modal with sensitivity config prefilled from run
+
+optimizer:
+opens job modal with optimizer config prefilled from run
+
+multiobjective:
+opens job modal with multi-objective config prefilled from run
+```
+
+### v0.8.3 Non-Changes
+
+```text
+No simulation core changes.
+No `ExperimentConfig` schema changes.
+No decision backend module changes.
+No Flask decision API route changes.
+No decision job API route changes.
+No decision math moved to the frontend.
+No stored run artifact format changes.
+No changes to Monte Carlo, sensitivity, optimizer, multi-objective, or robustness backend schemas.
+```
 
 ---
 
@@ -604,6 +973,7 @@ static/
     ├── warehouse.js
     ├── experiments.js
     ├── decision.js
+    ├── decision_forms.js
     └── app.js
 ```
 
@@ -612,6 +982,10 @@ Important note:
 ```text
 The ECharts wrapper module is static/js/charts.js.
 If a local file was accidentally named chart.js, it must be renamed to charts.js or the script tag must be corrected.
+
+Important note:
+`static/js/decision_forms.js` must load after `static/js/decision.js` and before `static/js/app.js`.
+It overrides guided job modal behavior, including `openJobModal` and `submitJob`.
 ```
 
 Correct script load order:
@@ -623,6 +997,7 @@ Correct script load order:
 <script src="/static/js/warehouse.js"></script>
 <script src="/static/js/experiments.js"></script>
 <script src="/static/js/decision.js"></script>
+<script src="/static/js/decision_forms.js"></script>
 <script src="/static/js/app.js"></script>
 ```
 
@@ -654,17 +1029,17 @@ No changes to Monte Carlo, sensitivity, optimizer, multi-objective, or robustnes
 
 No decision math moved to the frontend.
 
-### v0.8.2 Known Limitations
+### v0.8.3 Known Limitations
 
 Frontend limitations:
 
 ```text
-Setup does not yet expose v0.7.1 demand fields.
-Setup does not yet expose v0.7.1 layout fields.
-Decision job forms are JSON-first, not fully guided.
-Run-linked actions are not implemented yet.
 Advanced decision charts are not implemented yet.
 Spatial heatmap overlay is not implemented yet.
+Demand CSV and layout file selection use local trusted relative-path text inputs, not managed dropdowns or uploads.
+Guided robustness supports multi-objective study IDs and explicit candidates JSON, but not direct optimizer-summary import.
+Guided forms do not parse arbitrary Phase 3 prefilled JSON back into guided controls; Phase 3 prefills open in Advanced JSON mode.
+Study guided form supports simple factor entry, but does not yet provide factorial-size estimation or advanced DoE validation.
 ```
 
 Job system limitations:
@@ -5975,7 +6350,9 @@ GET /api/decision/templates/<module>
 Current frontend behavior:
 
 ```text
-Job modal uses client-side JSON templates.
+Job modal supports guided forms for all primary decision modules.
+Client-side JSON templates remain available.
+When guided mode is disabled, or when Load JSON template is clicked, the JSON editor is populated with a module template.
 ```
 
 Supported client-side template modules:
@@ -6009,8 +6386,11 @@ POST /api/decision/files/upload
 Current file policy:
 
 ```text
-No arbitrary filesystem paths are accepted from the UI.
-Demand CSV and layout file UI controls are not implemented yet.
+No arbitrary filesystem paths should be accepted from untrusted users.
+Demand CSV and layout file Setup fields are implemented as local trusted relative-path text inputs.
+These are acceptable for local single-user development.
+For hosted deployments, they must be replaced by admin-managed dropdowns or validated uploads.
+Managed file selection/upload endpoints remain not implemented.
 Cost config is edited inline as JSON.
 ```
 
@@ -6985,6 +7365,9 @@ loadExperiments
 generateVisualization
 generateAnalysis
 generateComparison
+updateResultsDecisionActionsVisibility
+createRunActionButton
+createRunLinkedActionsGroup
 ```
 
 `readExperimentConfig()` includes:
@@ -7008,7 +7391,7 @@ charging fields
 failure fields
 ```
 
-Current missing Setup fields:
+Implemented Setup v0.7.1 fields:
 
 ```text
 demand_mode
@@ -7021,7 +7404,27 @@ layout_preset
 layout_file
 ```
 
-These v0.7.1 Setup fields are not implemented in the v0.8.2 frontend yet.
+`readExperimentConfig()` includes these fields using backend snake_case keys.
+
+Setup validation helpers may include:
+
+```text
+parseSetupJson
+parseSetupJsonObject
+parseSetupJsonArray
+validateNonNegativeNumberObject
+validateRelativeTrustedPath
+validateDemandSegments
+validateDemandEvents
+```
+
+Phase 3 helpers may include:
+
+```text
+updateResultsDecisionActionsVisibility
+createRunActionButton
+createRunLinkedActionsGroup
+```
 
 ### `static/js/decision.js`
 
@@ -7082,6 +7485,132 @@ openJobModal
 closeJobModal
 loadJobTemplate
 submitJob
+
+ensureRunSelectValue
+uniqueSortedInts
+buildSensitivityFactorValues
+buildRunLinkedSearchSpace
+buildRunLinkedConfig
+fetchRunSummarySafe
+showRunActionError
+prepareDecisionRunSelect
+goToCostKpisForRun
+goToSpatialForRun
+openRunLinkedJobModal
+handleRunLinkedAction
+```
+
+Phase 3 run-linked behavior:
+
+`handleRunLinkedAction` handles buttons using `data-run-action`.
+Cost and spatial actions navigate to existing read-only Decision subviews.
+Report, Monte Carlo, sensitivity, optimizer, and multi-objective actions open the decision job modal with a prefilled JSON config.
+Phase 3 run-linked prefill remains JSON-based.
+Phase 4 guided forms do not reverse-parse arbitrary prefilled JSON.
+
+### `static/js/decision_forms.js`, NEW in v0.8.3
+
+Purpose:
+
+```text
+Guided decision job forms.
+Guided/advanced modal state.
+Client-side validation for guided decision job configs.
+Config builders for supported decision modules.
+```
+
+Important modal helpers:
+
+```text
+isGuidedJobFormEnabled
+hasGuidedJobForm
+setJobGuidedError
+clearJobGuidedError
+updateJobGuidedVisibility
+toggleJobGuidedJson
+onDecisionJobModuleChange
+```
+
+Important validation helpers:
+
+```text
+populateJobRunSelect
+parseGuidedJson
+parseGuidedJsonObject
+parseGuidedJsonArray
+guidedRequiredInteger
+guidedOptionalInteger
+guidedRequiredNumber
+guidedOptionalNumber
+getCostConfigTemplateObject
+```
+
+Important shared decision-form helpers:
+
+```text
+supportedObjectiveMetrics
+defaultDirectionForMetric
+metricOptionsHtml
+parseGuidedCostConfig
+buildGuidedCommonConstraints
+renderGuidedSearchSpaceSection
+getGuidedCheckedChoices
+buildGuidedSearchSpace
+```
+
+Important factor helpers:
+
+```text
+commonFactorOptions
+parseGuidedFactorValues
+addGuidedFactorRow
+buildGuidedFactors
+```
+
+Important guided form render functions:
+
+```text
+renderGuidedJobForm
+renderMonteCarloGuidedForm
+renderSensitivityGuidedForm
+renderReportGuidedForm
+renderSpatialGuidedForm
+renderOptimizerGuidedForm
+renderMultiobjectiveGuidedForm
+renderRobustnessGuidedForm
+renderStudyGuidedForm
+```
+
+Important guided form config builders:
+
+```text
+buildGuidedJobConfig
+buildMonteCarloGuidedConfig
+buildSensitivityGuidedConfig
+buildReportGuidedConfig
+buildSpatialGuidedConfig
+buildOptimizerGuidedConfig
+buildMultiobjectiveGuidedConfig
+buildRobustnessGuidedConfig
+buildStudyGuidedConfig
+```
+
+Overrides:
+
+```text
+openJobModal
+submitJob
+```
+
+Important behavior:
+
+```text
+Guided mode is enabled by default when opening a new job.
+Advanced JSON mode remains available.
+Phase 3 prefilled job configs open in Advanced JSON mode.
+Guided forms build snake_case backend configs.
+Guided forms do not compute decision math.
+Backend validation remains authoritative.
 ```
 
 ### `static/js/app.js`
@@ -7098,9 +7627,37 @@ bind experiment controls
 bind visualization/analysis/compare controls
 bind decision subview buttons
 bind spatial/cost controls
-bind job modal controls
-initialize setup conditional visibility
+bind Phase 3 run-linked action delegation
+bind job modal guided controls
+initialize Setup stop-mode visibility
+initialize Setup demand/layout visibility
 start polling
+```
+
+Phase 3 bindings:
+
+```text
+document-level click delegation for `[data-run-action]`
+`handleRunLinkedAction(button)`
+```
+
+Phase 4 bindings:
+
+```text
+decision-job-module change routing
+decision-job-use-guided change handling
+decision-job-toggle-json click handling
+decision-job-template-btn JSON template loading
+decision-job-submit-btn job submission
+decision-job-close-btn modal closing
+```
+
+Setup bindings:
+
+```text
+cfg-stop-mode conditional target tasks visibility
+cfg-demand-mode conditional demand field visibility
+cfg-layout-preset layout visibility hook
 ```
 
 ---
@@ -7185,6 +7742,54 @@ target-tasks-field
 
 It is shown or hidden depending on stop mode.
 
+Setup v0.7.1 demand IDs:
+
+```text
+cfg-demand-mode
+cfg-demand-rate-per-tick
+cfg-demand-task-weights
+cfg-demand-segments
+cfg-demand-csv-file
+cfg-demand-events
+cfg-layout-preset
+cfg-layout-file
+```
+
+Setup conditional containers:
+
+```text
+demand-uniform-fields
+demand-rate-schedule-fields
+demand-csv-fields
+```
+
+### Results / Experiments run-linked IDs
+
+Results decision action IDs:
+
+```text
+results-decision-actions-card
+```
+
+Run-linked action attributes:
+
+```text
+data-run-action
+data-run-id
+```
+
+Supported `data-run-action` values:
+
+```text
+cost
+spatial
+report
+monte_carlo
+sensitivity
+optimizer
+multiobjective
+```
+
 ### Decision subview containers
 
 ```text
@@ -7247,6 +7852,101 @@ decision-job-template-btn
 decision-job-submit-btn
 decision-job-close-btn
 decision-job-error
+decision-job-use-guided
+decision-job-guided
+decision-job-json-wrapper
+decision-job-toggle-json
+decision-job-guided-error
+```
+
+Guided form dynamic ID prefixes:
+
+```text
+mc-source-type
+mc-run-id
+mc-base-config
+mc-n-runs
+mc-base-seed
+mc-sla-target-ticks
+mc-cost-config
+sens-source-type
+sens-run-id
+sens-base-config
+sens-reps
+sens-base-seed
+sens-sla-target-ticks
+sens-cost-config
+sens-factor-rows
+sens-add-factor-btn
+sens-factor-options
+report-source-type
+report-run-id
+report-study-id
+spatial-job-run-id
+spatial-job-top
+spatial-job-by
+opt-source-type
+opt-run-id
+opt-base-config
+opt-objective
+opt-direction
+opt-n-trials
+opt-reps
+opt-base-seed
+opt-sla-target-ticks
+opt-cost-config
+opt-constraint-p95-max
+opt-constraint-sla-min
+opt-ss-num-robots-enabled
+opt-ss-num-robots-low
+opt-ss-num-robots-high
+opt-ss-charger-capacity-enabled
+opt-ss-charger-capacity-low
+opt-ss-charger-capacity-high
+opt-ss-conflict-manager-enabled
+opt-ss-scheduler-enabled
+mo-source-type
+mo-run-id
+mo-base-config
+mo-n-trials
+mo-reps
+mo-base-seed
+mo-population-size
+mo-sla-target-ticks
+mo-cost-config
+mo-objective-rows
+mo-add-objective-btn
+mo-constraint-p95-max
+mo-constraint-sla-min
+mo-ss-num-robots-enabled
+mo-ss-num-robots-low
+mo-ss-num-robots-high
+mo-ss-charger-capacity-enabled
+mo-ss-charger-capacity-low
+mo-ss-charger-capacity-high
+mo-ss-conflict-manager-enabled
+mo-ss-scheduler-enabled
+rob-source-type
+rob-from-mo-id
+rob-mo-options
+rob-max-candidates
+rob-candidates-json
+rob-reps
+rob-reps-warning
+rob-base-seed
+rob-objective
+rob-direction
+rob-min-pass-probability
+rob-sla-target-ticks
+rob-cost-config
+rob-constraint-p95-max
+rob-constraint-sla-min
+study-source-type
+study-run-id
+study-base-config
+study-factor-rows
+study-add-factor-btn
+study-factor-options
 ```
 
 ### Jobs table dynamic data attributes
@@ -7317,6 +8017,16 @@ New modal classes:
 .modal-close
 .modal-body
 .modal-footer
+```
+
+New guided form classes:
+
+```text
+.decision-guided-form
+.decision-guided-subsection
+.decision-guided-row
+.decision-guided-checkbox-grid
+.decision-guided-warning
 ```
 
 ---
@@ -7407,7 +8117,7 @@ Cancel queued job
 Current limitations:
 
 ```text
-Job forms are JSON-template based, not fully guided forms.
+Guided forms are available for supported modules; the advanced JSON editor remains available.
 Running jobs cannot be cancelled yet.
 Job progress is status-only; progress field is currently null.
 Job history is in-memory only.
@@ -7419,39 +8129,74 @@ Template endpoints are not implemented; templates are client-side.
 Status:
 
 ```text
-Next
+Complete
 ```
 
-Planned actions:
+Delivered:
 
 ```text
-View cost KPIs from run
-View spatial bottlenecks from run
-Generate run report from run
-Start Monte Carlo from run
-Start sensitivity from run
-Use run as optimizer baseline
-Use run as multi-objective baseline
+Results decision action card.
+Experiments row decision actions.
+Run-linked cost KPI access.
+Run-linked spatial bottleneck access.
+Run-linked report job prefill.
+Run-linked Monte Carlo job prefill.
+Run-linked sensitivity job prefill.
+Run-linked optimizer baseline prefill.
+Run-linked multi-objective baseline prefill.
 ```
 
-These actions should prefill decision job forms using the selected run id.
+Implementation notes:
+
+```text
+Cost and spatial actions navigate to existing read-only Decision subviews.
+Job actions open the decision job modal with prefilled JSON.
+Phase 3 prefills are JSON-based.
+After Phase 4, Phase 3 prefilled configs open in Advanced JSON mode.
+```
 
 ### Phase 4 — Guided forms
 
 Status:
 
 ```text
-Not started
+Complete
 ```
 
-Planned:
+Delivered:
 
 ```text
-Replace raw JSON-only forms with guided inputs.
-Keep advanced JSON editor available.
-Add inline validation.
-Add cost config editor.
-Add constraint editor for common constraints.
+Guided/advanced mode in the decision job modal.
+Guided forms for:
+monte_carlo
+sensitivity
+report
+spatial
+optimizer
+multiobjective
+robustness
+study
+
+Advanced JSON editor preserved.
+Client-side JSON template loading preserved.
+Inline validation for guided forms.
+Cost config template editors.
+Common constraint editors.
+Search-space builder for optimizer and multi-objective.
+Objective builder for multi-objective.
+Robustness candidate source selection.
+Study factor builder.
+```
+
+Implementation notes:
+
+```text
+Guided mode is enabled by default for new jobs.
+Advanced JSON mode remains available.
+Phase 3 prefilled configs open in Advanced JSON mode.
+Guided forms build snake_case backend configs.
+Guided forms do not compute decision math.
+Backend validation remains authoritative.
 ```
 
 ### Phase 5 — Advanced visualization and workflow integration
@@ -7474,6 +8219,217 @@ Guided pipeline from baseline to robustness
 ```
 
 ---
+
+## Setup v0.7.1 Demand and Layout Fields, NEW in v0.8.3
+
+Setup now supports the v0.7.1 experiment fields required for realistic non-CLI scenarios.
+
+Demand fields:
+
+```text
+demand_mode
+demand_rate_per_tick
+demand_task_weights
+demand_segments
+demand_csv_path
+demand_events
+```
+
+Layout fields:
+
+```text
+layout_preset
+layout_file
+```
+
+Recommended DOM IDs:
+
+```text
+cfg-demand-mode
+cfg-demand-rate-per-tick
+cfg-demand-task-weights
+cfg-demand-segments
+cfg-demand-csv-file
+cfg-demand-events
+cfg-layout-preset
+cfg-layout-file
+```
+
+Conditional demand behavior:
+
+```text
+If demand_mode = legacy: show no additional demand fields.
+If demand_mode = uniform: show demand_rate_per_tick and demand_task_weights.
+If demand_mode = rate_schedule: show demand_segments.
+If demand_mode = csv_orders: show demand_csv_path and demand_events.
+```
+
+`readExperimentConfig()` must send these fields using backend snake_case keys.
+
+Demand validation behavior:
+
+```text
+demand_rate_per_tick must be a finite number >= 0 when uniform demand is used.
+demand_task_weights must be a JSON object with finite non-negative numeric values.
+demand_segments must be a JSON array of segment objects.
+Each demand segment should include valid start_tick, end_tick, and rate values.
+demand_events must be a JSON array of event objects when provided.
+demand_csv_path must be a relative trusted path when provided.
+```
+
+Layout behavior:
+
+```text
+layout_preset supports default, high_density, and one_way_aisles.
+layout_file is optional.
+```
+
+Important file policy:
+
+```text
+Demand CSV and layout file inputs are currently implemented as local trusted relative-path text inputs.
+This is acceptable for local single-user development.
+For hosted deployments, these inputs must be replaced by admin-managed dropdowns or validated uploads.
+Arbitrary server filesystem paths must not be accepted from untrusted users.
+Path traversal patterns should be rejected.
+```
+
+## Run-Linked Actions, NEW in v0.8.3
+
+Run-linked actions allow a user to start decision workflows from an existing run.
+
+Entry points:
+
+```text
+Results view
+Experiments list
+```
+
+Results DOM contract:
+
+```text
+results-decision-actions-card
+```
+
+Run-linked action attributes:
+
+```text
+data-run-action
+data-run-id
+```
+
+Supported `data-run-action` values:
+
+```text
+cost
+spatial
+report
+monte_carlo
+sensitivity
+optimizer
+multiobjective
+```
+
+Behavior:
+
+```text
+cost: navigate to Decision -> Cost KPIs and select the run.
+spatial: navigate to Decision -> Spatial and select the run.
+report: open the decision job modal and prefill report config with the selected run id.
+monte_carlo: open the modal and prefill Monte Carlo config using the selected run id.
+sensitivity: open the modal and prefill sensitivity config using the selected run id.
+optimizer: open the modal and prefill single-objective optimizer config using the selected run as baseline.
+multiobjective: open the modal and prefill multi-objective config using the selected run as baseline.
+```
+
+Phase 3 configs are JSON-based. After Phase 4, Phase 3 prefilled configs open in Advanced JSON mode. Guided forms do not attempt to reverse-parse arbitrary Phase 3 JSON.
+
+## Guided Decision Job Forms, NEW in v0.8.3
+
+The decision job modal supports guided forms for non-CLI users and an advanced JSON editor for advanced users.
+
+Supported guided modules:
+
+```text
+monte_carlo
+sensitivity
+report
+spatial
+optimizer
+multiobjective
+robustness
+study
+```
+
+Modal behavior:
+
+```text
+When guided mode is enabled, render the module-specific guided form and hide the raw JSON editor.
+When guided mode is disabled, hide the guided form and show the raw JSON editor.
+When a Phase 3 run-linked action supplies a prefilled config object, open the modal in Advanced JSON mode.
+```
+
+Guided forms cover:
+
+```text
+Monte Carlo source selection, runs, seed, SLA target, and cost config.
+Sensitivity source selection, replications, seed, SLA target, cost config, and factor rows.
+Report run/study source selection.
+Spatial run, top-cell count, and sort mode.
+Optimizer objective, direction, trials, replications, cost config, common constraints, and search space.
+Multi-objective trials, replications, population size, objectives, constraints, cost config, and search space.
+Robustness candidate source, candidate limits, replications, objective, constraints, and cost config.
+Study source and factor rows.
+```
+
+Monte Carlo validation:
+
+```text
+source run or base config required
+n_runs >= 1
+cost config must be a valid JSON object if provided
+```
+
+Sensitivity validation:
+
+```text
+source run or base config required
+reps >= 1
+at least one factor required
+each factor requires at least one value
+```
+
+Report validation requires a run or study id. Spatial validation requires a run, `top >= 1`, and `sort by` equal to `blocked_ticks` or `blocked_events`.
+
+Optimizer validation requires a source, supported objective, direction equal to `minimize` or `maximize`, `n_trials >= 1`, `reps >= 1`, a non-empty search space, and a cost config when the objective is `cost_per_task`.
+
+Multi-objective validation requires at least two supported objectives, valid directions, a non-empty search space, and a cost config if any objective is `cost_per_task`.
+
+Robustness validation requires a candidate source, `reps >= 1`, `min_pass_probability` between 0 and 1, and a cost config when the objective is `cost_per_task`. Explicit candidates require `label` and `overrides`.
+
+Study validation requires a source, at least one factor, and at least one value per factor.
+
+Supported objective metrics:
+
+```text
+cost_per_task
+p95_cycle_time
+average_cycle_time
+average_throughput
+tasks_completed
+sla_compliance_rate
+total_blocked_ticks
+```
+
+A robustness warning remains visible when reps are below 20, and a study warning remains visible for large factorial designs.
+
+Important global rule:
+
+```text
+Guided forms only build request JSON.
+They do not compute decision math.
+Backend validation remains authoritative.
+```
 
 ## Frontend Behavior Rules
 
@@ -7823,7 +8779,8 @@ The recommended decision workflow is:
 10. Generate engineering reports from the final verified configuration.
 ```
 
-The v0.8.2 frontend supports this workflow through the Decision Center and Job Launcher, but guided forms and run-linked actions are still pending.
+The v0.8.3 frontend supports this workflow through the Decision Center, Job Launcher, run-linked actions, and guided decision forms.
+Advanced decision charts, spatial heatmap overlay, and managed file selection remain pending.
 
 ---
 
@@ -7919,17 +8876,30 @@ Robustness-aware optimizer that directly uses constraint_pass_probability in the
 ```text
 Persistent job history.
 Job progress callbacks.
+Saved cost configs.
+```
+
+### Completed in v0.8.3
+
+```text
 Run-linked actions from Results and Experiments.
 Guided decision job forms.
+Setup v0.7.1 demand and layout fields.
+```
+
+### Remaining v0.8.3+ extension points
+
+```text
+Managed demand CSV selection/upload.
+Managed layout file selection/upload.
 Saved cost configs.
-Demand CSV selection/upload.
-Layout preset/file selection.
-Template API endpoints.
 Decision artifact comparison views.
 Pareto scatter charts.
 Tornado charts.
 Monte Carlo histograms.
 Spatial heatmap overlay.
+Robustness guided import from optimizer summary.
+Guided forms that parse existing JSON back into guided controls.
 ```
 
 ---

@@ -1,34 +1,57 @@
 <div id="decision-job-modal" class="modal" hidden>
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Launch Decision Job</h3>
-            <button id="decision-job-close-btn" class="modal-close">&times;</button>
-        </div>
-        <div class="modal-body">
-            <label>
-                Module
-                <select id="decision-job-module">
-                    <option value="monte_carlo">Monte Carlo</option>
-                    <option value="sensitivity">Sensitivity</option>
-                    <option value="optimizer">Optimizer</option>
-                    <option value="multiobjective">Multi-Objective</option>
-                    <option value="robustness">Robustness</option>
-                    <option value="study">Study</option>
-                    <option value="report">Report</option>
-                    <option value="spatial">Spatial</option>
-                </select>
-            </label>
+  <div class="modal-content">
 
-            <label>
-                Config JSON
-                <textarea id="decision-job-config-editor" rows="15" spellcheck="false"></textarea>
-            </label>
-
-            <div id="decision-job-error" class="decision-status error" hidden></div>
-        </div>
-        <div class="modal-footer">
-            <button id="decision-job-template-btn">Load Template</button>
-            <button id="decision-job-submit-btn">Submit Job</button>
-        </div>
+    <div class="modal-header">
+      <h3>Launch Decision Job</h3>
+      <button id="decision-job-close-btn" class="modal-close" type="button">×</button>
     </div>
+
+    <div class="modal-body">
+
+      <label class="field">
+        Module
+        <select id="decision-job-module">
+          <option value="monte_carlo" selected>Monte Carlo</option>
+          <option value="sensitivity">Sensitivity</option>
+          <option value="optimizer">Optimizer</option>
+          <option value="multiobjective">Multi-Objective</option>
+          <option value="robustness">Robustness</option>
+          <option value="study">Study</option>
+          <option value="report">Report</option>
+          <option value="spatial">Spatial</option>
+        </select>
+      </label>
+
+      <div class="decision-toolbar">
+        <label>
+          <input id="decision-job-use-guided" type="checkbox" checked>
+          Guided form
+        </label>
+
+        <button id="decision-job-toggle-json" type="button">
+          Toggle JSON editor
+        </button>
+
+        <button id="decision-job-template-btn" type="button">
+          Load JSON template
+        </button>
+      </div>
+
+      <div id="decision-job-guided" class="decision-guided-form"></div>
+
+      <div id="decision-job-json-wrapper" class="field" hidden>
+        Config JSON
+        <textarea id="decision-job-config-editor" rows="16"></textarea>
+      </div>
+
+      <div id="decision-job-guided-error" class="decision-status error" hidden></div>
+      <div id="decision-job-error" class="decision-status error" hidden></div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button id="decision-job-submit-btn" type="button">Submit Job</button>
+    </div>
+
+  </div>
 </div>

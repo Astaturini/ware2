@@ -165,11 +165,40 @@ document.addEventListener("click", async event => {
 // =====================================================================
 
 on("decision-job-module", "change", event => {
-  loadJobTemplate(event.target.value);
+  if (typeof onDecisionJobModuleChange === "function") {
+    onDecisionJobModuleChange(event);
+  } else {
+    loadJobTemplate(event.target.value);
+  }
+});
+
+on("decision-job-use-guided", "change", () => {
+  if (typeof updateJobGuidedVisibility === "function") {
+    updateJobGuidedVisibility();
+  }
+});
+
+on("decision-job-toggle-json", "click", () => {
+  if (typeof toggleJobGuidedJson === "function") {
+    toggleJobGuidedJson();
+  }
 });
 
 on("decision-job-template-btn", "click", () => {
-  loadJobTemplate(document.getElementById("decision-job-module").value);
+  const moduleEl = document.getElementById("decision-job-module");
+  const guidedCheckbox = document.getElementById("decision-job-use-guided");
+
+  const module = moduleEl ? moduleEl.value : "monte_carlo";
+
+  if (guidedCheckbox) {
+    guidedCheckbox.checked = false;
+  }
+
+  if (typeof updateJobGuidedVisibility === "function") {
+    updateJobGuidedVisibility();
+  }
+
+  loadJobTemplate(module);
 });
 
 on("decision-job-submit-btn", "click", submitJob);
@@ -179,24 +208,72 @@ on("decision-job-close-btn", "click", closeJobModal);
 // Setup conditional visibility
 // =====================================================================
 
-const stopModeSelect = document.getElementById("cfg-stop-mode");
-const targetTasksField = document.getElementById("target-tasks-field");
+function setSetupFieldVisible(id, visible) {
+  const el = document.getElementById(id);
+  if (!el) return;
 
-function updateSetupVisibility() {
+  el.style.display = visible ? "block" : "none";
+}
+
+function updateStopModeVisibility() {
+  const stopModeSelect = document.getElementById("cfg-stop-mode");
+  const targetTasksField = document.getElementById("target-tasks-field");
+
   if (!stopModeSelect || !targetTasksField) return;
 
   const mode = stopModeSelect.value;
 
   targetTasksField.style.display =
     mode === "workload" || mode === "target_tasks"
-      ? "flex"
+      ? "block"
       : "none";
 }
 
+function updateDemandLayoutVisibility() {
+  const demandModeSelect = document.getElementById("cfg-demand-mode");
+
+  const demandMode = demandModeSelect
+    ? demandModeSelect.value
+    : "legacy";
+
+  setSetupFieldVisible(
+    "demand-uniform-fields",
+    demandMode === "uniform"
+  );
+
+  setSetupFieldVisible(
+    "demand-rate-schedule-fields",
+    demandMode === "rate_schedule"
+  );
+
+  setSetupFieldVisible(
+    "demand-csv-fields",
+    demandMode === "csv_orders"
+  );
+}
+
+function updateSetupVisibility() {
+  updateStopModeVisibility();
+  updateDemandLayoutVisibility();
+}
+
+const stopModeSelect = document.getElementById("cfg-stop-mode");
+const demandModeSelect = document.getElementById("cfg-demand-mode");
+const layoutPresetSelect = document.getElementById("cfg-layout-preset");
+
 if (stopModeSelect) {
   stopModeSelect.addEventListener("change", updateSetupVisibility);
-  updateSetupVisibility();
 }
+
+if (demandModeSelect) {
+  demandModeSelect.addEventListener("change", updateDemandLayoutVisibility);
+}
+
+if (layoutPresetSelect) {
+  layoutPresetSelect.addEventListener("change", updateDemandLayoutVisibility);
+}
+
+updateSetupVisibility();
 
 // =====================================================================
 // Start polling

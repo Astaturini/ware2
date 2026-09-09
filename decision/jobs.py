@@ -1406,9 +1406,13 @@ class DecisionJobManager:
 
             from decision.report import generate_run_report
 
-            generate_run_report(run_id, base_dir=str(self.runs_dir))
+            generate_run_report(
+                run_id,
+                base_dir=str(self.runs_dir),
+                output_dir=self.data_dir / "reports",
+            )
 
-            return "report", run_id
+            return "report", f"{run_id}_report"
 
         if study_id not in (None, ""):
             study_id = str(study_id)
@@ -1425,7 +1429,7 @@ class DecisionJobManager:
 
             generate_report(study_dir)
 
-            return "report", study_id
+            return "report", f"study_report_{study_id}"
 
         raise DecisionJobError(
             "Report job config must include either run_id or study_id."
