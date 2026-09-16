@@ -19,6 +19,7 @@ from analysis.loader import DEFAULT_RUNS_DIR, load_run
 from experiment.config import ExperimentConfig
 
 from decision.cost import CostConfig
+from decision.execution import validate_execution_options
 from decision.optimizer import SearchSpaceSpec, suggest_param
 from decision.sensitivity import (
     _execute_trial,
@@ -65,6 +66,8 @@ class MultiObjectiveConfig:
     output_dir: str = "data/multiobjective"
     runs_base_dir: str = DEFAULT_RUNS_DIR
     timeout: float | None = None
+    max_workers: int = 1
+    trial_artifact_mode: str = "full"
 
     def __post_init__(self) -> None:
         if self.n_trials < 1:
@@ -77,6 +80,7 @@ class MultiObjectiveConfig:
             raise ValueError("search_space is required")
         if not self.objectives:
             raise ValueError("objectives is required")
+        validate_execution_options(self.max_workers, self.trial_artifact_mode)
 
         for objective in self.objectives:
             if objective.metric not in _ALLOWED_METRICS:

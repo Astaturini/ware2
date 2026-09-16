@@ -17,6 +17,7 @@ from analysis.loader import DEFAULT_RUNS_DIR, load_run
 from experiment.config import ExperimentConfig
 
 from decision.cost import CostConfig
+from decision.execution import validate_execution_options
 from decision.sensitivity import (
     _execute_trial,
     extract_sensitivity_metrics,
@@ -51,6 +52,8 @@ class OptimizerConfig:
     output_dir: str = "data/optimizations"
     runs_base_dir: str = DEFAULT_RUNS_DIR
     timeout: float | None = None
+    max_workers: int = 1
+    trial_artifact_mode: str = "full"
 
     def __post_init__(self) -> None:
         if self.n_trials < 1:
@@ -63,6 +66,7 @@ class OptimizerConfig:
             raise ValueError("search_space is required")
         if self.direction not in {"minimize", "maximize"}:
             raise ValueError("direction must be minimize or maximize")
+        validate_execution_options(self.max_workers, self.trial_artifact_mode)
         
         allowed_objectives = {
             "cost_per_task", 

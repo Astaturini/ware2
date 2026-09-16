@@ -446,6 +446,19 @@ Derived decision artifacts are stored in their own directories under `data/`.
 
 v0.8.2 decision jobs may execute backend decision modules that internally create new runs, but they must not hijack the live experiment runner.
 
+Decision trial execution options:
+
+```text
+max_workers: integer, 1 through 4, default 1
+trial_artifact_mode: "full" or "metrics_only", default "full"
+```
+
+Monte Carlo supports both modes. `full` preserves normal
+`data/runs/<run_id>/` artifacts. `metrics_only` executes trials in memory,
+can use spawn-based process workers, and writes only Monte Carlo decision
+artifacts; its result rows use `run_id: null`. Such trials cannot be used for
+spatial analysis or single-run reports.
+
 ---
 
 ## Breaking Changes / Changes From v0.8.2 (v0.8.3)
@@ -696,13 +709,36 @@ opens job modal with multi-objective config prefilled from run
 ```text
 No simulation core changes.
 No `ExperimentConfig` schema changes.
-No decision backend module changes.
-No Flask decision API route changes.
+No decision math changes.
 No decision job API route changes.
 No decision math moved to the frontend.
 No stored run artifact format changes.
 No changes to Monte Carlo, sensitivity, optimizer, multi-objective, or robustness backend schemas.
 ```
+
+## Phase 5 Decision Charts
+
+Dedicated chart payload routes avoid sending full trial artifacts to the browser:
+
+```text
+GET /api/decision/monte-carlo/<mc_id>/charts/histograms
+GET /api/decision/sensitivity/<study_id>/tornado
+GET /api/decision/optimizations/<opt_id>/charts/objective
+GET /api/decision/multiobjective/<study_id>/charts/pareto
+GET /api/decision/robustness/<robust_id>/charts/pass-probability
+```
+
+Chart route behavior:
+
+```text
+Monte Carlo validates metrics and clamps bins to 5..100; bins and counts are computed by the backend.
+Sensitivity tornado rows are sorted by absolute delta and include the OAT interaction warning.
+Optimizer objective payloads include feasible flags and a best trial number only when a feasible best trial exists.
+Multi-objective payloads select the first two objectives by default and include backend Pareto membership.
+Robustness payloads include threshold, pass status, recommendation state, and low-replication warnings.
+```
+
+Chart wrappers live in `static/js/charts.js`; Decision detail views consume these payloads for the five Phase 5 charts.
 
 ---
 
@@ -742,6 +778,7 @@ GET /api/decision/studies/<study_id>/results
 
 GET /api/decision/reports
 GET /api/decision/reports/<report_id>
+GET /api/decision/reports/<report_id>/download.pdf
 
 GET /api/decision/monte-carlo
 GET /api/decision/monte-carlo/<mc_id>
@@ -764,6 +801,10 @@ GET /api/decision/multiobjective/<study_id>/pareto
 GET /api/decision/robustness
 GET /api/decision/robustness/<robust_id>
 GET /api/decision/robustness/<robust_id>/results
+
+GET /api/decision/templates/<module>
+GET /api/decision/files
+POST /api/decision/files
 
 GET /api/runs/<run_id>/cost-kpis
 GET /api/runs/<run_id>/spatial
@@ -846,17 +887,31 @@ Current cancellation policy:
 
 ```text
 queued jobs can be cancelled
-running jobs cannot be cancelled yet
+running jobs accept cooperative cancellation requests and finish as cancelled when the module returns
 finished/failed/cancelled jobs cannot be cancelled
 ```
 
 Current persistence policy:
 
 ```text
-job state is in-memory only
-job list is lost on Flask restart
+job metadata is persisted in data/decision_jobs.json
+queued/running jobs recovered after Flask restart are marked failed with an interruption message
 generated artifacts remain on disk
 ```
+
+Job progress is exposed as:
+
+```json
+{"percent": 5, "message": "Validating and preparing job."}
+```
+
+Decision reports can be downloaded as PDF. The PDF contains the Markdown report plus a generated KPI visualization when the source study or run has numeric result data:
+
+```text
+GET /api/decision/reports/<report_id>/download.pdf
+```
+
+The template endpoint returns an Advanced JSON starter config for each supported job module. The file endpoints provide a local data/uploads listing and multipart upload for trusted local development workflows.
 
 ### Flask Layer
 

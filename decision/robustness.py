@@ -16,6 +16,7 @@ from analysis.loader import DEFAULT_RUNS_DIR, load_run
 from experiment.config import ExperimentConfig
 
 from decision.cost import CostConfig
+from decision.execution import validate_execution_options
 from decision.sensitivity import (
     _execute_trial,
     extract_sensitivity_metrics,
@@ -60,6 +61,8 @@ class RobustnessConfig:
     force_fast_mode: bool = True
     output_dir: str = "data/robustness"
     runs_base_dir: str = DEFAULT_RUNS_DIR
+    max_workers: int = 1
+    trial_artifact_mode: str = "full"
 
     def __post_init__(self) -> None:
         if self.reps < 1:
@@ -68,6 +71,7 @@ class RobustnessConfig:
             raise ValueError("base_config is required")
         if not self.candidates:
             raise ValueError("candidates is required")
+        validate_execution_options(self.max_workers, self.trial_artifact_mode)
         if self.objective not in _ALLOWED_METRICS:
             raise ValueError(f"unsupported objective metric: {self.objective}")
         if self.direction not in {"minimize", "maximize"}:

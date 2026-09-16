@@ -50,6 +50,27 @@ def compute_cost_kpis(run_data: Any, cost_config: CostConfig) -> CostKPIs:
     summary: Mapping[str, Any] = raw_summary if isinstance(raw_summary, Mapping) else {}
     config: Mapping[str, Any] = raw_config if isinstance(raw_config, Mapping) else {}
 
+    raw_events = getattr(run_data, "events", None)
+    events = raw_events if isinstance(raw_events, pd.DataFrame) else pd.DataFrame()
+    task_lifecycles = task_lifecycle_from_events(events)
+    return compute_cost_kpis_from_primitives(
+        summary=summary,
+        config=config,
+        task_lifecycles=task_lifecycles,
+        cost_config=cost_config,
+    )
+
+
+def compute_cost_kpis_from_primitives(
+    summary: Mapping[str, Any],
+    config: Mapping[str, Any],
+    task_lifecycles: Any,
+    cost_config: CostConfig,
+) -> CostKPIs:
+    """Compute cost KPIs from an in-memory summary and task lifecycles."""
+    if not isinstance(cost_config, CostConfig):
+        raise TypeError("cost_config must be a CostConfig")
+
     tick_interval = _tick_interval_seconds(config, summary)
 
     simulation_ticks = _to_int(summary.get("simulation_ticks"), 0)
@@ -91,7 +112,7 @@ def compute_cost_kpis(run_data: Any, cost_config: CostConfig) -> CostKPIs:
         * cost_config.downtime_cost_per_hour
     )
 
-    cycle_times = _completed_cycle_times(run_data)
+    cycle_times = _completed_cycle_times_from_lifecycles(task_lifecycles)
     sla_evaluated_tasks = int(len(cycle_times))
 
     late_tasks = 0
@@ -201,6 +222,10 @@ def _completed_cycle_times(run_data: Any) -> pd.Series:
         return pd.Series(dtype=float)
 
     lifecycle = task_lifecycle_from_events(events)
+    return _completed_cycle_times_from_lifecycles(lifecycle)
+
+
+def _completed_cycle_times_from_lifecycles(lifecycle: Any) -> pd.Series:
 
     if lifecycle is None:
         return pd.Series(dtype=float)

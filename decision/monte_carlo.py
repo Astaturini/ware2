@@ -19,7 +19,9 @@ from experiment.factory import create_simulation_from_config
 from experiment.runner import ExperimentRunner
 
 from decision.cost import CostConfig
+from decision.execution import validate_execution_options
 from decision.kpis import compute_cost_kpis_for_run_id
+from decision.parallel import run_trial_specs
 
 
 _KPI_FIELDS = (
@@ -53,6 +55,8 @@ class MonteCarloConfig:
     force_fast_mode: bool = True
     output_dir: str = "data/monte_carlo"
     runs_base_dir: str = DEFAULT_RUNS_DIR
+    max_workers: int = 1
+    trial_artifact_mode: str = "full"
 
     def __post_init__(self) -> None:
         if self.n_runs < 1:
@@ -61,6 +65,7 @@ class MonteCarloConfig:
             raise ValueError("base_config is required")
         if self.seeds and len(self.seeds) < self.n_runs:
             raise ValueError("seeds must contain at least n_runs values")
+        validate_execution_options(self.max_workers, self.trial_artifact_mode)
 
 
 @dataclass(frozen=True)
@@ -368,12 +373,174 @@ def _aggregate(rows: list[dict[str, Any]], sla_target_ticks: int | None) -> dict
     return aggregate
 
 
-def run_monte_carlo(mc_config: MonteCarloConfig) -> MonteCarloResult:
+def _write_results_csv(
+    results_csv: Path,
+    rows: list[dict[str, Any]],
+    errors: list[dict[str, Any]],
+) -> None:
+    if rows:
+        fieldnames: list[str] = []
+        for row in rows:
+            for key in row:
+                if key not in fieldnames:
+                    fieldnames.append(key)
+
+        required = ["mc_index", "seed", "run_id", "stop_reason"]
+        fieldnames = [key for key in required if key in fieldnames] + [
+            key for key in fieldnames if key not in required
+        ]
+
+        with results_csv.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames, restval="")
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({key: _csv_safe(row.get(key)) for key in fieldnames})
+        return
+
+    with results_csv.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["mc_index", "seed", "run_id", "error"])
+
+
+def _run_monte_carlo_metrics_only(
+    mc_config: MonteCarloConfig,
+    seeds: list[int],
+    effective_sla: int | None,
+    cost_config: CostConfig | None,
+    progress_callback: Any | None = None,
+) -> MonteCarloResult:
+    mc_id = time.strftime("%Y%m%d_%H%M%S_") + uuid.uuid4().hex[:6]
+    out_dir = Path(mc_config.output_dir) / mc_id
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    specs: list[dict[str, Any]] = []
+    for index, seed in enumerate(seeds):
+        specs.append(
+            {
+                "index": index,
+                "seed": seed,
+                "config": build_trial_config(
+                    mc_config.base_config,
+                    seed=seed,
+                    index=index,
+                    force_fast_mode=mc_config.force_fast_mode,
+                ),
+                "sla_target_ticks": effective_sla,
+                "cost_config": cost_config,
+            }
+        )
+
+    def report_trial_progress(completed: int, total: int) -> None:
+        if progress_callback is not None:
+            progress_callback(
+                10 + int(completed / total * 80),
+                f"Completed trial {completed} of {total}.",
+            )
+
+    outcomes = run_trial_specs(
+        specs,
+        max_workers=mc_config.max_workers,
+        progress_callback=report_trial_progress,
+    )
+    rows: list[dict[str, Any]] = []
+    errors: list[dict[str, Any]] = []
+
+    for spec, outcome in zip(specs, outcomes):
+        if outcome.ok:
+            row = dict(outcome.metrics)
+            row.update(
+                {
+                    "mc_index": spec["index"],
+                    "seed": spec["seed"],
+                    "run_id": None,
+                    "status": "ok",
+                }
+            )
+            rows.append(row)
+        else:
+            errors.append(
+                {
+                    "mc_index": spec["index"],
+                    "seed": spec["seed"],
+                    "stage": "run",
+                    "error": outcome.error,
+                }
+            )
+
+    rows.sort(key=lambda row: int(row["mc_index"]))
+    results_csv = out_dir / "results.csv"
+    _write_results_csv(results_csv, rows, errors)
+    aggregate = _aggregate(rows, effective_sla)
+    summary = {
+        "mc_id": mc_id,
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "n_runs_requested": mc_config.n_runs,
+        "successful_runs": len(rows),
+        "failed_runs": len(errors),
+        "seeds": seeds,
+        "effective_sla_target_ticks": effective_sla,
+        "force_fast_mode": mc_config.force_fast_mode,
+        "trial_artifact_mode": mc_config.trial_artifact_mode,
+        "max_workers": mc_config.max_workers,
+        "run_artifacts_written": False,
+        "base_config": mc_config.base_config,
+        "aggregate": aggregate,
+        "errors": errors,
+    }
+    summary_json = out_dir / "summary.json"
+    summary_json.write_text(json.dumps(summary, indent=2, default=str), encoding="utf-8")
+
+    return MonteCarloResult(
+        mc_id=mc_id,
+        output_dir=out_dir,
+        results_csv=results_csv,
+        summary_json=summary_json,
+        n_runs_requested=mc_config.n_runs,
+        successful_runs=len(rows),
+        failed_runs=len(errors),
+        aggregate=aggregate,
+    )
+
+
+def run_monte_carlo(
+    mc_config: MonteCarloConfig,
+    progress_callback: Any | None = None,
+) -> MonteCarloResult:
+    validate_execution_options(mc_config.max_workers, mc_config.trial_artifact_mode)
     seeds = generate_seeds(
         mc_config.n_runs,
         base_seed=mc_config.base_seed,
         explicit_seeds=mc_config.seeds,
     )
+
+    effective_sla = mc_config.sla_target_ticks
+    cost_config = mc_config.cost_config
+    if cost_config is not None and effective_sla is None:
+        effective_sla = cost_config.sla_target_ticks
+    if (
+        cost_config is not None
+        and effective_sla is not None
+        and cost_config.sla_target_ticks != effective_sla
+    ):
+        cost_config = replace(cost_config, sla_target_ticks=effective_sla)
+
+    if mc_config.trial_artifact_mode == "metrics_only":
+        return _run_monte_carlo_metrics_only(
+            mc_config,
+            seeds,
+            effective_sla,
+            cost_config,
+            progress_callback=progress_callback,
+        )
+
+    return _run_monte_carlo_full(mc_config, seeds, progress_callback=progress_callback)
+
+
+def _run_monte_carlo_full(
+    mc_config: MonteCarloConfig,
+    seeds: list[int],
+    progress_callback: Any | None = None,
+) -> MonteCarloResult:
 
     mc_id = time.strftime("%Y%m%d_%H%M%S_") + uuid.uuid4().hex[:6]
     out_dir = Path(mc_config.output_dir) / mc_id
@@ -413,6 +580,13 @@ def run_monte_carlo(mc_config: MonteCarloConfig) -> MonteCarloResult:
                     "stage": "config",
                     "error": str(exc),
                 }
+            )
+
+        if progress_callback is not None:
+            completed = index + 1
+            progress_callback(
+                10 + int(completed / len(seeds) * 80),
+                f"Completed trial {completed} of {len(seeds)}.",
             )
             continue
 
@@ -471,6 +645,9 @@ def run_monte_carlo(mc_config: MonteCarloConfig) -> MonteCarloResult:
         "seeds": seeds,
         "effective_sla_target_ticks": effective_sla,
         "force_fast_mode": mc_config.force_fast_mode,
+        "trial_artifact_mode": mc_config.trial_artifact_mode,
+        "max_workers": mc_config.max_workers,
+        "run_artifacts_written": True,
         "base_config": mc_config.base_config,
         "aggregate": aggregate,
         "errors": errors,
@@ -527,6 +704,12 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--cost-config", type=str, default=None, help="Optional CostConfig JSON file.")
     parser.add_argument("--output-dir", type=str, default="data/monte_carlo")
     parser.add_argument("--runs-base-dir", type=str, default=DEFAULT_RUNS_DIR)
+    parser.add_argument("--max-workers", type=int, default=1)
+    parser.add_argument(
+        "--trial-artifact-mode",
+        choices=("full", "metrics_only"),
+        default="full",
+    )
 
     args = parser.parse_args(argv)
 
@@ -553,6 +736,8 @@ def main(argv: list[str] | None = None) -> None:
         cost_config=cost_config,
         output_dir=args.output_dir,
         runs_base_dir=args.runs_base_dir,
+        max_workers=args.max_workers,
+        trial_artifact_mode=args.trial_artifact_mode,
     )
 
     result = run_monte_carlo(mc_config)

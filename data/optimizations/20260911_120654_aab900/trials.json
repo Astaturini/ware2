@@ -1,0 +1,38 @@
+[
+  {
+    "number": 0,
+    "params": {
+      "num_robots": 11
+    },
+    "value": 0.0340625,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": null,
+      "p95_cycle_time": 867.0,
+      "average_throughput": 0.0340625,
+      "tasks_completed": 981.0,
+      "sla_compliance_rate": null
+    },
+    "feasible": true,
+    "constraints": [],
+    "error": null
+  },
+  {
+    "number": 1,
+    "params": {
+      "num_robots": 13
+    },
+    "value": 0.0035069444444444445,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": null,
+      "p95_cycle_time": 121.0,
+      "average_throughput": 0.0035069444444444445,
+      "tasks_completed": 101.0,
+      "sla_compliance_rate": null
+    },
+    "feasible": true,
+    "constraints": [],
+    "error": null
+  }
+]

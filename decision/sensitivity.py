@@ -19,6 +19,7 @@ from experiment.factory import create_simulation_from_config
 from experiment.runner import ExperimentRunner
 
 from decision.cost import CostConfig
+from decision.execution import validate_execution_options
 from decision.kpis import compute_cost_kpis_for_run_id
 
 
@@ -62,6 +63,8 @@ class SensitivityConfig:
     force_fast_mode: bool = True
     output_dir: str = "data/sensitivity"
     runs_base_dir: str = DEFAULT_RUNS_DIR
+    max_workers: int = 1
+    trial_artifact_mode: str = "full"
 
     def __post_init__(self) -> None:
         if self.reps < 1:
@@ -70,6 +73,7 @@ class SensitivityConfig:
             raise ValueError("base_config is required")
         if not self.factors:
             raise ValueError("at least one factor is required")
+        validate_execution_options(self.max_workers, self.trial_artifact_mode)
 
         for factor in self.factors:
             if not factor.name:

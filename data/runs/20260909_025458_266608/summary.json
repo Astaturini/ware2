@@ -1,0 +1,65 @@
+{
+  "run_id": "20260909_025458_266608",
+  "seed": 1749090055,
+  "scheduler": "priority",
+  "stop_reason": "target_reached",
+  "fast_mode": true,
+  "simulation_ticks": 250,
+  "simulation_seconds": 75.0,
+  "robot_count": 5,
+  "tasks_created": 95,
+  "tasks_assigned": 57,
+  "tasks_completed": 50,
+  "tasks_failed": 0,
+  "average_throughput": 0.2,
+  "average_wait_time": 14.31578947368421,
+  "average_cycle_time": 32.0,
+  "average_robot_utilization": 0.9056,
+  "total_replans": 8,
+  "total_blocked_ticks": 32,
+  "blocked_time_seconds": 9.6,
+  "charging_events": 4,
+  "total_charging_ticks": 36,
+  "charger_wait_ticks": 0,
+  "charger_wait_events": 0,
+  "battery_task_interruptions": 5,
+  "failure_task_interruptions": 0,
+  "task_reassignments": 3,
+  "failed_robot_events": 0,
+  "failure_downtime_ticks": 0,
+  "robot_utilization": {
+    "R1": 0.908,
+    "R2": 0.896,
+    "R3": 0.888,
+    "R4": 0.94,
+    "R5": 0.896
+  },
+  "robot_busy_ticks": {
+    "R1": 227,
+    "R2": 224,
+    "R3": 222,
+    "R4": 235,
+    "R5": 224
+  },
+  "robot_total_ticks": {
+    "R1": 250,
+    "R2": 250,
+    "R3": 250,
+    "R4": 250,
+    "R5": 250
+  },
+  "robot_blocked_ticks": {
+    "R1": 9,
+    "R2": 4,
+    "R3": 3,
+    "R4": 8,
+    "R5": 8
+  },
+  "robot_distance_travelled": {
+    "R1": 229,
+    "R2": 231,
+    "R3": 230,
+    "R4": 238,
+    "R5": 226
+  }
+}

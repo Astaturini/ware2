@@ -196,6 +196,101 @@ function renderHistogramChart(containerEl, histogram) {
     analysisCharts.push(chart);
 }
 
+function renderProbabilityBarChart(containerEl, payload) {
+    if (!containerEl || !ensureECharts(containerEl)) return null;
+    const candidates = payload.candidates || [];
+    if (!candidates.length) return null;
+    const chart = echarts.init(containerEl, "dark");
+    chart.setOption({
+        backgroundColor: "transparent",
+        tooltip: { trigger: "axis" },
+        grid: { left: 60, right: 30, top: 55, bottom: 55 },
+        xAxis: { type: "category", data: candidates.map(item => item.label || "Candidate") },
+        yAxis: { type: "value", min: 0, max: 1, axisLabel: { formatter: value => `${Math.round(value * 100)}%` } },
+        graphic: [{ type: "text", left: 60, top: 12, style: { text: `Minimum pass probability: ${Math.round(Number(payload.min_pass_probability || 0) * 100)}%`, fill: "#fef3c7" } }],
+        series: [{
+            type: "bar",
+            data: candidates.map(item => ({ value: item.constraint_pass_probability, itemStyle: { color: item.robust_pass ? "#10b981" : "#ef4444" } })),
+            markLine: { symbol: "none", data: [{ yAxis: payload.min_pass_probability, label: { formatter: "threshold" }, lineStyle: { color: "#f59e0b", type: "dashed" } }] }
+        }]
+    });
+    return chart;
+}
+
+function renderParetoScatterChart(containerEl, payload) {
+    const points = payload.points || [];
+    return renderScatterChart(containerEl, [
+        { name: "Other feasible trials", type: "scatter", data: points.filter(item => !item.pareto).map(item => [item.x, item.y]), itemStyle: { color: "#56B4E9" } },
+        { name: "Pareto candidates", type: "scatter", data: points.filter(item => item.pareto).map(item => [item.x, item.y]), symbolSize: 14, itemStyle: { color: "#f59e0b" } }
+    ], payload.x_metric, payload.y_metric);
+}
+
+function renderRobustnessChart(containerEl, candidates, threshold) {
+    if (!containerEl || !ensureECharts(containerEl)) return null;
+    const chart = echarts.init(containerEl, "dark");
+    chart.setOption({
+        backgroundColor: "transparent",
+        tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+        grid: { left: 60, right: 30, top: 50, bottom: 55 },
+        xAxis: { type: "category", data: candidates.map(item => item.label || "Candidate"), axisLabel: { color: "#a8a8a8" } },
+        yAxis: { type: "value", min: 0, max: 1, axisLabel: { formatter: value => `${Math.round(value * 100)}%` } },
+        graphic: [{ type: "text", left: 60, top: 12, style: { text: `Minimum pass probability: ${Math.round(Number(threshold || 0) * 100)}%`, fill: "#fef3c7", fontSize: 12 } }],
+        series: [{
+            type: "bar",
+            data: candidates.map(item => ({ value: Number(item.constraint_pass_probability), itemStyle: { color: item.robust_pass ? "#10b981" : "#ef4444" } })),
+            markLine: { symbol: "none", data: [{ yAxis: Number(threshold || 0), label: { formatter: "threshold" }, lineStyle: { color: "#f59e0b", type: "dashed" } }] }
+        }]
+    });
+    return chart;
+}
+
+function renderScatterChart(containerEl, series, xName, yName) {
+    if (!containerEl || !ensureECharts(containerEl)) return null;
+    const chart = echarts.init(containerEl, "dark");
+    chart.setOption({
+        backgroundColor: "transparent",
+        tooltip: { trigger: "item" },
+        legend: { top: 0, textStyle: { color: "#eaeaea" } },
+        grid: { left: 65, right: 30, top: 45, bottom: 60 },
+        xAxis: { type: "value", name: xName },
+        yAxis: { type: "value", name: yName },
+        series
+    });
+    return chart;
+}
+
+function renderObjectiveTrialChart(containerEl, trials, objective, bestTrial) {
+    if (!containerEl || !ensureECharts(containerEl)) return null;
+    const chart = echarts.init(containerEl, "dark");
+    chart.setOption({
+        backgroundColor: "transparent",
+        tooltip: { trigger: "axis" },
+        grid: { left: 65, right: 30, top: 45, bottom: 60 },
+        xAxis: { type: "category", name: "Trial", data: trials.map(item => item.number ?? item.trial_number) },
+        yAxis: { type: "value", name: objective },
+        series: [{
+            type: "bar",
+            data: trials.map(item => ({ value: Number(item.value ?? item[objective]), itemStyle: { color: item.feasible ? "#10b981" : "#ef4444" } }))
+        }, ...(bestTrial ? [{ type: "scatter", name: "Best feasible", data: [[String(bestTrial.number), Number(bestTrial.value ?? bestTrial[objective])]], symbolSize: 14, itemStyle: { color: "#f59e0b" } }] : [])]
+    });
+    return chart;
+}
+
+function renderTornadoChart(containerEl, rows) {
+    if (!containerEl || !ensureECharts(containerEl)) return null;
+    const chart = echarts.init(containerEl, "dark");
+    const ordered = [...rows].sort((a, b) => Math.abs(Number(b.delta ?? b.delta_percent ?? 0)) - Math.abs(Number(a.delta ?? a.delta_percent ?? 0)));
+    chart.setOption({
+        backgroundColor: "transparent",
+        tooltip: { trigger: "axis" },
+        grid: { left: 120, right: 30, top: 25, bottom: 35 },
+        xAxis: { type: "value" },
+        yAxis: { type: "category", data: ordered.map(item => item.factor || item.name || "factor") },
+        series: [{ type: "bar", data: ordered.map(item => Number(item.delta ?? item.delta_percent ?? 0)), itemStyle: { color: "#56B4E9" } }]
+    });
+    return chart;
+}
+
 // Resize charts when browser window changes.
 window.addEventListener("resize", () => {
     if (visualizationChart) visualizationChart.resize();

@@ -1,0 +1,35 @@
+{
+  "opt_id": "20260911_130415_a04ba1",
+  "generated_at": "2026-09-11T13:48:17",
+  "n_trials": 2,
+  "reps": 1,
+  "objective": "cost_per_task",
+  "direction": "minimize",
+  "constraints": {},
+  "best_trial": {
+    "number": 0,
+    "params": {
+      "num_robots": 10
+    },
+    "value": 0.1571050688976378,
+    "state": "COMPLETE",
+    "metrics": {
+      "cost_per_task": 0.1571050688976378,
+      "p95_cycle_time": 192.79999999999927,
+      "average_throughput": 0.07055555555555555,
+      "tasks_completed": 2032.0,
+      "sla_compliance_rate": 0.9512795275590551
+    },
+    "feasible": true,
+    "constraints": [],
+    "error": null
+  },
+  "feasible_count": 2,
+  "infeasible_count": 0,
+  "search_space": [
+    {
+      "name": "num_robots",
+      "type": "int"
+    }
+  ]
+}

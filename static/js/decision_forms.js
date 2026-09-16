@@ -350,6 +350,56 @@ function parseGuidedCostConfig(id) {
   return costConfig;
 }
 
+function renderGuidedExecutionSection(
+  prefix,
+  supportsMetricsOnly = false,
+  supportsParallel = false
+) {
+  return `
+    <div class="decision-guided-subsection">
+      <h4>Trial execution</h4>
+
+      <div class="decision-guided-row">
+        <label class="field">
+          Workers
+          <input id="${prefix}-max-workers" type="number" min="1" max="4" step="1" value="1" ${supportsParallel ? "" : "disabled"}>
+        </label>
+
+        <label class="field">
+          Trial artifacts
+          <select id="${prefix}-trial-artifact-mode">
+            <option value="full" selected>Full run artifacts</option>
+            <option value="metrics_only" ${supportsMetricsOnly ? "" : "disabled"}>Metrics only</option>
+          </select>
+        </label>
+
+        <span></span>
+      </div>
+
+      <div class="decision-guided-warning">
+        Metrics-only trials do not create normal run files or support single-run reports and spatial analysis.
+      </div>
+    </div>
+  `;
+}
+
+function buildGuidedExecutionConfig(prefix) {
+  const workersEl = document.getElementById(`${prefix}-max-workers`);
+  const maxWorkers = workersEl.disabled
+    ? 1
+    : guidedRequiredInteger(`${prefix}-max-workers`, 1);
+
+  if (maxWorkers > 4) {
+    throw new Error(`${prefix}-max-workers must be <= 4.`);
+  }
+
+  const mode = document.getElementById(`${prefix}-trial-artifact-mode`).value;
+  return {
+    max_workers: maxWorkers,
+    trial_artifact_mode: mode
+  };
+}
+
 function buildGuidedCommonConstraints(prefix) {
   const constraints = {};
 
@@ -377,12 +427,13 @@ function renderGuidedSearchSpaceSection(prefix) {
         Enable at least one parameter.
       </div>
 
-      <label>
-        <input id="${prefix}-ss-num-robots-enabled" type="checkbox" checked>
-        num_robots
-      </label>
+      <div class="decision-search-parameter">
+        <label class="decision-search-parameter-title">
+          <input id="${prefix}-ss-num-robots-enabled" type="checkbox" checked>
+          <strong>num_robots</strong>
+        </label>
 
-      <div class="decision-guided-row">
+        <div class="decision-guided-row">
         <label class="field">
           Low
           <input id="${prefix}-ss-num-robots-low" type="number" min="1" step="1" value="4">
@@ -394,14 +445,16 @@ function renderGuidedSearchSpaceSection(prefix) {
         </label>
 
         <span></span>
+        </div>
       </div>
 
-      <label>
-        <input id="${prefix}-ss-charger-capacity-enabled" type="checkbox">
-        charger_capacity
-      </label>
+      <div class="decision-search-parameter">
+        <label class="decision-search-parameter-title">
+          <input id="${prefix}-ss-charger-capacity-enabled" type="checkbox">
+          <strong>charger_capacity</strong>
+        </label>
 
-      <div class="decision-guided-row">
+        <div class="decision-guided-row">
         <label class="field">
           Low
           <input id="${prefix}-ss-charger-capacity-low" type="number" min="1" step="1" value="2">
@@ -413,14 +466,16 @@ function renderGuidedSearchSpaceSection(prefix) {
         </label>
 
         <span></span>
+        </div>
       </div>
 
-      <label>
-        <input id="${prefix}-ss-conflict-manager-enabled" type="checkbox">
-        conflict_manager
-      </label>
+      <div class="decision-search-parameter">
+        <label class="decision-search-parameter-title">
+          <input id="${prefix}-ss-conflict-manager-enabled" type="checkbox">
+          <strong>conflict_manager</strong>
+        </label>
 
-      <div class="decision-guided-checkbox-grid">
+        <div class="decision-guided-checkbox-grid">
         <label>
           <input type="checkbox" name="${prefix}-ss-conflict-manager-choice" value="local_yield" checked>
           local_yield
@@ -435,14 +490,16 @@ function renderGuidedSearchSpaceSection(prefix) {
           <input type="checkbox" name="${prefix}-ss-conflict-manager-choice" value="priority_reservation">
           priority_reservation
         </label>
+        </div>
       </div>
 
-      <label>
-        <input id="${prefix}-ss-scheduler-enabled" type="checkbox">
-        scheduler
-      </label>
+      <div class="decision-search-parameter">
+        <label class="decision-search-parameter-title">
+          <input id="${prefix}-ss-scheduler-enabled" type="checkbox">
+          <strong>scheduler</strong>
+        </label>
 
-      <div class="decision-guided-checkbox-grid">
+        <div class="decision-guided-checkbox-grid">
         <label>
           <input type="checkbox" name="${prefix}-ss-scheduler-choice" value="baseline" checked>
           baseline
@@ -467,6 +524,7 @@ function renderGuidedSearchSpaceSection(prefix) {
           <input type="checkbox" name="${prefix}-ss-scheduler-choice" value="auction">
           auction
         </label>
+        </div>
       </div>
     </div>
   `;
@@ -804,6 +862,8 @@ function renderMonteCarloGuidedForm(container) {
 }'></textarea>
       </label>
     </div>
+
+    ${renderGuidedExecutionSection("mc", true, true)}
   `;
 
   populateJobRunSelect(container.querySelector("#mc-run-id"));
@@ -867,6 +927,8 @@ function buildMonteCarloGuidedConfig() {
   if (costConfig !== null) {
     config.cost_config = costConfig;
   }
+
+  Object.assign(config, buildGuidedExecutionConfig("mc"));
 
   return config;
 }
@@ -951,6 +1013,8 @@ function renderSensitivityGuidedForm(container) {
         One-at-a-time sensitivity does not reveal interaction effects.
       </div>
     </div>
+
+    ${renderGuidedExecutionSection("sens")}
   `;
 
   populateJobRunSelect(container.querySelector("#sens-run-id"));
@@ -1018,6 +1082,8 @@ function buildSensitivityGuidedConfig() {
   config.factors = buildGuidedFactors(
     document.getElementById("sens-factor-rows")
   );
+
+  Object.assign(config, buildGuidedExecutionConfig("sens"));
 
   return config;
 }
@@ -1265,6 +1331,8 @@ function renderOptimizerGuidedForm(container) {
     </div>
 
     ${renderGuidedSearchSpaceSection("opt")}
+
+    ${renderGuidedExecutionSection("opt", false)}
   `;
 
   populateJobRunSelect(container.querySelector("#opt-run-id"));
@@ -1356,6 +1424,7 @@ function buildOptimizerGuidedConfig() {
 
   config.constraints = buildGuidedCommonConstraints("opt");
   config.search_space = buildGuidedSearchSpace("opt");
+  Object.assign(config, buildGuidedExecutionConfig("opt"));
 
   return config;
 }
@@ -1533,6 +1602,8 @@ function renderMultiobjectiveGuidedForm(container) {
     </div>
 
     ${renderGuidedSearchSpaceSection("mo")}
+
+    ${renderGuidedExecutionSection("mo", false)}
   `;
 
   populateJobRunSelect(container.querySelector("#mo-run-id"));
@@ -1663,6 +1734,7 @@ function buildMultiobjectiveGuidedConfig() {
 
   config.constraints = buildGuidedCommonConstraints("mo");
   config.search_space = buildGuidedSearchSpace("mo");
+  Object.assign(config, buildGuidedExecutionConfig("mo"));
 
   return config;
 }
@@ -1857,6 +1929,8 @@ function renderRobustnessGuidedForm(container) {
         Leave a constraint blank to omit it.
       </div>
     </div>
+
+    ${renderGuidedExecutionSection("rob")}
   `;
 
   populateMultiobjectiveDatalist(container.querySelector("#rob-mo-options"));
@@ -1975,6 +2049,7 @@ function buildRobustnessGuidedConfig() {
   }
 
   config.constraints = buildGuidedCommonConstraints("rob");
+  Object.assign(config, buildGuidedExecutionConfig("rob"));
 
   return config;
 }
@@ -2041,6 +2116,8 @@ function renderStudyGuidedForm(container) {
         Large factorial designs can create many runs.
       </div>
     </div>
+
+    ${renderGuidedExecutionSection("study", false)}
   `;
 
   populateJobRunSelect(container.querySelector("#study-run-id"));

@@ -1,0 +1,11 @@
+run_id,tick,event_type,robot_id,task_id,details
+20260909_102327_443f57,3,task_created,,G00001,type=PUTAWAY pickup=BUFFER dropoff=A-04
+20260909_102327_443f57,3,task_assigned,R3,G00001,
+20260909_102327_443f57,5,task_created,,G00002,type=PICK pickup=E-04 dropoff=PICK-1
+20260909_102327_443f57,5,task_assigned,R5,G00002,
+20260909_102327_443f57,7,task_created,,G00003,type=PACK pickup=PICK-1 dropoff=PACK-1
+20260909_102327_443f57,7,task_assigned,R2,G00003,
+20260909_102327_443f57,9,task_created,,G00004,type=SHIP pickup=STAGING dropoff=DOCK-1
+20260909_102327_443f57,9,task_assigned,R1,G00004,
+20260909_102327_443f57,11,task_created,,G00005,type=PUTAWAY pickup=RECV dropoff=A-05
+20260909_102327_443f57,11,task_assigned,R4,G00005,

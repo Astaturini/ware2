@@ -201,7 +201,7 @@ def generate_report(study_dir: str | Path) -> Path:
                     f"({cost_best_rate:.1%} compliance)."
                 )
     
-        report_lines.append("\n## 3. Spatial Bottleneck Analysis")
+        report_lines.append("\n## 4. Spatial Bottleneck Analysis")
         if "run_id" not in success_df.columns:
             report_lines.append(
                 "_Skipped: results.csv has no `run_id` column. "
@@ -231,7 +231,7 @@ def generate_report(study_dir: str | Path) -> Path:
                     "problems._"
                 )
 
-    report_lines.append("\n## 4. Raw Data Summary")
+    report_lines.append("\n## 3. Raw Data Summary")
 
     cols_to_show = factor_keys + [
         "tasks_completed",

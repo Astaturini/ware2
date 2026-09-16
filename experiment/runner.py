@@ -14,6 +14,155 @@ from .config import ExperimentConfig
 from .recorder import MetricsRecorder
 
 
+def snapshot_simulation(sim: Simulation) -> dict[str, Any]:
+    metrics = sim._metrics
+
+    def metric_value(name: str, default: float = 0.0) -> float:
+        return float(getattr(metrics, name, default))
+
+    tasks: list[dict[str, Any]] = []
+    for task in sim._tasks.values():
+        tasks.append(
+            {
+                "id": task.id,
+                "status": getattr(task.status, "value", str(task.status)),
+                "assigned_robot_id": task.assigned_robot_id,
+                "task_type": getattr(task.task_type, "value", str(task.task_type)),
+                "pickup": task.pickup,
+                "dropoff": task.dropoff,
+                "created_at": task.created_at,
+                "completed_at": task.completed_at,
+            }
+        )
+
+    robots: list[dict[str, Any]] = []
+    for robot in sim._robots.values():
+        robots.append(
+            {
+                "id": robot.id,
+                "status": getattr(robot.status, "value", str(robot.status)),
+                "mode": getattr(robot.mode, "value", str(robot.mode)),
+                "x": robot.x,
+                "y": robot.y,
+                "blocked_ticks": robot.blocked_ticks,
+                "replanning": robot.replanning,
+                "battery": float(getattr(robot, "battery", 0.0)),
+            }
+        )
+
+    return {
+        "tick": sim._tick_count,
+        "metrics": {
+            "tasks_generated": metric_value("tasks_generated"),
+            "tasks_assigned": metric_value("tasks_assigned"),
+            "tasks_completed": metric_value("tasks_completed"),
+            "tasks_failed": metric_value("tasks_failed"),
+            "blocked_time_ticks": metric_value("blocked_time_ticks"),
+            "replanning_count": metric_value("replanning_count"),
+            "task_waiting_time_total": metric_value("task_waiting_time_total"),
+            "task_completion_time_total": metric_value("task_completion_time_total"),
+        },
+        "tasks": tasks,
+        "robots": robots,
+    }
+
+
+def evaluate_stop_condition(
+    config: ExperimentConfig,
+    snapshot: dict[str, Any],
+) -> str | None:
+    tick = int(snapshot["tick"])
+    completed = float(snapshot["metrics"].get("tasks_completed", 0))
+
+    if config.stop_mode == "fixed_ticks" and tick >= config.max_ticks:
+        return "max_ticks_reached"
+
+    if config.stop_mode == "workload":
+        if config.target_tasks is not None and completed >= config.target_tasks:
+            return "target_reached"
+        if tick >= config.max_ticks:
+            return "max_ticks_reached"
+
+    return None
+
+
+def build_run_summary(
+    sim: Simulation,
+    config: ExperimentConfig,
+    stop_reason: str | None,
+    run_id: str | None = None,
+) -> dict[str, Any]:
+    metrics = sim._metrics
+    ticks = int(sim._tick_count)
+
+    tasks_generated = int(getattr(metrics, "tasks_generated", 0))
+    tasks_assigned = int(getattr(metrics, "tasks_assigned", 0))
+    tasks_completed = int(getattr(metrics, "tasks_completed", 0))
+    tasks_failed = int(getattr(metrics, "tasks_failed", 0))
+
+    blocked_ticks = int(getattr(metrics, "blocked_time_ticks", 0))
+    replans = int(getattr(metrics, "replanning_count", 0))
+
+    waiting_total = float(getattr(metrics, "task_waiting_time_total", 0.0))
+    completion_total = float(getattr(metrics, "task_completion_time_total", 0.0))
+
+    robot_busy_ticks = getattr(metrics, "robot_busy_ticks", {}) or {}
+    robot_total_ticks = getattr(metrics, "robot_total_ticks", {}) or {}
+    robot_blocked_ticks = getattr(metrics, "robot_blocked_ticks", {}) or {}
+    robot_distance_travelled = getattr(metrics, "robot_distance_travelled", {}) or {}
+
+    busy_sum = sum(int(value) for value in robot_busy_ticks.values())
+    total_sum = sum(int(value) for value in robot_total_ticks.values())
+
+    average_throughput = tasks_completed / ticks if ticks > 0 else 0.0
+    average_wait_time = waiting_total / tasks_assigned if tasks_assigned > 0 else 0.0
+    average_cycle_time = completion_total / tasks_completed if tasks_completed > 0 else 0.0
+    average_utilization = busy_sum / total_sum if total_sum > 0 else 0.0
+
+    robot_utilization: dict[str, float] = {}
+    for robot_id, total in robot_total_ticks.items():
+        total = int(total)
+        busy = int(robot_busy_ticks.get(robot_id, 0))
+        robot_utilization[str(robot_id)] = busy / total if total > 0 else 0.0
+
+    summary = {
+        "run_id": run_id,
+        "seed": config.seed,
+        "scheduler": config.scheduler,
+        "stop_reason": stop_reason,
+        "fast_mode": config.fast_mode,
+        "simulation_ticks": ticks,
+        "simulation_seconds": ticks * config.tick_interval,
+        "robot_count": config.num_robots,
+        "tasks_created": tasks_generated,
+        "tasks_assigned": tasks_assigned,
+        "tasks_completed": tasks_completed,
+        "tasks_failed": tasks_failed,
+        "average_throughput": average_throughput,
+        "average_wait_time": average_wait_time,
+        "average_cycle_time": average_cycle_time,
+        "average_robot_utilization": average_utilization,
+        "total_replans": replans,
+        "total_blocked_ticks": blocked_ticks,
+        "blocked_time_seconds": blocked_ticks * config.tick_interval,
+        "charging_events": int(getattr(metrics, "charging_events", 0)),
+        "total_charging_ticks": int(getattr(metrics, "total_charging_ticks", 0)),
+        "charger_wait_ticks": int(getattr(metrics, "charger_wait_ticks", 0)),
+        "charger_wait_events": int(getattr(metrics, "charger_wait_events", 0)),
+        "battery_task_interruptions": int(getattr(metrics, "battery_task_interruptions", 0)),
+        "failure_task_interruptions": int(getattr(metrics, "failure_task_interruptions", 0)),
+        "task_reassignments": int(getattr(metrics, "task_reassignments", 0)),
+        "failed_robot_events": int(getattr(metrics, "failed_robot_events", 0)),
+        "failure_downtime_ticks": int(getattr(metrics, "failure_downtime_ticks", 0)),
+        "robot_utilization": robot_utilization,
+        "robot_busy_ticks": {str(key): int(value) for key, value in robot_busy_ticks.items()},
+        "robot_total_ticks": {str(key): int(value) for key, value in robot_total_ticks.items()},
+        "robot_blocked_ticks": {str(key): int(value) for key, value in robot_blocked_ticks.items()},
+        "robot_distance_travelled": {str(key): int(value) for key, value in robot_distance_travelled.items()},
+    }
+    return summary
+
+
 class ExperimentRunner:
     def __init__(self, base_dir: str = "data/runs") -> None:
         self.base_dir = Path(base_dir)
@@ -126,10 +275,10 @@ class ExperimentRunner:
             try:
                 with self.sim._lock:
                     self.sim._tick()
-                    snapshot = self._snapshot()
+                    snapshot = snapshot_simulation(self.sim)
                     self.recorder.record(snapshot)
 
-                    reason = self._evaluate_stop_condition(snapshot)
+                    reason = evaluate_stop_condition(self.config, snapshot)
                     if reason is not None:
                         self.stop_reason = reason
                         self.sim.stop()
@@ -151,75 +300,11 @@ class ExperimentRunner:
 
     def _evaluate_stop_condition(self, snapshot: dict[str, Any]) -> str | None:
         assert self.config is not None
-
-        tick = int(snapshot["tick"])
-        completed = float(snapshot["metrics"].get("tasks_completed", 0))
-
-        if self.config.stop_mode == "fixed_ticks":
-            if tick >= self.config.max_ticks:
-                return "max_ticks_reached"
-
-        if self.config.stop_mode == "workload":
-            if self.config.target_tasks is not None and completed >= self.config.target_tasks:
-                return "target_reached"
-            if tick >= self.config.max_ticks:
-                return "max_ticks_reached"
-
-        return None
+        return evaluate_stop_condition(self.config, snapshot)
 
     def _snapshot(self) -> dict[str, Any]:
         assert self.sim is not None
-
-        metrics = self.sim._metrics
-
-        def metric_value(name: str, default: float = 0.0) -> float:
-            return float(getattr(metrics, name, default))
-
-        tasks: list[dict[str, Any]] = []
-        for task in self.sim._tasks.values():
-            tasks.append(
-                {
-                    "id": task.id,
-                    "status": getattr(task.status, "value", str(task.status)),
-                    "assigned_robot_id": task.assigned_robot_id,
-                    "task_type": getattr(task.task_type, "value", str(task.task_type)),
-                    "pickup": task.pickup,
-                    "dropoff": task.dropoff,
-                    "created_at": task.created_at,
-                    "completed_at": task.completed_at,
-                }
-            )
-
-        robots: list[dict[str, Any]] = []
-        for robot in self.sim._robots.values():
-            robots.append(
-                {
-                    "id": robot.id,
-                    "status": getattr(robot.status, "value", str(robot.status)),
-                    "mode": getattr(robot.mode, "value", str(robot.mode)),
-                    "x": robot.x,
-                    "y": robot.y,
-                    "blocked_ticks": robot.blocked_ticks,
-                    "replanning": robot.replanning,
-                    "battery": float(getattr(robot, "battery", 0.0)),
-                }
-            )
-
-        return {
-            "tick": self.sim._tick_count,
-            "metrics": {
-                "tasks_generated": metric_value("tasks_generated"),
-                "tasks_assigned": metric_value("tasks_assigned"),
-                "tasks_completed": metric_value("tasks_completed"),
-                "tasks_failed": metric_value("tasks_failed"),
-                "blocked_time_ticks": metric_value("blocked_time_ticks"),
-                "replanning_count": metric_value("replanning_count"),
-                "task_waiting_time_total": metric_value("task_waiting_time_total"),
-                "task_completion_time_total": metric_value("task_completion_time_total"),
-            },
-            "tasks": tasks,
-            "robots": robots,
-        }
+        return snapshot_simulation(self.sim)
 
     def _finalize(self) -> None:
         if self._finalized:
@@ -232,74 +317,12 @@ class ExperimentRunner:
 
         self.recorder.close()
 
-        metrics = self.sim._metrics
-        ticks = int(self.sim._tick_count)
-
-        tasks_generated = int(getattr(metrics, "tasks_generated", 0))
-        tasks_assigned = int(getattr(metrics, "tasks_assigned", 0))
-        tasks_completed = int(getattr(metrics, "tasks_completed", 0))
-        tasks_failed = int(getattr(metrics, "tasks_failed", 0))
-
-        blocked_ticks = int(getattr(metrics, "blocked_time_ticks", 0))
-        replans = int(getattr(metrics, "replanning_count", 0))
-
-        waiting_total = float(getattr(metrics, "task_waiting_time_total", 0.0))
-        completion_total = float(getattr(metrics, "task_completion_time_total", 0.0))
-
-        robot_busy_ticks = getattr(metrics, "robot_busy_ticks", {}) or {}
-        robot_total_ticks = getattr(metrics, "robot_total_ticks", {}) or {}
-        robot_blocked_ticks = getattr(metrics, "robot_blocked_ticks", {}) or {}
-        robot_distance_travelled = getattr(metrics, "robot_distance_travelled", {}) or {}
-
-        busy_sum = sum(int(v) for v in robot_busy_ticks.values())
-        total_sum = sum(int(v) for v in robot_total_ticks.values())
-
-        average_throughput = tasks_completed / ticks if ticks > 0 else 0.0
-        average_wait_time = waiting_total / tasks_assigned if tasks_assigned > 0 else 0.0
-        average_cycle_time = completion_total / tasks_completed if tasks_completed > 0 else 0.0
-        average_utilization = busy_sum / total_sum if total_sum > 0 else 0.0
-
-        robot_utilization: dict[str, float] = {}
-        for robot_id, total in robot_total_ticks.items():
-            total = int(total)
-            busy = int(robot_busy_ticks.get(robot_id, 0))
-            robot_utilization[str(robot_id)] = busy / total if total > 0 else 0.0
-
-        summary = {
-            "run_id": self.run_id,
-            "seed": self.config.seed,
-            "scheduler": self.config.scheduler,
-            "stop_reason": self.stop_reason,
-            "fast_mode": self.config.fast_mode,
-            "simulation_ticks": ticks,
-            "simulation_seconds": ticks * self.config.tick_interval,
-            "robot_count": self.config.num_robots,
-            "tasks_created": tasks_generated,
-            "tasks_assigned": tasks_assigned,
-            "tasks_completed": tasks_completed,
-            "tasks_failed": tasks_failed,
-            "average_throughput": average_throughput,
-            "average_wait_time": average_wait_time,
-            "average_cycle_time": average_cycle_time,
-            "average_robot_utilization": average_utilization,
-            "total_replans": replans,
-            "total_blocked_ticks": blocked_ticks,
-            "blocked_time_seconds": blocked_ticks * self.config.tick_interval,
-            "charging_events": int(getattr(metrics, "charging_events", 0)),
-            "total_charging_ticks": int(getattr(metrics, "total_charging_ticks", 0)),
-            "charger_wait_ticks": int(getattr(metrics, "charger_wait_ticks", 0)),
-            "charger_wait_events": int(getattr(metrics, "charger_wait_events", 0)),
-            "battery_task_interruptions": int(getattr(metrics, "battery_task_interruptions", 0)),
-            "failure_task_interruptions": int(getattr(metrics, "failure_task_interruptions", 0)),
-            "task_reassignments": int(getattr(metrics, "task_reassignments", 0)),
-            "failed_robot_events": int(getattr(metrics, "failed_robot_events", 0)),
-            "failure_downtime_ticks": int(getattr(metrics, "failure_downtime_ticks", 0)),
-            "robot_utilization": robot_utilization,
-            "robot_busy_ticks": {str(k): int(v) for k, v in robot_busy_ticks.items()},
-            "robot_total_ticks": {str(k): int(v) for k, v in robot_total_ticks.items()},
-            "robot_blocked_ticks": {str(k): int(v) for k, v in robot_blocked_ticks.items()},
-            "robot_distance_travelled": {str(k): int(v) for k, v in robot_distance_travelled.items()},
-        }
+        summary = build_run_summary(
+            self.sim,
+            self.config,
+            self.stop_reason,
+            self.run_id,
+        )
 
         with open(self.run_dir / "summary.json", "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)

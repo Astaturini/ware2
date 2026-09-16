@@ -14,6 +14,7 @@ import pandas as pd
 from analysis.loader import DEFAULT_RUNS_DIR, load_run
 from decision.cost import CostConfig
 from decision.kpis import compute_cost_kpis
+from decision.execution import validate_execution_options
 from experiment.config import ExperimentConfig
 from experiment.factory import create_simulation_from_config
 from experiment.runner import ExperimentRunner
@@ -25,6 +26,11 @@ class StudyConfig:
     base_config: dict[str, Any]
     factors: dict[str, list[Any]]
     cost_config: dict[str, Any] = field(default_factory=dict)
+    max_workers: int = 1
+    trial_artifact_mode: str = "full"
+
+    def __post_init__(self) -> None:
+        validate_execution_options(self.max_workers, self.trial_artifact_mode)
 
     @classmethod
     def from_json(cls, path: str | Path) -> "StudyConfig":

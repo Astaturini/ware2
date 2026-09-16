@@ -228,6 +228,15 @@ function robustPassBadge(value) {
     : '<span class="badge badge-error">Fail</span>';
 }
 
+function openAdvancedDecisionJob(module, config) {
+  openJobModal(module, config);
+  const guided = document.getElementById("decision-job-use-guided");
+  if (guided && guided.checked) {
+    guided.checked = false;
+    updateJobGuidedVisibility();
+  }
+}
+
 // =====================================================================
 // Phase 3: run-linked action helpers
 // =====================================================================
@@ -784,7 +793,10 @@ async function loadDecisionReports() {
         {
           key: "action",
           label: "Action",
-          render: row => `<button data-open-report="${escapeHtml(row.report_id)}">Open</button>`
+          render: row => `
+            <button data-open-report="${escapeHtml(row.report_id)}">Open</button>
+            <a class="decision-button-link" href="/api/decision/reports/${encodeURIComponent(row.report_id)}/download.pdf" download>Download PDF</a>
+          `
         }
       ],
       reports
@@ -813,6 +825,7 @@ async function openReport(reportId) {
     el.innerHTML = `
       <div class="decision-toolbar">
         <button id="report-back-btn">Back to reports</button>
+        <a class="decision-button-link" href="/api/decision/reports/${encodeURIComponent(reportId)}/download.pdf" download>Download PDF</a>
       </div>
 
       <div class="decision-cards">
@@ -1063,6 +1076,12 @@ async function openMonteCarloDetail(mcId) {
       <h3>Aggregate KPIs</h3>
       <div class="mc-kpi-table"></div>
 
+      <h3>KPI Distributions</h3>
+      <div class="mc-histograms"></div>
+
+      <h3>Workflow</h3>
+      <button data-next-sensitivity>Use Monte Carlo baseline for sensitivity</button>
+
       <h3>SLA Statistics</h3>
       ${sla ? `<div class="mc-sla-table"></div>` : `<div class="decision-status">SLA metrics unavailable.</div>`}
 
@@ -1102,6 +1121,24 @@ async function openMonteCarloDetail(mcId) {
       renderObjectTable(el.querySelector(".mc-sla-table"), sla, "SLA Field", "Value");
     }
 
+    const histogramData = await decisionFetchJson(
+      `/api/decision/monte-carlo/${encodeURIComponent(mcId)}/charts/histograms`
+    );
+    const histogramContainer = el.querySelector(".mc-histograms");
+    const histogramEntries = Object.entries(histogramData.histograms || {});
+    if (!histogramEntries.some(([, histogram]) => histogram.counts && histogram.counts.length)) {
+      setDecisionEmpty(histogramContainer, "No histogram data available.");
+    } else {
+      histogramEntries.forEach(([metric, histogram]) => {
+        if (!histogram.counts || !histogram.counts.length) return;
+        const block = document.createElement("div");
+        block.className = "decision-chart-block";
+        block.innerHTML = `<h4>${escapeHtml(metric)}</h4><div class="decision-chart"></div>`;
+        histogramContainer.appendChild(block);
+        renderHistogramChart(block.querySelector(".decision-chart"), histogram);
+      });
+    }
+
     renderPaginatedDynamicTable(
       el.querySelector(".mc-results-table"),
       (page, pageSize) =>
@@ -1125,6 +1162,15 @@ async function openMonteCarloDetail(mcId) {
     el.onclick = event => {
       if (event.target.closest("[data-back-mc]")) {
         loadDecisionMonteCarlo();
+      } else if (event.target.closest("[data-next-sensitivity]")) {
+        openAdvancedDecisionJob("sensitivity", {
+          from_run_id: "REPLACE_WITH_RUN_ID",
+          reps: 5,
+          base_seed: 42,
+          factors: [
+            { name: "num_robots", values: [4, 6, 8] }
+          ]
+        });
       }
     };
   } catch (error) {
@@ -1203,7 +1249,7 @@ async function openSensitivityDetail(studyId) {
     const baseline = summary.baseline || {};
     const factorResults = summary.factor_results || [];
     const errors = summary.errors || [];
-    const tornado = tornadoData.tornado || summary.tornado || {};
+    const tornado = tornadoData.tornado || {};
 
     el.innerHTML = `
       <div class="decision-toolbar">
@@ -1232,6 +1278,9 @@ async function openSensitivityDetail(studyId) {
 
       <h3>Tornado Data</h3>
       <div class="sens-tornado"></div>
+
+      <h3>Workflow</h3>
+      <button data-next-optimizer>Use sensitivity baseline for optimizer</button>
 
       <h3>Raw Results</h3>
       <div class="sens-results-table"></div>
@@ -1295,6 +1344,11 @@ async function openSensitivityDetail(studyId) {
 
         tornadoContainer.appendChild(block);
 
+        const chart = document.createElement("div");
+        chart.className = "decision-chart tornado-chart";
+        block.appendChild(chart);
+        renderTornadoChart(chart, Array.isArray(rows) ? rows : []);
+
         renderRowsTable(
           block.querySelector(".sens-tornado-target"),
           Array.isArray(rows) ? rows : [],
@@ -1328,6 +1382,17 @@ async function openSensitivityDetail(studyId) {
     el.onclick = event => {
       if (event.target.closest("[data-back-sensitivity]")) {
         loadDecisionSensitivity();
+      } else if (event.target.closest("[data-next-optimizer]")) {
+        openAdvancedDecisionJob("optimizer", {
+          from_run_id: "REPLACE_WITH_RUN_ID",
+          objective: "cost_per_task",
+          direction: "minimize",
+          n_trials: 5,
+          reps: 1,
+          base_seed: 42,
+          constraints: {},
+          search_space: []
+        });
       }
     };
   } catch (error) {
@@ -1426,6 +1491,12 @@ async function openOptimizationDetail(optId) {
 
       <h3>Trials</h3>
       <div class="opt-trials-table"></div>
+
+      <h3>Objective by Trial</h3>
+      <div class="opt-trial-chart decision-chart"></div>
+
+      <h3>Workflow</h3>
+      <button data-next-robustness>Verify with robustness</button>
     `;
 
     if (bestTrial) {
@@ -1466,9 +1537,30 @@ async function openOptimizationDetail(optId) {
       }
     );
 
+    const trialData = await decisionFetchJson(
+      `/api/decision/optimizations/${encodeURIComponent(optId)}/charts/objective`
+    );
+    renderObjectiveTrialChart(
+      el.querySelector(".opt-trial-chart"),
+      trialData.points || [],
+      trialData.objective || summary.objective || "objective",
+      bestTrial
+    );
+
     el.onclick = event => {
       if (event.target.closest("[data-back-optimization]")) {
         loadDecisionOptimizations();
+      } else if (event.target.closest("[data-next-robustness]")) {
+        openAdvancedDecisionJob("robustness", {
+          from_multiobjective_id: "REPLACE_WITH_MULTIOBJECTIVE_ID",
+          max_candidates: 3,
+          reps: 20,
+          base_seed: 123,
+          objective: summary.objective || "cost_per_task",
+          direction: summary.direction || "minimize",
+          min_pass_probability: 0.9,
+          constraints: summary.constraints || {}
+        });
       }
     };
   } catch (error) {
@@ -1563,8 +1655,14 @@ async function openMultiobjectiveDetail(studyId) {
       <h3>Pareto Trials</h3>
       <div class="mo-pareto-table"></div>
 
+      <h3>Pareto Plot</h3>
+      <div class="mo-pareto-chart decision-chart"></div>
+
       <h3>All Trials</h3>
       <div class="mo-trials-table"></div>
+
+      <h3>Workflow</h3>
+      <button data-next-robustness>Verify Pareto candidates with robustness</button>
     `;
 
     renderRowsTable(
@@ -1618,9 +1716,28 @@ async function openMultiobjectiveDetail(studyId) {
       }
     );
 
+    const paretoData = await decisionFetchJson(
+      `/api/decision/multiobjective/${encodeURIComponent(studyId)}/charts/pareto`
+    );
+    const objectives = summary.objectives || [];
+    const xMetric = paretoData.x_metric || objectives[0]?.metric || "cost_per_task";
+    const yMetric = paretoData.y_metric || objectives[1]?.metric || "p95_cycle_time";
+    renderParetoScatterChart(el.querySelector(".mo-pareto-chart"), paretoData);
+
     el.onclick = event => {
       if (event.target.closest("[data-back-multiobjective]")) {
         loadDecisionMultiobjective();
+      } else if (event.target.closest("[data-next-robustness]")) {
+        openAdvancedDecisionJob("robustness", {
+          from_multiobjective_id: studyId,
+          max_candidates: 3,
+          reps: 20,
+          base_seed: 123,
+          objective: xMetric,
+          direction: objectives[0]?.direction || "minimize",
+          min_pass_probability: 0.9,
+          constraints: summary.constraints || {}
+        });
       }
     };
   } catch (error) {
@@ -1703,6 +1820,9 @@ async function openRobustnessDetail(robustId) {
     const errors = summary.errors || [];
     const reps = toNumber(summary.reps, 0);
     const minPassProbability = summary.min_pass_probability;
+    const chartData = await decisionFetchJson(
+      `/api/decision/robustness/${encodeURIComponent(robustId)}/charts/pass-probability`
+    );
 
     el.innerHTML = `
       <div class="decision-toolbar">
@@ -1740,6 +1860,9 @@ async function openRobustnessDetail(robustId) {
       <h3>Candidates</h3>
       <div class="rob-candidates-table"></div>
 
+      <h3>Constraint Pass Probability</h3>
+      <div class="probability-chart decision-chart"></div>
+
       <h3>Replication Results</h3>
       <div class="rob-results-table"></div>
     `;
@@ -1761,6 +1884,7 @@ async function openRobustnessDetail(robustId) {
         "No candidate summary available."
       );
     } else {
+      renderProbabilityBarChart(el.querySelector(".probability-chart"), chartData);
       renderDecisionTable(
         el.querySelector(".rob-candidates-table"),
         [
@@ -1831,7 +1955,8 @@ async function loadDecisionJobs() {
   const el = decisionContainer("jobs");
   if (!el) return;
 
-  setDecisionLoading(el);
+  const hasRenderedJobs = Boolean(el.querySelector("#jobs-table"));
+  if (!hasRenderedJobs) setDecisionLoading(el);
 
   try {
     const data = await decisionFetchJson("/api/decision/jobs");
@@ -1852,25 +1977,29 @@ async function loadDecisionJobs() {
 }
 
 function renderJobs(el, jobs) {
-  el.innerHTML = `
-    <div class="decision-toolbar">
-      <button id="decision-job-launch-btn">Launch New Job</button>
-    </div>
+  let tableEl = el.querySelector("#jobs-table");
 
-    <div id="jobs-table"></div>
-  `;
+  if (!tableEl) {
+    el.innerHTML = `
+      <div class="decision-toolbar">
+        <button id="decision-job-launch-btn">Launch New Job</button>
+      </div>
 
-  el.querySelector("#decision-job-launch-btn").onclick = openJobModal;
+      <div id="jobs-table"></div>
+    `;
+    el.querySelector("#decision-job-launch-btn").onclick = openJobModal;
+    tableEl = el.querySelector("#jobs-table");
+  }
 
   if (!jobs.length) {
-    el.querySelector("#jobs-table").innerHTML = `
+    tableEl.innerHTML = `
       <div class="decision-status">No active or recent decision jobs.</div>
     `;
     return;
   }
 
   renderDecisionTable(
-    el.querySelector("#jobs-table"),
+    tableEl,
     [
       { key: "job_id", label: "Job ID" },
       { key: "module", label: "Module" },
@@ -1891,6 +2020,13 @@ function renderJobs(el, jobs) {
       },
       { key: "created_at", label: "Created" },
       { key: "finished_at", label: "Finished" },
+      {
+        key: "progress",
+        label: "Progress",
+        render: row => row.progress && typeof row.progress === "object"
+          ? `${row.progress.percent == null ? "" : `${escapeHtml(String(row.progress.percent))}% `}${escapeHtml(String(row.progress.message || ""))}`
+          : "-"
+      },
       { key: "artifact_type", label: "Artifact Type" },
       {
         key: "action",
@@ -1907,7 +2043,7 @@ function renderJobs(el, jobs) {
             `;
           }
 
-          if (row.status === "queued") {
+          if (row.status === "queued" || row.status === "running") {
             return `<button data-cancel-job="${escapeHtml(row.job_id)}">Cancel</button>`;
           }
 

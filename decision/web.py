@@ -9,12 +9,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 
 from analysis.loader import load_run
 from decision.cost import CostConfig
 from decision.kpis import compute_cost_kpis_for_run_id
 from decision.spatial import compute_spatial_blockage
+from decision.pdf import markdown_to_pdf
 
 
 ID_PATTERN = re.compile(r"^[A-Za-z0-9_\-]+$")
@@ -236,6 +237,48 @@ def _read_csv_page(
     return rows, total
 
 
+def _histogram_payload(
+    rows: list[dict[str, Any]],
+    metric_names: tuple[str, ...],
+    bin_count: int = 10,
+) -> dict[str, dict[str, Any]]:
+    histograms: dict[str, dict[str, Any]] = {}
+
+    for metric in metric_names:
+        values = [
+            float(row[metric])
+            for row in rows
+            if isinstance(row.get(metric), (int, float))
+            and math.isfinite(float(row[metric]))
+        ]
+
+        if not values:
+            histograms[metric] = {"bin_edges": [], "bin_centers": [], "counts": []}
+            continue
+
+        low = min(values)
+        high = max(values)
+        if low == high:
+            edges = [low - 0.5, high + 0.5]
+        else:
+            width = (high - low) / bin_count
+            edges = [low + width * index for index in range(bin_count + 1)]
+
+        counts = [0] * (len(edges) - 1)
+        for value in values:
+            index = len(counts) - 1 if value == edges[-1] else int((value - edges[0]) / (edges[-1] - edges[0]) * len(counts))
+            counts[max(0, min(len(counts) - 1, index))] += 1
+
+        centers = [(edges[index] + edges[index + 1]) / 2 for index in range(len(counts))]
+        histograms[metric] = {
+            "bin_edges": edges,
+            "bin_centers": centers,
+            "counts": counts,
+        }
+
+    return histograms
+
+
 def _page_args() -> tuple[int, int]:
     try:
         page = max(1, int(request.args.get("page", 1)))
@@ -394,6 +437,52 @@ def _load_tornado_payload(study_dir: Path) -> dict[str, Any]:
         grouped.setdefault(str(target), []).append(row)
 
     return grouped
+
+
+def _finite_number(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _bounded_query_int(name: str, default: int, minimum: int, maximum: int) -> int:
+    raw = request.args.get(name)
+    if raw is None:
+        return default
+    try:
+        return max(minimum, min(maximum, int(raw)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _sample_trials(path: Path, max_points: int) -> list[dict[str, Any]]:
+    trials = _load_trials_from_artifact(path)
+    if len(trials) <= max_points:
+        return [trial for trial in trials if isinstance(trial, dict)]
+    step = (len(trials) - 1) / (max_points - 1)
+    return [trials[round(index * step)] for index in range(max_points)]
+
+
+def _trial_metric(trial: dict[str, Any], metric: str) -> float | None:
+    metrics = trial.get("metrics")
+    if isinstance(metrics, dict):
+        value = _finite_number(metrics.get(metric))
+        if value is not None:
+            return value
+    return _finite_number(trial.get(metric))
+
+
+def _pareto_trial_numbers(summary: dict[str, Any], path: Path) -> set[str]:
+    pareto_trials = summary.get("pareto_trials")
+    if not isinstance(pareto_trials, list):
+        pareto_trials = _read_json_list(path / "pareto.json")
+    return {
+        str(trial.get("number"))
+        for trial in pareto_trials
+        if isinstance(trial, dict) and trial.get("number") is not None
+    }
 
 
 def create_decision_blueprint(
@@ -611,6 +700,35 @@ def create_decision_blueprint(
 
         return jsonify(_sanitize(payload))
 
+    @bp.get("/api/decision/reports/<report_id>/download.pdf")
+    def decision_report_download_pdf(report_id: str):
+        markdown_path = _get_report_path(report_id)
+        if markdown_path is None:
+            return jsonify({"error": "Report not found."}), 404
+
+        pdf_path = markdown_path.with_suffix(".pdf")
+        source_dir: Path | None = None
+        if report_id.startswith("study_report_"):
+            source_dir = data_dir / "studies" / report_id.removeprefix("study_report_")
+        else:
+            source_dir = runs_dir / report_id.removesuffix("_report")
+
+        try:
+            markdown_to_pdf(
+                markdown_path.read_text(encoding="utf-8", errors="replace"),
+                pdf_path,
+                source_dir=source_dir if source_dir.is_dir() else None,
+            )
+        except Exception as exc:
+            return jsonify({"error": f"PDF generation failed: {exc}"}), 500
+
+        return send_file(
+            pdf_path,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=pdf_path.name,
+        )
+
     # ------------------------------------------------------------------
     # Monte Carlo
     # ------------------------------------------------------------------
@@ -660,6 +778,7 @@ def create_decision_blueprint(
             return jsonify({"error": "Monte Carlo study not found."}), 404
 
         page, page_size = _page_args()
+        all_rows, _ = _read_csv_page(path / "results.csv", page=1, page_size=10**9)
         rows, total_rows = _read_csv_page(
             path / "results.csv",
             page=page,
@@ -672,9 +791,56 @@ def create_decision_blueprint(
             "page_size": page_size,
             "total_rows": total_rows,
             "rows": rows,
+            "histograms": _histogram_payload(
+                all_rows,
+                (
+                    "cost_per_task",
+                    "p95_cycle_time",
+                    "average_cycle_time",
+                    "average_throughput",
+                    "tasks_completed",
+                ),
+            ),
         }
 
         return jsonify(_sanitize(payload))
+
+    @bp.get("/api/decision/monte-carlo/<mc_id>/charts/histograms")
+    def decision_monte_carlo_histograms(mc_id: str):
+        path = _get_artifact_dir(data_dir, "monte_carlo", mc_id)
+        if path is None:
+            return jsonify({"error": "Monte Carlo study not found."}), 404
+
+        allowed = {"cost_per_task", "p95_cycle_time", "average_cycle_time", "average_throughput", "tasks_completed"}
+        requested = [value.strip() for value in request.args.get("metrics", "").split(",") if value.strip()]
+        metrics = requested or ["cost_per_task", "p95_cycle_time", "average_cycle_time"]
+        invalid = sorted(set(metrics) - allowed)
+        if invalid:
+            return jsonify({"error": f"Unsupported Monte Carlo metrics: {', '.join(invalid)}."}), 400
+
+        bins = _bounded_query_int("bins", 20, 5, 100)
+        rows, _ = _read_csv_page(path / "results.csv", page=1, page_size=10**9)
+        histograms = {}
+        for metric in metrics:
+            raw_values = [row.get(metric) for row in rows]
+            values = [number for value in raw_values if (number := _finite_number(value)) is not None]
+            if not values:
+                histograms[metric] = {"count": 0, "null_count": len(raw_values), "min": None, "max": None, "bin_edges": [], "bin_centers": [], "counts": []}
+                continue
+            low, high = min(values), max(values)
+            edges = [low - 0.5, high + 0.5] if low == high else [low + (high - low) * index / bins for index in range(bins + 1)]
+            counts = [0] * (len(edges) - 1)
+            for value in values:
+                index = len(counts) - 1 if value == edges[-1] else int((value - edges[0]) / (edges[-1] - edges[0]) * len(counts))
+                counts[max(0, min(len(counts) - 1, index))] += 1
+            histograms[metric] = {
+                "count": len(values), "null_count": len(raw_values) - len(values),
+                "min": low, "max": high, "bin_edges": edges,
+                "bin_centers": [(edges[index] + edges[index + 1]) / 2 for index in range(len(counts))],
+                "counts": counts,
+            }
+
+        return jsonify(_sanitize({"mc_id": mc_id, "bins": bins, "histograms": histograms, "warnings": []}))
 
     # ------------------------------------------------------------------
     # Sensitivity
@@ -748,9 +914,21 @@ def create_decision_blueprint(
         if path is None:
             return jsonify({"error": "Sensitivity study not found."}), 404
 
+        tornado = _load_tornado_payload(path)
+        for rows in tornado.values():
+            rows.sort(
+                key=lambda row: abs(
+                    _finite_number(row.get("delta"))
+                    or _finite_number(row.get("delta_percent"))
+                    or 0
+                ),
+                reverse=True,
+            )
         payload = {
             "study_id": study_id,
-            "tornado": _load_tornado_payload(path),
+            "metrics": list(tornado),
+            "tornado": tornado,
+            "warnings": ["One-at-a-time sensitivity does not reveal interaction effects."],
         }
 
         return jsonify(_sanitize(payload))
@@ -817,6 +995,30 @@ def create_decision_blueprint(
             "rows": rows,
         }
 
+        return jsonify(_sanitize(payload))
+
+    @bp.get("/api/decision/optimizations/<opt_id>/charts/objective")
+    def decision_optimization_objective_chart(opt_id: str):
+        path = _get_artifact_dir(data_dir, "optimizations", opt_id)
+        if path is None:
+            return jsonify({"error": "Optimization study not found."}), 404
+
+        summary = _read_summary(path)
+        trials = _sample_trials(path, _bounded_query_int("max_points", 2000, 1, 2000))
+        best = summary.get("best_trial")
+        payload = {
+            "opt_id": opt_id,
+            "objective": summary.get("objective"),
+            "direction": summary.get("direction"),
+            "feasible_count": summary.get("feasible_count"),
+            "infeasible_count": summary.get("infeasible_count"),
+            "best_trial_number": best.get("number") if isinstance(best, dict) and best.get("feasible") else None,
+            "points": [
+                {"trial_number": trial.get("number"), "value": trial.get("value"), "feasible": bool(trial.get("feasible"))}
+                for trial in trials
+            ],
+            "warnings": ["Single-replica optimizer results are exploratory. Run robustness verification before deployment."],
+        }
         return jsonify(_sanitize(payload))
 
     # ------------------------------------------------------------------
@@ -916,6 +1118,47 @@ def create_decision_blueprint(
 
         return jsonify(_sanitize(payload))
 
+    @bp.get("/api/decision/multiobjective/<study_id>/charts/pareto")
+    def decision_multiobjective_pareto_chart(study_id: str):
+        path = _get_artifact_dir(data_dir, "multiobjective", study_id)
+        if path is None:
+            return jsonify({"error": "Multi-objective study not found."}), 404
+
+        summary = _read_summary(path)
+        raw_objectives = summary.get("objectives")
+        objectives = raw_objectives if isinstance(raw_objectives, list) else []
+        x_metric = request.args.get("x_metric") or (objectives[0].get("metric") if len(objectives) > 0 else None)
+        y_metric = request.args.get("y_metric") or (objectives[1].get("metric") if len(objectives) > 1 else None)
+        if not x_metric or not y_metric:
+            return jsonify(_sanitize({
+                "study_id": study_id, "x_metric": x_metric, "y_metric": y_metric,
+                "objectives": objectives, "total_trials": 0, "feasible_count": 0,
+                "pareto_count": 0, "points": [],
+                "warnings": ["At least two objectives are required for a Pareto scatter chart."],
+            }))
+
+        pareto_numbers = _pareto_trial_numbers(summary, path)
+        points = []
+        for trial in _sample_trials(path, _bounded_query_int("max_points", 2000, 1, 2000)):
+            if not trial.get("feasible"):
+                continue
+            x_value = _trial_metric(trial, x_metric)
+            y_value = _trial_metric(trial, y_metric)
+            if x_value is not None and y_value is not None:
+                points.append({
+                    "trial_number": trial.get("number"), "x": x_value, "y": y_value,
+                    "feasible": True, "pareto": str(trial.get("number")) in pareto_numbers,
+                })
+
+        return jsonify(_sanitize({
+            "study_id": study_id, "x_metric": x_metric, "y_metric": y_metric,
+            "objectives": objectives, "total_trials": summary.get("n_trials", 0),
+            "feasible_count": summary.get("feasible_count", len(points)),
+            "pareto_count": summary.get("pareto_count", sum(point["pareto"] for point in points)),
+            "points": points,
+            "warnings": ["Pareto candidates are not deployable until verified by robustness."],
+        }))
+
     # ------------------------------------------------------------------
     # Robustness
     # ------------------------------------------------------------------
@@ -982,6 +1225,43 @@ def create_decision_blueprint(
             "rows": rows,
         }
 
+        return jsonify(_sanitize(payload))
+
+    @bp.get("/api/decision/robustness/<robust_id>/charts/pass-probability")
+    def decision_robustness_pass_probability_chart(robust_id: str):
+        path = _get_artifact_dir(data_dir, "robustness", robust_id)
+        if path is None:
+            return jsonify({"error": "Robustness study not found."}), 404
+
+        summary = _read_summary(path)
+        candidates = summary.get("candidates")
+        candidates = candidates if isinstance(candidates, list) else []
+        recommended = summary.get("recommended")
+        recommended_label = recommended.get("label") if isinstance(recommended, dict) else None
+        reps = int(summary.get("reps") or 0)
+
+        payload = {
+            "robust_id": robust_id,
+            "objective": summary.get("objective"),
+            "direction": summary.get("direction"),
+            "min_pass_probability": summary.get("min_pass_probability"),
+            "recommended_label": recommended_label,
+            "candidates": [
+                {
+                    "label": candidate.get("label"),
+                    "constraint_pass_probability": candidate.get("constraint_pass_probability"),
+                    "robust_pass": candidate.get("robust_pass"),
+                    "recommended": candidate.get("label") == recommended_label,
+                    "objective_mean": candidate.get("objective_mean"),
+                    "objective_stdev": candidate.get("objective_stdev"),
+                }
+                for candidate in candidates
+                if isinstance(candidate, dict)
+            ],
+            "warnings": [
+                "reps below 20 is not recommended for deployment decisions."
+            ] if reps < 20 else [],
+        }
         return jsonify(_sanitize(payload))
 
     # ------------------------------------------------------------------

@@ -13,6 +13,10 @@ from typing import Any
 from flask import Blueprint, jsonify, request
 
 from decision.cost import CostConfig
+from decision.execution import (
+    ALLOWED_TRIAL_ARTIFACT_MODES,
+    MAX_MAX_WORKERS,
+)
 
 
 ID_PATTERN = re.compile(r"^[A-Za-z0-9_\-]+$")
@@ -195,15 +199,55 @@ class DecisionJobManager:
     ) -> None:
         self.data_dir = Path(data_dir)
         self.runs_dir = Path(runs_dir)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self._state_path = self.data_dir / "decision_jobs.json"
 
         self._lock = threading.Lock()
-        self._jobs: dict[str, DecisionJob] = {}
+        self._jobs: dict[str, DecisionJob] = self._load_jobs()
         self._futures: dict[str, Any] = {}
+        self._cancel_events: dict[str, threading.Event] = {
+            job_id: threading.Event() for job_id in self._jobs
+        }
 
         self._executor = ThreadPoolExecutor(
             max_workers=max_workers,
             thread_name_prefix="decision-job",
         )
+
+    def _load_jobs(self) -> dict[str, DecisionJob]:
+        payload = _read_json(self._state_path)
+        jobs: dict[str, DecisionJob] = {}
+        if not isinstance(payload, list):
+            return jobs
+        for item in payload:
+            if not isinstance(item, dict) or not _is_safe_id(item.get("job_id", "")):
+                continue
+            if item.get("status") in {"queued", "running"}:
+                item["status"] = "failed"
+                item["error"] = "Interrupted by Flask restart."
+                item["finished_at"] = _now_iso()
+            try:
+                job = DecisionJob(**{field.name: item.get(field.name) for field in fields(DecisionJob)})
+            except TypeError:
+                continue
+            jobs[job.job_id] = job
+        return jobs
+
+    def _save_jobs_locked(self) -> None:
+        temporary = self._state_path.with_suffix(".tmp")
+        temporary.write_text(
+            json.dumps([job.to_dict() | {"config": job.config} for job in self._jobs.values()], indent=2),
+            encoding="utf-8",
+        )
+        temporary.replace(self._state_path)
+
+    def _set_progress(self, job_id: str, percent: int | None, message: str) -> None:
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is not None:
+                bounded = None if percent is None else max(0, min(100, percent))
+                job.progress = {"percent": bounded, "message": message}
+                self._save_jobs_locked()
 
     # ------------------------------------------------------------------
     # Public API
@@ -257,6 +301,8 @@ class DecisionJobManager:
 
         with self._lock:
             self._jobs[job.job_id] = job
+            self._cancel_events[job.job_id] = threading.Event()
+            self._save_jobs_locked()
 
         future = self._executor.submit(self._run_job, job.job_id)
 
@@ -276,16 +322,18 @@ class DecisionJobManager:
                 raise DecisionJobNotFoundError("Job not found.")
 
             if job.status == "queued":
+                self._cancel_events.setdefault(job_id, threading.Event()).set()
                 job.status = "cancelled"
                 job.finished_at = _now_iso()
                 job.error = "Cancelled before execution."
+                self._save_jobs_locked()
                 return job
 
             if job.status == "running":
-                raise DecisionJobConflictError(
-                    "Running decision jobs cannot be cancelled yet. "
-                    "Only queued jobs can be cancelled."
-                )
+                self._cancel_events.setdefault(job_id, threading.Event()).set()
+                job.progress = {"percent": job.progress.get("percent", 0) if isinstance(job.progress, dict) else 0, "message": "Cancellation requested."}
+                self._save_jobs_locked()
+                return job
 
             raise DecisionJobConflictError(
                 f"Cannot cancel job with status '{job.status}'."
@@ -307,26 +355,38 @@ class DecisionJobManager:
 
             job.status = "running"
             job.started_at = _now_iso()
+            job.progress = {"percent": None, "message": "Starting job."}
+            self._save_jobs_locked()
 
         try:
+            self._set_progress(job_id, None, "Validating and preparing job.")
+            self._set_progress(job_id, None, f"Running {job.module}; progress is being measured.")
             artifact_type, artifact_id = self._execute_module(
                 job.module,
                 job.config,
+                progress_callback=lambda percent, message: self._set_progress(
+                    job_id, percent, message
+                ),
             )
+            self._set_progress(job_id, 95, "Finalizing artifact.")
 
             with self._lock:
-                job.status = "finished"
+                cancelled = self._cancel_events.get(job_id, threading.Event()).is_set()
+                job.status = "cancelled" if cancelled else "finished"
                 job.finished_at = _now_iso()
                 job.artifact_type = artifact_type
                 job.artifact_id = artifact_id
-                job.progress = None
-                job.error = None
+                job.progress = {"percent": 100, "message": "Cancellation requested after execution." if cancelled else "Completed."}
+                job.error = "Cancellation requested; execution completed." if cancelled else None
+                self._save_jobs_locked()
 
         except Exception as exc:
             with self._lock:
                 job.status = "failed"
                 job.finished_at = _now_iso()
                 job.error = str(exc)
+                job.progress = {"percent": 100, "message": "Failed."}
+                self._save_jobs_locked()
 
     # ------------------------------------------------------------------
     # Validation
@@ -337,6 +397,16 @@ class DecisionJobManager:
         module: str,
         config: dict[str, Any],
     ) -> None:
+        if module in {
+            "monte_carlo",
+            "sensitivity",
+            "optimizer",
+            "multiobjective",
+            "robustness",
+            "study",
+        }:
+            self._validate_execution_options(config)
+
         if module in {
             "monte_carlo",
             "sensitivity",
@@ -368,6 +438,25 @@ class DecisionJobManager:
 
         elif module == "study":
             self._validate_study_config(config)
+
+    def _validate_execution_options(self, config: dict[str, Any]) -> None:
+        mode = config.get("trial_artifact_mode", "full")
+        if mode not in ALLOWED_TRIAL_ARTIFACT_MODES:
+            raise DecisionJobError(
+                "trial_artifact_mode must be 'full' or 'metrics_only'."
+            )
+
+        try:
+            max_workers = int(config.get("max_workers", 1))
+        except Exception as exc:
+            raise DecisionJobError("max_workers must be an integer.") from exc
+
+        if max_workers < 1:
+            raise DecisionJobError("max_workers must be >= 1.")
+        if max_workers > MAX_MAX_WORKERS:
+            raise DecisionJobError(
+                f"max_workers must be <= {MAX_MAX_WORKERS}."
+            )
 
     def _require_source_config(self, config: dict[str, Any]) -> None:
         if isinstance(config.get("base_config"), dict):
@@ -724,9 +813,10 @@ class DecisionJobManager:
         self,
         module: str,
         config: dict[str, Any],
+        progress_callback: Any | None = None,
     ) -> tuple[str | None, str | None]:
         if module == "monte_carlo":
-            return self._run_monte_carlo_job(config)
+            return self._run_monte_carlo_job(config, progress_callback=progress_callback)
 
         if module == "sensitivity":
             return self._run_sensitivity_job(config)
@@ -883,6 +973,7 @@ class DecisionJobManager:
     def _run_monte_carlo_job(
         self,
         config: dict[str, Any],
+        progress_callback: Any | None = None,
     ) -> tuple[str, str | None]:
         from decision.monte_carlo import MonteCarloConfig, run_monte_carlo
 
@@ -912,9 +1003,11 @@ class DecisionJobManager:
             force_fast_mode=bool(config.get("force_fast_mode", True)),
             output_dir=str(self.data_dir / "monte_carlo"),
             runs_base_dir=str(self.runs_dir),
+            max_workers=int(config.get("max_workers", 1)),
+            trial_artifact_mode=str(config.get("trial_artifact_mode", "full")),
         )
 
-        result = run_monte_carlo(mc_config)
+        result = run_monte_carlo(mc_config, progress_callback=progress_callback)
         artifact_id = _extract_id(result, ["mc_id", "id"])
 
         return "monte_carlo", artifact_id
@@ -985,6 +1078,8 @@ class DecisionJobManager:
             force_fast_mode=bool(config.get("force_fast_mode", True)),
             output_dir=str(self.data_dir / "sensitivity"),
             runs_base_dir=str(self.runs_dir),
+            max_workers=int(config.get("max_workers", 1)),
+            trial_artifact_mode=str(config.get("trial_artifact_mode", "full")),
         )
 
         result = run_sensitivity(sensitivity_config)
@@ -1062,6 +1157,8 @@ class DecisionJobManager:
             output_dir=str(self.data_dir / "optimizations"),
             runs_base_dir=str(self.runs_dir),
             timeout=config.get("timeout"),
+            max_workers=int(config.get("max_workers", 1)),
+            trial_artifact_mode=str(config.get("trial_artifact_mode", "full")),
         )
 
         summary = run_optimization(optimizer_config)
@@ -1168,6 +1265,8 @@ class DecisionJobManager:
             output_dir=str(self.data_dir / "multiobjective"),
             runs_base_dir=str(self.runs_dir),
             timeout=config.get("timeout"),
+            max_workers=int(config.get("max_workers", 1)),
+            trial_artifact_mode=str(config.get("trial_artifact_mode", "full")),
         )
 
         summary = run_multiobjective(multiobjective_config)
@@ -1376,6 +1475,8 @@ class DecisionJobManager:
             force_fast_mode=bool(config.get("force_fast_mode", True)),
             output_dir=str(self.data_dir / "robustness"),
             runs_base_dir=str(self.runs_dir),
+            max_workers=int(config.get("max_workers", 1)),
+            trial_artifact_mode=str(config.get("trial_artifact_mode", "full")),
         )
 
         summary = run_robustness(robustness_config)
@@ -1558,6 +1659,44 @@ class DecisionJobManager:
 
 def create_decision_jobs_blueprint(manager: DecisionJobManager) -> Blueprint:
     bp = Blueprint("decision_jobs_api", __name__)
+
+    @bp.get("/api/decision/templates/<module>")
+    def decision_job_template(module: str):
+        if module not in SUPPORTED_DECISION_JOB_MODULES:
+            return jsonify({"error": "Unsupported decision module."}), 404
+        templates: dict[str, dict[str, Any]] = {
+            "monte_carlo": {"from_run_id": "REPLACE_WITH_RUN_ID", "n_runs": 20, "base_seed": 42},
+            "sensitivity": {"from_run_id": "REPLACE_WITH_RUN_ID", "reps": 5, "base_seed": 42, "factors": []},
+            "optimizer": {"from_run_id": "REPLACE_WITH_RUN_ID", "objective": "cost_per_task", "direction": "minimize", "n_trials": 20, "reps": 1, "search_space": []},
+            "multiobjective": {"from_run_id": "REPLACE_WITH_RUN_ID", "n_trials": 20, "reps": 1, "objectives": [{"metric": "cost_per_task", "direction": "minimize"}, {"metric": "p95_cycle_time", "direction": "minimize"}], "search_space": []},
+            "robustness": {"from_multiobjective_id": "REPLACE_WITH_ID", "max_candidates": 3, "reps": 20, "min_pass_probability": 0.9},
+            "report": {"run_id": "REPLACE_WITH_RUN_ID"},
+            "spatial": {"run_id": "REPLACE_WITH_RUN_ID", "top": 20, "by": "blocked_ticks"},
+            "study": {"from_run_id": "REPLACE_WITH_RUN_ID", "factors": []},
+        }
+        return jsonify({"module": module, "config": templates[module]})
+
+    @bp.get("/api/decision/files")
+    def list_decision_files():
+        root = manager.data_dir / "uploads"
+        root.mkdir(parents=True, exist_ok=True)
+        files = [{"name": path.name, "size": path.stat().st_size} for path in root.iterdir() if path.is_file() and _is_safe_id(path.stem)]
+        return jsonify({"files": files})
+
+    @bp.post("/api/decision/files")
+    def upload_decision_file():
+        uploaded = request.files.get("file")
+        if uploaded is None or not uploaded.filename:
+            return jsonify({"error": "A file field is required."}), 400
+        filename = Path(uploaded.filename).name
+        stem = re.sub(r"[^A-Za-z0-9_.-]", "_", filename)
+        if not stem or stem.startswith("."):
+            return jsonify({"error": "Invalid filename."}), 400
+        root = manager.data_dir / "uploads"
+        root.mkdir(parents=True, exist_ok=True)
+        destination = root / stem
+        uploaded.save(destination)
+        return jsonify({"name": stem, "path": destination.as_posix()}), 201
 
     @bp.post("/api/decision/jobs")
     def create_decision_job():
