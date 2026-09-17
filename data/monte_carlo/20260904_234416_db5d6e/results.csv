@@ -1,2 +1,0 @@
-mc_index,seed,run_id,stop_reason,tasks_created,tasks_completed,tasks_failed,simulation_ticks,average_cycle_time,average_wait_time,average_throughput,average_robot_utilization,total_blocked_ticks,total_replans,sla_target_ticks,sla_evaluated_tasks,late_tasks,sla_compliance_rate,total_operating_cost,cost_per_task
-0,478163327,20260904_234416_27ed04,target_reached,72,50,0,189,31.1,8.839285714285714,0.26455026455026454,0.9145880574452003,75,17,300,50,0,1.0,1.5041250000000002,0.0300825
