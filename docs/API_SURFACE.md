@@ -10,9 +10,9 @@ If code and documentation disagree, the code is the source of truth, but this fi
 
 Project Name: `warehouse_simulator`
 
-Current Version: `v0.8.3`
+Current Version: `v0.9.1`
 
-Previous Documented Version: `v0.8.2`
+Previous Documented Version: `v0.9.0`
 
 Version Meaning:
 
