@@ -40,11 +40,21 @@ Run Command:
 python app.py
 ```
 
+Health check:
+
+```text
+GET /healthz -> {"status": "ok"}
+```
+
 Production:
 
 ```bash
 gunicorn app:app
 ```
+
+The initial Docker deployment must use one Gunicorn worker because live simulation
+state and decision jobs are process-local. Generated `data/` content should be
+stored on a persistent volume and should not be committed to the repository.
 
 Never use the Flask development server when hosted.
 
@@ -881,6 +891,18 @@ Current concurrency policy:
 
 ```text
 one decision job at a time
+```
+
+HTTP job submissions enforce workload ceilings:
+
+```text
+Monte Carlo runs: 100
+Sensitivity replications: 100
+Optimizer trials: 200, replications: 20
+Multi-objective trials: 200, replications: 20
+Robustness replications: 100, candidates: 50
+Search-space entries: 20
+Sensitivity factors: 25, values per factor: 100
 ```
 
 Current cancellation policy:
@@ -6427,7 +6449,12 @@ spatial
 
 ## File Endpoints
 
-Not implemented in v0.8.2.
+Implemented for trusted local development:
+
+```text
+GET /api/decision/files
+POST /api/decision/files
+```
 
 Planned future routes:
 
@@ -6445,7 +6472,8 @@ No arbitrary filesystem paths should be accepted from untrusted users.
 Demand CSV and layout file Setup fields are implemented as local trusted relative-path text inputs.
 These are acceptable for local single-user development.
 For hosted deployments, they must be replaced by admin-managed dropdowns or validated uploads.
-Managed file selection/upload endpoints remain not implemented.
+Uploads accept only .csv and .json files up to 10 MiB.
+Uploads cannot overwrite an existing file with the same name.
 Cost config is edited inline as JSON.
 ```
 

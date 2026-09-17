@@ -1,4 +1,7 @@
 from pathlib import Path
+import time
+
+import pytest
 
 from decision.monte_carlo import MonteCarloConfig, run_monte_carlo
 
@@ -81,8 +84,12 @@ def test_metrics_only_matches_full_trial_metrics(tmp_path: Path) -> None:
 
     runner = ExperimentRunner(base_dir=str(tmp_path / "runs"))
     run_id = runner.start(trial_config, create_simulation_from_config)
+    deadline = time.monotonic() + 10
     while not runner.finished:
-        pass
+        if time.monotonic() >= deadline:
+            runner.stop("test_timeout")
+            pytest.fail("experiment runner did not finish before the test deadline")
+        time.sleep(0.01)
 
     full = extract_run_metrics(
         run_id,

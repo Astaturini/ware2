@@ -54,6 +54,20 @@ SUPPORTED_DIRECTIONS = {
     "maximize",
 }
 
+MAX_MONTE_CARLO_RUNS = 100
+MAX_SENSITIVITY_REPS = 100
+MAX_OPTIMIZER_TRIALS = 200
+MAX_OPTIMIZER_REPS = 20
+MAX_MULTIOBJECTIVE_TRIALS = 200
+MAX_MULTIOBJECTIVE_REPS = 20
+MAX_ROBUSTNESS_REPS = 100
+MAX_ROBUSTNESS_CANDIDATES = 50
+MAX_FACTORS = 25
+MAX_FACTOR_VALUES = 100
+MAX_SEARCH_SPACE = 20
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+ALLOWED_UPLOAD_SUFFIXES = {".csv", ".json"}
+
 
 class DecisionJobError(ValueError):
     """
@@ -478,6 +492,10 @@ class DecisionJobManager:
 
         if n_runs < 1:
             raise DecisionJobError("n_runs must be >= 1.")
+        if n_runs > MAX_MONTE_CARLO_RUNS:
+            raise DecisionJobError(
+                f"n_runs must be <= {MAX_MONTE_CARLO_RUNS}."
+            )
 
         seeds = config.get("seeds")
         if seeds is not None:
@@ -496,6 +514,8 @@ class DecisionJobManager:
             raise DecisionJobError(
                 "Sensitivity config must include a non-empty factors list."
             )
+        if len(factors) > MAX_FACTORS:
+            raise DecisionJobError(f"factors must contain <= {MAX_FACTORS} entries.")
 
         for factor in factors:
             if not isinstance(factor, dict):
@@ -511,6 +531,10 @@ class DecisionJobManager:
                 raise DecisionJobError(
                     f"Sensitivity factor '{name}' needs a non-empty values list."
                 )
+            if len(values) > MAX_FACTOR_VALUES:
+                raise DecisionJobError(
+                    f"Sensitivity factor '{name}' must contain <= {MAX_FACTOR_VALUES} values."
+                )
 
         try:
             reps = int(config.get("reps", 3))
@@ -519,6 +543,8 @@ class DecisionJobManager:
 
         if reps < 1:
             raise DecisionJobError("reps must be >= 1.")
+        if reps > MAX_SENSITIVITY_REPS:
+            raise DecisionJobError(f"reps must be <= {MAX_SENSITIVITY_REPS}.")
 
     def _validate_optimizer_config(self, config: dict[str, Any]) -> None:
         objective = str(config.get("objective", "cost_per_task"))
@@ -550,6 +576,10 @@ class DecisionJobManager:
 
         if n_trials < 1:
             raise DecisionJobError("n_trials must be >= 1.")
+        if n_trials > MAX_OPTIMIZER_TRIALS:
+            raise DecisionJobError(
+                f"n_trials must be <= {MAX_OPTIMIZER_TRIALS}."
+            )
 
         try:
             reps = int(config.get("reps", 1))
@@ -558,6 +588,8 @@ class DecisionJobManager:
 
         if reps < 1:
             raise DecisionJobError("reps must be >= 1.")
+        if reps > MAX_OPTIMIZER_REPS:
+            raise DecisionJobError(f"reps must be <= {MAX_OPTIMIZER_REPS}.")
 
     def _validate_multiobjective_config(self, config: dict[str, Any]) -> None:
         objectives = config.get("objectives")
@@ -605,6 +637,10 @@ class DecisionJobManager:
 
         if n_trials < 1:
             raise DecisionJobError("n_trials must be >= 1.")
+        if n_trials > MAX_MULTIOBJECTIVE_TRIALS:
+            raise DecisionJobError(
+                f"n_trials must be <= {MAX_MULTIOBJECTIVE_TRIALS}."
+            )
 
         try:
             reps = int(config.get("reps", 1))
@@ -613,6 +649,8 @@ class DecisionJobManager:
 
         if reps < 1:
             raise DecisionJobError("reps must be >= 1.")
+        if reps > MAX_MULTIOBJECTIVE_REPS:
+            raise DecisionJobError(f"reps must be <= {MAX_MULTIOBJECTIVE_REPS}.")
 
     def _validate_robustness_config(self, config: dict[str, Any]) -> None:
         try:
@@ -622,6 +660,8 @@ class DecisionJobManager:
 
         if reps < 1:
             raise DecisionJobError("reps must be >= 1.")
+        if reps > MAX_ROBUSTNESS_REPS:
+            raise DecisionJobError(f"reps must be <= {MAX_ROBUSTNESS_REPS}.")
 
         try:
             min_pass_probability = float(
@@ -662,6 +702,11 @@ class DecisionJobManager:
             if not isinstance(config.get("constraints"), dict) or not config.get("constraints"):
                 raise DecisionJobError(
                     "Robustness verification requires a non-empty constraints object."
+                )
+
+            if len(candidates) > MAX_ROBUSTNESS_CANDIDATES:
+                raise DecisionJobError(
+                    f"candidates must contain <= {MAX_ROBUSTNESS_CANDIDATES} entries."
                 )
 
         elif from_multiobjective_id not in (None, ""):
@@ -773,6 +818,10 @@ class DecisionJobManager:
         if not isinstance(search_space, list) or not search_space:
             raise DecisionJobError(
                 "search_space must be a non-empty list."
+            )
+        if len(search_space) > MAX_SEARCH_SPACE:
+            raise DecisionJobError(
+                f"search_space must contain <= {MAX_SEARCH_SPACE} entries."
             )
 
         for spec in search_space:
@@ -1692,10 +1741,17 @@ def create_decision_jobs_blueprint(manager: DecisionJobManager) -> Blueprint:
         stem = re.sub(r"[^A-Za-z0-9_.-]", "_", filename)
         if not stem or stem.startswith("."):
             return jsonify({"error": "Invalid filename."}), 400
+        if Path(stem).suffix.lower() not in ALLOWED_UPLOAD_SUFFIXES:
+            return jsonify({"error": "Only CSV and JSON uploads are supported."}), 400
         root = manager.data_dir / "uploads"
         root.mkdir(parents=True, exist_ok=True)
         destination = root / stem
-        uploaded.save(destination)
+        if destination.exists():
+            return jsonify({"error": "A file with that name already exists."}), 409
+        content = uploaded.read(MAX_UPLOAD_BYTES + 1)
+        if len(content) > MAX_UPLOAD_BYTES:
+            return jsonify({"error": "Uploaded files must be 10 MiB or smaller."}), 413
+        destination.write_bytes(content)
         return jsonify({"name": stem, "path": destination.as_posix()}), 201
 
     @bp.post("/api/decision/jobs")

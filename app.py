@@ -49,6 +49,10 @@ def create_app(
     def index():
         return render_template("index.html")
 
+    @app.get("/healthz")
+    def healthz():
+        return jsonify({"status": "ok"})
+
     @app.get("/api/state")
     def state():
         simulation = holder["simulation"]

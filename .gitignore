@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+.venv/
+venv/
+env/
+.env
+.env.*
+
+# Test and tooling output
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Editors and operating-system files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Generated simulator state and local databases
+data/runs/*
+data/uploads/*
+data/monte_carlo/*
+data/sensitivity/*
+data/optimizations/*
+data/multiobjective/*
+data/robustness/*
+data/studies/*
+data/reports/*
+data/decision_jobs.json
+data/decision_jobs.json.tmp
+optuna_study.db
+
+# Build and local deployment output
+*.log
+dist/
+build/
+*.egg-info/
+.docker-data/
