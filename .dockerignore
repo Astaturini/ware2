@@ -9,14 +9,6 @@ __pycache__
 .coverage
 .idea
 .vscode
-data/runs
-data/uploads
-data/monte_carlo
-data/sensitivity
-data/optimizations
-data/multiobjective
-data/robustness
-data/studies
-data/reports
+data/*
 optuna_study.db
 *.log
